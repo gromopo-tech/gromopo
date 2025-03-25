@@ -15,7 +15,7 @@ export default function HeroHome() {
               className="animate-[gradient_6s_linear_infinite] bg-[linear-gradient(to_right,var(--color-green-800),var(--color-sky-800),var(--color-green-950),var(--color-sky-950),var(--color-green-800))] bg-[length:200%_auto] bg-clip-text pb-5 font-nacelle text-4xl font-semibold text-transparent md:text-5xl"
               data-aos="fade-up"
             >
-              Introducing a platform for small food and beverage businesses
+              Introducing a customer-obsessed platform to grow small food and beverage businesses
             </h1>
             <div className="mx-auto max-w-3xl">
               <p
@@ -23,7 +23,7 @@ export default function HeroHome() {
                 data-aos="fade-up"
                 data-aos-delay={200}
               >
-                Eliminate manual order taking and lines while increasing customer satisfaction
+                Streamline order taking and eliminate lines while increasing customer satisfaction
                 with our easy-to-use platform tailored specifically for small mom and pop shops.
                 <br></br>
                 Join us today to get exclusive early access!

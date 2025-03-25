@@ -20,7 +20,7 @@ export default function Workflows() {
               Map your customers journey
             </h2>
             <p className="text-lg text-sky-800/65">
-              From ordering to payment, our platform is designed to make your customers' experience rewarding as possible to keep them coming back for more.
+              From ordering and payments to loyalty rewards, our platform is designed to make your customers' experience seamless and enjoyable to keep them coming back for more.
             </p>
           </div>
           {/* Spotlight items */}
