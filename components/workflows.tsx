@@ -61,12 +61,12 @@ export default function Workflows() {
                   <div className="mb-3">
                     <span className="btn-sm relative rounded-full bg-green-800/40 px-2.5 py-0.5 text-xs font-normal before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-transparent before:[background:linear-gradient(to_bottom,--theme(--color-green-700/.15),--theme(--color-green-700/.5))_border-box] before:[mask-composite:exclude_!important] before:[mask:linear-gradient(white_0_0)_padding-box,_linear-gradient(white_0_0)] hover:bg-green-800/60">
                       <span className="bg-linear-to-r from-green-500 to-green-200 bg-clip-text text-transparent">
-                        In-app Ordering
+                        Mobile Ordering
                       </span>
                     </span>
                   </div>
                   <p className="text-sky-200/65">
-                    Eliminate lines and streamline order taking for carry out or dine-in.
+                    Eliminate lines and streamline order taking from the comfort of your customers table, or wherever they may be whether it's for dine-in, take away, or delivery.
                   </p>
                 </div>
               </div>
@@ -112,7 +112,7 @@ export default function Workflows() {
                     </span>
                   </div>
                   <p className="text-sky-200/65">
-                    Accept payments through the app to easily keep track of sales and returning customers with a
+                    Accept payments through the platform at time of ordering to easily keep track of sales and returning customers with a
                     simple and intuitive interface.
                   </p>
                 </div>
