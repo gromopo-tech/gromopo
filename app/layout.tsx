@@ -1,4 +1,4 @@
-// filepath: /Users/logan/Code/gromopo-site/app/layout.tsx
+import { UserProvider } from '@auth0/nextjs-auth0/client';
 import "./css/style.css";
 
 import { Inter } from "next/font/google";
@@ -51,6 +51,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+    <UserProvider>
       <body
         className={`${inter.variable} ${nacelle.variable} bg-e9e7d5 font-inter text-base text-green-200 antialiased`}
       >
@@ -59,6 +60,7 @@ export default function RootLayout({
           {children}
         </div>
       </body>
+      </UserProvider>
     </html>
   );
 }
