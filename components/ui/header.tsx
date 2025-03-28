@@ -16,12 +16,12 @@ export default function Header() {
           {/* Desktop sign in links */}
           <ul className="flex flex-1 items-center justify-end gap-3">
             <li>
-              <Link
-                href="/signin"
+              <a 
+                href="/api/auth/login"
                 className="btn-sm relative bg-linear-to-b from-green-800 to-green-800/60 bg-[length:100%_100%] bg-[bottom] py-[5px] text-green-300 before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-transparent before:[background:linear-gradient(to_right,var(--color-green-200),var(--color-green-300),var(--color-green-200))_border-box] before:[mask-composite:exclude_!important] before:[mask:linear-gradient(white_0_0)_padding-box,_linear-gradient(white_0_0)] hover:bg-[length:100%_150%]"
-              >
-                Sign In
-              </Link>
+                >
+                  Sign In
+              </a>
             </li>
             <li>
               <Link
