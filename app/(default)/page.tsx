@@ -3,16 +3,25 @@ export const metadata = {
   description: "Page description",
 };
 
-import Hero from "@/components/hero-home";
-import Workflows from "@/components/workflows";
-import Cta from "@/components/cta";
+import Hero from "@/components/marketing/home";
+import Workflows from "@/components/marketing/workflows";
+import Cta from "@/components/marketing/cta";
+import { auth0 } from "@/lib/auth0";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  return (
-    <>
-      <Hero />
-      <Workflows />
-      <Cta />
-    </>
-  );
+export default async function Home() {
+  const session = await auth0.getSession();
+
+  if (!session) {
+    return (
+        <>
+          <Hero />
+          <Workflows />
+          <Cta />
+        </>
+      );
+  } else {
+    // Redirect to the dashboard landing page
+    redirect("/dashboard");
+  }
 }

@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
-import Header from "@/components/marketing/ui/header";
+import Header from "@/components/dashboard/ui/header";
 
 export default function DefaultLayout({
   children,
