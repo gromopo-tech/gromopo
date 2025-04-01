@@ -2,4 +2,3 @@ node_modules
 .next
 public/.DS_Store
 .DS_Store
-.env.local
