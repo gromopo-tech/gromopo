@@ -1,0 +1,33 @@
+name: Firebase Deploy
+
+on:
+  push:
+    branches:
+      - main       # Production
+      - staging    # Staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy to Firebase
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROD }}" > service-account.json
+            firebase use production
+          else
+            echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}" > service-account.json
+            firebase use staging
+          fi
+          firebase deploy --only hosting --token ${{ secrets.FIREBASE_TOKEN }}
