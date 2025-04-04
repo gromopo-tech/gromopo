@@ -1,5 +1,8 @@
 node_modules
 .next
-.DS_Store
 .env.local
 public/.DS_Store
+.DS_Store
+env.local
+.env.development
+apphosting.emulator.yaml
