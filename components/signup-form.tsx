@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { auth, db } from "@/lib/firebase/config";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth";
 import { collection, addDoc } from "firebase/firestore";
 
 // Schema for form validation
@@ -38,6 +38,10 @@ export default function SignupForm() {
         "temporary-password"
       );
 
+      await updateProfile(userCredential.user, {
+        displayName: data.name,
+      });
+      
       await sendEmailVerification(userCredential.user);
 
       // Store in Firestore
