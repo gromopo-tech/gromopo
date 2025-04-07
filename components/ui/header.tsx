@@ -14,8 +14,8 @@ export default function Header() {
           </div>
 
           {/* Desktop sign in links */}
-          {/*
           <ul className="flex flex-1 items-center justify-end gap-3">
+            {/* Uncomment this to show the sign in link
             <li>
               <Link
                 href="/signin"
@@ -24,6 +24,7 @@ export default function Header() {
                 Sign In
               </Link>
             </li>
+            */}
             <li>
               <Link
                 href="/signup"
@@ -33,7 +34,6 @@ export default function Header() {
               </Link>
             </li>
           </ul>
-          */}
         </div>
       </div>
     </header>
