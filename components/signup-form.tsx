@@ -42,11 +42,7 @@ export default function SignupForm() {
         displayName: data.name,
       });
       
-      await sendEmailVerification(userCredential.user,
-        {
-          url: `${window.location.origin}/auth/action`,
-        }
-      );
+      await sendEmailVerification(userCredential.user);
 
       // Store in Firestore
       await addDoc(collection(db, "subscribers"), {

@@ -11,12 +11,10 @@
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@hookform/resolvers": "^5.0.0",
-    "@radix-ui/react-slot": "^1.2.0",
     "@types/node": "^22.13.0",
     "@types/react": "19.0.8",
     "@types/react-dom": "19.0.3",
     "aos": "3.0.0-beta.6",
-    "class-variance-authority": "^0.7.1",
     "firebase": "^11.6.0",
     "i": "^0.3.7",
     "next": "^15.2.4",
@@ -24,7 +22,6 @@
     "react-dom": "19.0.0",
     "react-hook-form": "^7.55.0",
     "sharp": "^0.33.5",
-    "tailwind-merge": "^3.2.0",
     "typescript": "^5.7.3",
     "zod": "^3.24.2"
   },
