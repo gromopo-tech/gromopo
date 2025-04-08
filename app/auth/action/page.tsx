@@ -1,7 +1,7 @@
 // app/auth/action/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { auth } from '@/lib/firebase/config';
 import { 
@@ -14,7 +14,7 @@ import {
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 
-export default function EmailActionHandler() {
+function EmailActionHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -189,4 +189,12 @@ export default function EmailActionHandler() {
   }
 
   return null;
+}
+
+export default function EmailActionHandlerPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <EmailActionHandler />
+    </Suspense>
+  );
 }
