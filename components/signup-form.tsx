@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { auth, db } from "@/lib/firebase/config";
-import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth";
+import { db } from "@/lib/firebase/config"; //import auth here
+//import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth";
 import { collection, addDoc } from "firebase/firestore";
 
 // Schema for form validation
@@ -32,6 +32,7 @@ export default function SignupForm() {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
+      /*
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         data.email,
@@ -43,7 +44,7 @@ export default function SignupForm() {
       });
       
       await sendEmailVerification(userCredential.user);
-
+      */
       // Store in Firestore
       await addDoc(collection(db, "subscribers"), {
         name: data.name,
@@ -75,7 +76,7 @@ export default function SignupForm() {
       {success ? (
         <div className="text-green-600">
           <h2>🎉 Success!</h2>
-          <p>Check your email to verify your address.</p>
+          <p>We'll email you as soon we're ready to onboard you for early access.</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
