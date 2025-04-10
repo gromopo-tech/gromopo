@@ -112,8 +112,8 @@ export default function Workflows() {
                     </span>
                   </div>
                   <p className="text-sky-200/65">
-                    Accept payments through the platform at time of ordering to easily keep track of sales and returning customers with a
-                    simple and intuitive interface.
+                    Accept payments when customers place their order through a simple and 
+                    intuitive interface to save time and money, and easily keep track of returning customers.
                   </p>
                 </div>
               </div>
@@ -159,7 +159,7 @@ export default function Workflows() {
                     </span>
                   </div>
                   <p className="text-sky-200/65">
-                    Easily define rewarding tiers and discounts to keep customers coming back for more.
+                    Easily define rewarding tiers and discounts driven by key metrics to keep customers coming back for more.
                   </p>
                 </div>
               </div>
