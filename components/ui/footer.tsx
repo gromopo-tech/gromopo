@@ -17,11 +17,8 @@ export default function Footer() {
             <div className="mb-3">
               <Logo />
             </div>
-            <div className="text-sm">
-              <p className="mb-3 text-green-800/65">
-                © GroMoPo.com
-                <span className="text-green-700"> · </span>
-              </p>
+            <div className="text-sm mb-3 text-green-800/65">
+              GroMoPo
             </div>
           </div>
         </div>

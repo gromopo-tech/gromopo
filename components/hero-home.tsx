@@ -1,7 +1,99 @@
+"use client";
 import Image from "next/image";
 import CoffeeShopImg from "@/public/images/coffee-shop.png";
 import FoodTruckImg from "@/public/images/food-truck.png";
 import WineRoomImg from "@/public/images/wine-room.png";
+import { useState, useEffect } from 'react';
+
+const HeroImages = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const images = [
+    { src: CoffeeShopImg, alt: "Coffee Shop" },
+    { src: FoodTruckImg, alt: "Food Truck" },
+    { src: WineRoomImg, alt: "Wine Room" }
+  ];
+
+  // Check for mobile view on mount and resize
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768); // 768px is a common breakpoint for tablets
+    };
+
+    // Initial check
+    checkScreenSize();
+
+    // Add event listener
+    window.addEventListener('resize', checkScreenSize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // Auto-advance slideshow on mobile
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % images.length);
+    }, 3000); // Change slide every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [isMobile, images.length]);
+
+  if (isMobile) {
+    // Mobile view - slideshow
+    return (
+      <div className="hero-slideshow relative w-full max-w-[400px] mx-auto mt-8 overflow-hidden">
+        <div 
+          className="flex transition-transform duration-500 ease-in-out"
+          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        >
+          {images.map((image, index) => (
+            <div key={index} className="w-full flex-shrink-0">
+              <Image
+                src={image.src}
+                width={400}
+                height={300}
+                alt={image.alt}
+                className="rounded-lg w-full"
+              />
+            </div>
+          ))}
+        </div>
+        
+        {/* Slide indicators */}
+        <div className="flex justify-center gap-2 mt-4">
+          {images.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-3 h-3 rounded-full ${currentSlide === index ? 'bg-gray-800' : 'bg-gray-300'}`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop view - side by side images
+  return (
+    <div className="hero-images flex justify-center gap-4 mt-8">
+      {images.map((image, index) => (
+        <Image
+          key={index}
+          src={image.src}
+          width={400}
+          height={300}
+          alt={image.alt}
+          className="rounded-lg"
+        />
+      ))}
+    </div>
+  );
+};
 
 export default function HeroHome() {
   return (
@@ -15,7 +107,7 @@ export default function HeroHome() {
               className="animate-[gradient_6s_linear_infinite] bg-[linear-gradient(to_right,var(--color-green-800),var(--color-sky-800),var(--color-green-950),var(--color-sky-950),var(--color-green-800))] bg-[length:200%_auto] bg-clip-text pb-5 font-nacelle text-4xl font-semibold text-transparent md:text-5xl"
               data-aos="fade-up"
             >
-              Introducing a customer-obsessed platform to grow food and beverage businesses
+              Growing food and beverage businesses
             </h1>
             <div className="mx-auto max-w-3xl">
               <p
@@ -23,7 +115,7 @@ export default function HeroHome() {
                 data-aos="fade-up"
                 data-aos-delay={200}
               >
-                Streamline order taking and eliminate lines while increasing customer satisfaction
+                Introducing a platform to streamline orders, and increase customer satisfaction 
                 with our easy-to-use platform tailored specifically for mom and pop shops.
                 <br></br>
                 Join us today to get exclusive early access!
@@ -45,26 +137,7 @@ export default function HeroHome() {
               </div>
             </div>
           </div>
-          <div className="hero-images flex justify-center gap-4 mt-8">
-          <Image
-            src={CoffeeShopImg}
-            width={400}
-            alt="Coffee Shop"
-            className="rounded-lg"
-          />
-          <Image
-            src={FoodTruckImg}
-            width={400}
-            alt="Food Truck"
-            className="rounded-lg"
-          />
-          <Image
-            src={WineRoomImg}
-            width={400}
-            alt="Wine Room"
-            className="rounded-lg"
-          />
-          </div>
+          <HeroImages />
         </div>
       </div>
     </section>
