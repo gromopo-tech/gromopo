@@ -31,6 +31,19 @@ export default function Cta() {
                   </span>
                 </a>
               </div>
+              <div data-aos="fade-up" data-aos-delay={600}>
+                <a
+                  className="btn relative w-full bg-linear-to-b from-green-800 to-green-800/60 bg-[length:100%_100%] bg-[bottom] text-green-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-transparent before:[background:linear-gradient(to_right,var(--color-green-800),var(--color-green-700),var(--color-green-800))_border-box] before:[mask-composite:exclude_!important] before:[mask:linear-gradient(white_0_0)_padding-box,_linear-gradient(white_0_0)] hover:bg-[length:100%_150%] sm:ml-4 sm:w-auto"
+                  href="partners"
+                >
+                  <span className="relative inline-flex items-center">
+                    Investors & Advisors
+                    <span className="ml-1 tracking-normal text-green-200 transition-transform group-hover:transky-x-0.5">
+                      -&gt;
+                    </span>
+                  </span>
+                </a>
+              </div>
             </div>
           </div>
         </div>
