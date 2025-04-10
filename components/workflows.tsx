@@ -61,12 +61,12 @@ export default function Workflows() {
                   <div className="mb-3">
                     <span className="btn-sm relative rounded-full bg-green-800/40 px-2.5 py-0.5 text-xs font-normal before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-transparent before:[background:linear-gradient(to_bottom,--theme(--color-green-700/.15),--theme(--color-green-700/.5))_border-box] before:[mask-composite:exclude_!important] before:[mask:linear-gradient(white_0_0)_padding-box,_linear-gradient(white_0_0)] hover:bg-green-800/60">
                       <span className="bg-linear-to-r from-green-500 to-green-200 bg-clip-text text-transparent">
-                        Mobile Ordering
+                        Streamline Ordering
                       </span>
                     </span>
                   </div>
                   <p className="text-sky-200/65">
-                    Eliminate lines and streamline order taking from the comfort of your customers table, or wherever they may be whether it's for dine-in, take away, or delivery.
+                  Whether its eliminating lines, or just tracking orders to improve training and key metrics for customer satisfaction, our platform has you covered.
                   </p>
                 </div>
               </div>
@@ -107,13 +107,13 @@ export default function Workflows() {
                   <div className="mb-3">
                     <span className="btn-sm relative rounded-full bg-green-800/40 px-2.5 py-0.5 text-xs font-normal before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-transparent before:[background:linear-gradient(to_bottom,--theme(--color-green-700/.15),--theme(--color-green-700/.5))_border-box] before:[mask-composite:exclude_!important] before:[mask:linear-gradient(white_0_0)_padding-box,_linear-gradient(white_0_0)] hover:bg-green-800/60">
                       <span className="bg-linear-to-r from-green-500 to-green-200 bg-clip-text text-transparent">
-                        Simplified Transactions
+                        Simplify Transactions
                       </span>
                     </span>
                   </div>
                   <p className="text-sky-200/65">
-                    Accept payments through the platform at time of ordering to easily keep track of sales and returning customers with a
-                    simple and intuitive interface.
+                    Accept payments when customers place their order through a simple and 
+                    intuitive interface to save time and money, and easily keep track of returning customers.
                   </p>
                 </div>
               </div>
@@ -154,12 +154,12 @@ export default function Workflows() {
                   <div className="mb-3">
                     <span className="btn-sm relative rounded-full bg-green-800/40 px-2.5 py-0.5 text-xs font-normal before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-transparent before:[background:linear-gradient(to_bottom,--theme(--color-green-700/.15),--theme(--color-green-700/.5))_border-box] before:[mask-composite:exclude_!important] before:[mask:linear-gradient(white_0_0)_padding-box,_linear-gradient(white_0_0)] hover:bg-green-800/60">
                       <span className="bg-linear-to-r from-green-500 to-green-200 bg-clip-text text-transparent">
-                        Loyalty Rewards
+                        Reward Loyalty
                       </span>
                     </span>
                   </div>
                   <p className="text-sky-200/65">
-                    Easily define rewarding tiers and discounts to keep customers coming back for more.
+                    Easily define rewarding tiers and discounts driven by key metrics to keep customers coming back for more.
                   </p>
                 </div>
               </div>

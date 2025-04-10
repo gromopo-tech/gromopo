@@ -13,7 +13,8 @@ service cloud.firestore {
     // all client requests to your Firestore database will be denied until you Update
     // your rules
     match /subscribers/{subscriber} {
-      allow create: if request.auth != null;
+      allow create: if request.auth == null; // No auth needed
+      allow read: if false; // Block public reads
     }
   }
 }
