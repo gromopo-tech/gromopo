@@ -16,5 +16,9 @@ service cloud.firestore {
       allow create: if request.auth == null; // No auth needed
       allow read: if false; // Block public reads
     }
+    match /partners/{partner} {
+      allow create: if request.auth == null; // No auth needed
+      allow read: if false; // Block public reads
+    }
   }
 }
