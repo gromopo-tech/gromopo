@@ -28,10 +28,10 @@ export default function Workflows() {
             {/* Card 1 */}
             <a
               className="group/card relative h-full overflow-hidden rounded-2xl bg-green-800 p-px before:pointer-events-none before:absolute before:-left-40 before:-top-40 before:z-10 before:h-80 before:w-80 before:transky-x-[var(--mouse-x)] before:transky-y-[var(--mouse-y)] before:rounded-full before:bg-sky-500/80 before:opacity-0 before:blur-3xl before:transition-opacity before:duration-500 after:pointer-events-none after:absolute after:-left-48 after:-top-48 after:z-30 after:h-64 after:w-64 after:transky-x-[var(--mouse-x)] after:transky-y-[var(--mouse-y)] after:rounded-full after:bg-sky-500 after:opacity-0 after:blur-3xl after:transition-opacity after:duration-500 hover:after:opacity-20 group-hover:before:opacity-100"
-              href="#0"
+              //href="#0" uncomment to enable link
             >
               <div className="relative z-20 h-full overflow-hidden rounded-[inherit] bg-green-950 after:absolute after:inset-0 after:bg-linear-to-br after:from-green-900/50 after:via-green-800/25 after:to-green-900/50">
-                {/* Arrow */}
+                {/* uncomment to enable Arrow 
                 <div
                   className="absolute right-6 top-6 flex h-8 w-8 items-center justify-center rounded-full border border-green-700/50 bg-green-800/65 text-green-200 opacity-0 transition-opacity group-hover/card:opacity-100"
                   aria-hidden="true"
@@ -47,12 +47,12 @@ export default function Workflows() {
                       d="m4.92 8-.787-.763 2.733-2.68H0V3.443h6.866L4.133.767 4.92 0 9 4 4.92 8Z"
                     />
                   </svg>
-                </div>
+                </div> */}
                 {/* Image */}
                 <Image
                   className="inline-flex"
                   src={WorflowImg01}
-                  width={350}
+                  width={400}
                   height={288}
                   alt="Workflow 01"
                 />
@@ -74,10 +74,10 @@ export default function Workflows() {
             {/* Card 2 */}
             <a
               className="group/card relative h-full overflow-hidden rounded-2xl bg-green-800 p-px before:pointer-events-none before:absolute before:-left-40 before:-top-40 before:z-10 before:h-80 before:w-80 before:transky-x-[var(--mouse-x)] before:transky-y-[var(--mouse-y)] before:rounded-full before:bg-sky-500/80 before:opacity-0 before:blur-3xl before:transition-opacity before:duration-500 after:pointer-events-none after:absolute after:-left-48 after:-top-48 after:z-30 after:h-64 after:w-64 after:transky-x-[var(--mouse-x)] after:transky-y-[var(--mouse-y)] after:rounded-full after:bg-sky-500 after:opacity-0 after:blur-3xl after:transition-opacity after:duration-500 hover:after:opacity-20 group-hover:before:opacity-100"
-              href="#0"
+              //href="#0"
             >
               <div className="relative z-20 h-full overflow-hidden rounded-[inherit] bg-green-950 after:absolute after:inset-0 after:bg-linear-to-br after:from-green-900/50 after:via-green-800/25 after:to-green-900/50">
-                {/* Arrow */}
+                {/* Arrow 
                 <div
                   className="absolute right-6 top-6 flex h-8 w-8 items-center justify-center rounded-full border border-green-700/50 bg-green-800/65 text-green-200 opacity-0 transition-opacity group-hover/card:opacity-100"
                   aria-hidden="true"
@@ -93,12 +93,12 @@ export default function Workflows() {
                       d="m4.92 8-.787-.763 2.733-2.68H0V3.443h6.866L4.133.767 4.92 0 9 4 4.92 8Z"
                     />
                   </svg>
-                </div>
+                </div> */}
                 {/* Image */}
                 <Image
                   className="inline-flex"
                   src={WorflowImg02}
-                  width={350}
+                  width={400}
                   height={288}
                   alt="Workflow 02"
                 />
@@ -121,10 +121,10 @@ export default function Workflows() {
             {/* Card 3 */}
             <a
               className="group/card relative h-full overflow-hidden rounded-2xl bg-green-800 p-px before:pointer-events-none before:absolute before:-left-40 before:-top-40 before:z-10 before:h-80 before:w-80 before:transky-x-[var(--mouse-x)] before:transky-y-[var(--mouse-y)] before:rounded-full before:bg-sky-500/80 before:opacity-0 before:blur-3xl before:transition-opacity before:duration-500 after:pointer-events-none after:absolute after:-left-48 after:-top-48 after:z-30 after:h-64 after:w-64 after:transky-x-[var(--mouse-x)] after:transky-y-[var(--mouse-y)] after:rounded-full after:bg-sky-500 after:opacity-0 after:blur-3xl after:transition-opacity after:duration-500 hover:after:opacity-20 group-hover:before:opacity-100"
-              href="#0"
+              //href="#0"
             >
               <div className="relative z-20 h-full overflow-hidden rounded-[inherit] bg-green-950 after:absolute after:inset-0 after:bg-linear-to-br after:from-green-900/50 after:via-green-800/25 after:to-green-900/50">
-                {/* Arrow */}
+                {/* Arrow 
                 <div
                   className="absolute right-6 top-6 flex h-8 w-8 items-center justify-center rounded-full border border-green-700/50 bg-green-800/65 text-green-200 opacity-0 transition-opacity group-hover/card:opacity-100"
                   aria-hidden="true"
@@ -140,12 +140,12 @@ export default function Workflows() {
                       d="m4.92 8-.787-.763 2.733-2.68H0V3.443h6.866L4.133.767 4.92 0 9 4 4.92 8Z"
                     />
                   </svg>
-                </div>
+                </div> */}
                 {/* Image */}
                 <Image
                   className="inline-flex"
                   src={WorflowImg03}
-                  width={350}
+                  width={400}
                   height={288}
                   alt="Workflow 03"
                 />
