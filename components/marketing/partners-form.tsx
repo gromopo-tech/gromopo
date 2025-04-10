@@ -103,7 +103,7 @@ export default function PartnersForm() {
           </div>
           <div className="w-full max-w-2xl">
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                What problems excite you about mom and pop shops in the food and beverage industry?
+                What problems excite you the most about mom and pop shops in the food and beverage industry?
               </label>
               <input
                 id="excitement"
