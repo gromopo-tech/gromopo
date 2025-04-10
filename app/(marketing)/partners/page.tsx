@@ -1,5 +1,5 @@
 "use client";
-import PartnersForm from "@/components/partners-form";
+import PartnersForm from "@/components/marketing/partners-form";
 
 export default function SignupPage() {
   return (
