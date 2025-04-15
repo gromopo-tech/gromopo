@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
+import Sidebar from "@/components/dashboard/ui/sidebar";
 
 export default function DashboardLayout({
   children,
@@ -35,5 +36,15 @@ export default function DashboardLayout({
     return null;
   }
 
-  return <div className="flex min-h-screen">{children}</div>;
+  return (
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
+      <Sidebar />
+
+      {/* Main Content */}
+      <div className="flex-grow p-6">
+        {children}
+      </div>
+    </div>
+  )
 }
