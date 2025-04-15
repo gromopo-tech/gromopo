@@ -72,6 +72,10 @@ export default function TasksPage() {
       }
     }
 
+    if (!user) {
+      alert("You must be logged in to perform this action.");
+      return;
+    }
     const userId = user.uid;
     const schedulingRef = collection(db, "scheduling");
     const tasksRef = doc(schedulingRef, userId);
@@ -119,7 +123,7 @@ export default function TasksPage() {
         if (docSnap.exists()) {
           const fetchedTasks = docSnap.data().tasks || [];
           // Sort tasks alphabetically by name
-          const sortedTasks = fetchedTasks.sort((a, b) =>
+          const sortedTasks = fetchedTasks.sort((a: { name: string; }, b: { name: string; }) =>
             a.name.localeCompare(b.name)
           );
           setTasks(sortedTasks);
