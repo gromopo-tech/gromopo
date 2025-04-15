@@ -1,5 +1,4 @@
-import Logo from "./logo";
-import Image from "next/image";
+import Logo from "@/components/marketing/ui/logo";
 
 export default function Footer() {
   return (
