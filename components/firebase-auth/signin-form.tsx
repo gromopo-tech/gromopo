@@ -1,0 +1,139 @@
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { auth } from "@/lib/firebase/config";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+
+// Schema for form validation
+const schema = z.object({
+  email: z.string().email("Invalid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+type FormData = z.infer<typeof schema>;
+
+export default function SigninForm() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const router = useRouter();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
+
+  const onSubmit = async (data: FormData) => {
+    setIsSubmitting(true);
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password
+      );
+
+      setSuccess(true);
+      router.push("/dashboard");
+    } catch (error) {
+      console.error(error);
+      if (error instanceof Error) {
+        alert("Error: " + error.message);
+      } else {
+        alert("An unknown error occurred.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      console.log("Google Sign-In successful:", user);
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+      alert("Failed to sign in with Google. Please try again.");
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <h1 className="pb-12 animate-[gradient_6s_linear_infinite] bg-[linear-gradient(to_right,var(--color-green-800),var(--color-green-800),var(--color-green-950),var(--color-green-950),var(--color-green-800))] bg-[length:800%_auto] bg-clip-text font-nacelle text-3xl font-semibold text-transparent md:text-4xl">
+        Signin
+      </h1>
+      {success ? (
+        <div className="text-green-600">
+          <h2>🎉 Success!</h2>
+        </div>
+      ) : (
+        <>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="email"
+                type="email"
+                {...register("email")}
+                className="form-input w-full text-gray-950"
+                required
+              />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Password <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="password"
+                type="password"
+                {...register("password")}
+                className="form-input w-full text-gray-950"
+                required
+              />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn w-full bg-linear-to-t from-orange-400 to-orange-500 bg-[length:100%_100%] bg-[bottom] text-orange-200 shadow-[inset_0px_1px_0px_0px_--theme(--color-white/.16)] hover:bg-[length:100%_150%]"
+            >
+              {isSubmitting ? "Sending..." : "Signin"}
+            </button>
+          </form>
+          <div className="mt-4">
+            <button
+              onClick={handleGoogleSignIn}
+              className="btn w-full bg-blue-500 text-white hover:bg-blue-600"
+            >
+              Sign in with Google
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
