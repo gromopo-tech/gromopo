@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase/config";
-import { collection, doc, setDoc, getDoc } from "firebase/firestore";
+import { collection, doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState([
@@ -81,13 +81,20 @@ export default function TasksPage() {
     const tasksRef = doc(schedulingRef, userId);
 
     try {
-      await setDoc(tasksRef, { tasks });
+      await updateDoc(tasksRef, { tasks });
       alert("Tasks saved successfully!");
     } catch (error) {
+      // If the document doesn't exist, create it
+      if ((error as { code?: string }).code === "not-found") {
+        await setDoc(tasksRef, { tasks });
+        alert("Tasks saved successfully!");
+      } else {
       console.error("Error saving tasks:", error);
       alert("Failed to save tasks. Please try again.");
     }
-  };
+  }
+};
+
 
   const timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
     const hours = Math.floor(i / 4);
