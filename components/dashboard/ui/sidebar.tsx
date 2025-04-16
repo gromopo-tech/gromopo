@@ -12,7 +12,13 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-green-900 text-white h-screen p-4">
       <nav className="space-y-4">
-        <h2 className="text-lg font-semibold">Dashboard</h2>
+        {/* Link Header text of dashobard to /dashboard/ home page */}
+        <Link
+          href="/dashboard"
+          className="flex items-center text-lg font-semibold text-white hover:text-orange-400"
+        >
+          <span className="text-lg font-semibold">🏠</span> Dashboard
+        </Link>
         <ul className="space-y-2">
           {/* Scheduling Section */}
           <li>
