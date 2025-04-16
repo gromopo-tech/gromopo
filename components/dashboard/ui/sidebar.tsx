@@ -4,9 +4,12 @@ import Link from "next/link";
 
 export default function Sidebar() {
   const [isSchedulingOpen, setIsSchedulingOpen] = useState(false); // State to toggle dropdown
-
   const toggleSchedulingDropdown = () => {
     setIsSchedulingOpen((prev) => !prev);
+  };
+  const [isEmployeesOpen, setIsEmployeesOpen] = useState(false); // State to toggle dropdown
+  const toggleEmployeesDropdown = () => {
+    setIsEmployeesOpen((prev) => !prev);
   };
 
   return (
@@ -19,32 +22,70 @@ export default function Sidebar() {
         >
           <span className="text-lg font-semibold">🏠</span> Dashboard
         </Link>
-        <ul className="space-y-2">
+        <ul className="space-y-2 items-center text-left">
           {/* Scheduling Section */}
-          <li>
+          <li className="items-center text-left">
             <button
               onClick={toggleSchedulingDropdown}
-              className="w-full flex items-center text-left hover:text-orange-400"
+              className={`mr-2 transform transition-transform hover:text-orange-400 ${
+                isSchedulingOpen ? "rotate-90" : ""
+              }`}
             >
               {/* Arrow Icon */}
               <span
-                className={`mr-2 transform transition-transform ${
-                  isSchedulingOpen ? "rotate-90" : ""
-                }`}
               >
                 ▶
               </span>
-              Scheduling
             </button>
+            <Link
+                href="/dashboard/scheduling"
+                className="hover:text-orange-400"
+            >
+              Scheduling
+            </Link>
+            {/* Scheduling Dropdown */}
             {isSchedulingOpen && (
-              <ul className="ml-6 mt-2 space-y-2">
-                <li>
+              <ul className="ml-6 mt-2 space-y-2 items-center text-left">
+                <li className="items-center text-left">
+                  <button
+                    onClick={toggleEmployeesDropdown}
+                    className={`mr-2 transform transition-transform hover:text-orange-400 ${
+                      isEmployeesOpen ? "rotate-90" : ""
+                    }`}
+                  >
+                    {/* Arrow Icon */}
+                    <span
+                    >
+                      ▶
+                    </span>
+                  </button>
                   <Link
                     href="/dashboard/scheduling/employees"
-                    className="block hover:text-orange-400"
+                    className="hover:text-orange-400"
                   >
                     Employees
                   </Link>
+                    {/* Employees Dropdown */}
+                  {isEmployeesOpen && (
+                    <ul className="ml-6 mt-2 space-y-2 items-center text-left">
+                      <li>
+                        <Link
+                          href="/dashboard/scheduling/employees/availability"
+                          className="block hover:text-orange-400"
+                        >
+                          Availability
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          href="/dashboard/scheduling/employees/skills"
+                          className="block hover:text-orange-400"
+                        >
+                          Skills
+                        </Link>
+                      </li>
+                    </ul>
+                  )}
                 </li>
                 <li>
                   <Link
