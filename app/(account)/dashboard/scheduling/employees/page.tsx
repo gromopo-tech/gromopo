@@ -3,41 +3,158 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase/config";
 import { collection, doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { set } from "react-hook-form";
+import React from "react";
+
+// Define types for better type safety
+type Availability = {
+  [day: string]: {
+    [hour: string]: 'L' | 'D' | '';
+  };
+};
+
+type Employee = {
+  active: boolean;
+  lastName: string;
+  firstName: string;
+  email: string;
+  minShift: number;
+  maxShift: number;
+  maxHours: string;
+  skills: { task: string; rating: number }[];
+  availability: Availability;
+};
+
+const defaultAvailability: Availability = {
+  monday: {},
+  tuesday: {},
+  wednesday: {},
+  thursday: {},
+  friday: {},
+  saturday: {},
+  sunday: {},
+};
+
+// Initialize hours for each day
+for (const day in defaultAvailability) {
+  for (let hour = 0; hour < 24; hour++) {
+    defaultAvailability[day][`${hour.toString().padStart(2, '0')}:00`] = '';
+  }
+}
 
 export default function EmployeesPage() {
-  const [employees, setEmployees] = useState<{ lastName: string; firstName: string; email: string; minShift: number; maxShift: number; maxHours: string; }[]>([
-    { lastName: "", firstName: "", email: "", minShift: 4, maxShift: 8, maxHours: "" },
+  const [employees, setEmployees] = useState<Employee[]>([
+    { 
+      active: true,
+      lastName: "", 
+      firstName: "", 
+      email: "", 
+      minShift: 4, 
+      maxShift: 8, 
+      maxHours: "", 
+      skills: [],
+      availability: JSON.parse(JSON.stringify(defaultAvailability)) // Deep copy
+    },
   ]);
+  const [tasks, setTasks] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const handleAddEmployee = () => {
-    setEmployees([...employees, { lastName: "", firstName: "", email: "", minShift: 4, maxShift: 8.5, maxHours: "" }]);
+    setEmployees([...employees, 
+      { 
+        active: true,
+        lastName: "", 
+        firstName: "", 
+        email: "", 
+        minShift: 4, 
+        maxShift: 8.5, 
+        maxHours: "", 
+        skills: [],
+        availability: JSON.parse(JSON.stringify(defaultAvailability)) // Deep copy
+      }
+    ]);
   };
 
-  const handleEmployeeChange = (index: number, field: string, value: string | string[]) => {
+  const handleEmployeeChange = (employeeIndex: number, field: string, value: string | string[] | number) => {
     const updatedEmployees = [...employees];
-    updatedEmployees[index] = {
-      ...updatedEmployees[index],
+    updatedEmployees[employeeIndex] = {
+      ...updatedEmployees[employeeIndex],
       [field]: value
     };
     setEmployees(updatedEmployees);
   };
 
-  const handleDeleteEmployee = (index: number) => {
+  const handleToggleActive = (employeeIndex: number) => {
+    const updatedEmployees = [...employees];
+    updatedEmployees[employeeIndex].active = !updatedEmployees[employeeIndex].active;
+    setEmployees(updatedEmployees);
+  };
+
+  // Handle availability changes
+  const handleAvailabilityChange = (
+    employeeIndex: number,
+    day: string,
+    hour: string,
+    value: 'L' | 'D' | ''
+  ) => {
+    const updatedEmployees = [...employees];
+    updatedEmployees[employeeIndex].availability[day][hour] = value;
+    setEmployees(updatedEmployees);
+  };
+
+  // Add a skill to an employee
+  const handleAddSkill = (employeeIndex: number) => {
+    const updatedEmployees = [...employees];
+    updatedEmployees[employeeIndex].skills.push({ task: "", rating: 1 });
+    setEmployees(updatedEmployees);
+  };
+
+  // Update a skill for an employee
+  const handleSkillChange = (
+    employeeIndex: number,
+    skillIndex: number,
+    field: string,
+    value: string | number
+  ) => {
+    const updatedEmployees = [...employees];
+    updatedEmployees[employeeIndex].skills[skillIndex] = {
+      ...updatedEmployees[employeeIndex].skills[skillIndex],
+      [field]: value,
+    };
+    setEmployees(updatedEmployees);
+  };
+
+  const handleDeleteSkill = (employeeIndex: number, skillIndex: number) => {
+    const updatedEmployees = [...employees];
+    updatedEmployees[employeeIndex].skills.splice(skillIndex, 1);
+    setEmployees(updatedEmployees);
+  };
+
+  const handleDeleteEmployee = (employeeIndex: number) => {
     if (employees.length <= 1) {
       alert("You need to have at least one employee");
       return;
     }
     
     const updatedEmployees = [...employees];
-    updatedEmployees.splice(index, 1);
+    updatedEmployees.splice(employeeIndex, 1);
     setEmployees(updatedEmployees);
   };
 
   const handleSubmit = async () => {
-    
     const user = auth.currentUser;
-    for (const employee of employees) {
+
+    for (let employeeIndex = 0; employeeIndex < employees.length; employeeIndex++) {
+      const employee = employees[employeeIndex];
+
+      {/* Validate employee fields */}
+
+      // At least one employee must be active
+      const activeEmployees = employees.filter(emp => emp.active);
+      if (activeEmployees.length === 0) {
+        alert("At least one employee must be active.");
+        return;
+      }
       if (!employee.firstName.trim()) {
         alert("Employee first name is required.");
         return;
@@ -46,35 +163,84 @@ export default function EmployeesPage() {
         alert("Employee last name is required.");
         return;
       }
+      // check if employee already exists
+      const existingEmployee = employees.find(
+        (emp, index) =>
+          emp.firstName === employee.firstName &&
+          emp.lastName === employee.lastName &&
+          index !== employeeIndex // Exclude the current employee from the check
+      );
+      if (existingEmployee) {
+        alert(`Employee already exists for ${employee.lastName}, ${employee.firstName}.`);
+        return;
+      }
+      // check if email is valid
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(employee.email)) {
+        alert(`Employee email is invalid for ${employee.lastName}, ${employee.firstName}.`);
+        return;
+      }
       if (!employee.minShift) {
-          alert("Employee minimum shift is required.");
+          alert(`Employee minimum shift is required for ${employee.lastName}, ${employee.firstName}.`);
           return;
       }
       if (!employee.maxShift) {
-          alert("Employee maximum shift is required.");
+          alert(`Employee maximum shift is required for ${employee.lastName}, ${employee.firstName}.`);
           return;
       }
       if (!employee.maxHours) {
-          alert("Employee maximum hours is required.");
+          alert(`Employee maximum hours is required for ${employee.lastName}, ${employee.firstName}.`);
           return;
       }
       if (employee.minShift >= employee.maxShift) {
-        alert("Minimum shift length must be smaller than max shift length.");
+        alert(`Minimum shift length must be smaller than max shift length for ${employee.lastName}, ${employee.firstName}.`);
         return;
       }
       if (employee.minShift > Number(employee.maxHours)) {
-          alert("Minimum shift length must be smaller than max hours.");
+          alert(`Minimum shift length must be smaller than max hours for ${employee.lastName}, ${employee.firstName}.`);
           return;
       }
       if (employee.maxShift > Number(employee.maxHours)) {
-          alert("Maximum shift length must be smaller than max hours.");
+          alert(`Maximum shift length must be smaller than max hours for ${employee.lastName}, ${employee.firstName}.`);
           return;
       }
       if (Number(employee.maxHours) % 1 !== 0) {
-        alert("Maximum weekly hours must be an integer.");
+        alert(`Maximum weekly hours must be an integer for ${employee.lastName}, ${employee.firstName}.`);
         return;
       }
-    }
+      
+      {/* Validate employee availability */}
+      // Check that employee is availabile at least one hour for any day
+      const isAvailable = Object.values(employee.availability).some((day) =>
+        Object.values(day).some((hour) => hour === "L" || hour === "D")
+      );
+      if (!isAvailable) {
+        alert(`Employee must be available at least one hour for any day for ${employee.lastName}, ${employee.firstName}.`);
+        return;
+      }
+
+      {/* Validate employee skills */}
+      if (employee.skills.length === 0) {
+        alert(`At least one skill is required for ${employee.lastName}, ${employee.firstName}.`);
+        return;
+      }
+      // Validate skill cannot be empty
+      for (const skill of employee.skills) {
+        if (!skill.task.trim()) {
+          alert(`Skill task is required for ${employee.lastName}, ${employee.firstName}.`);
+          return;
+        }
+        if (employee.skills.length > 1) {
+          const skillExists = employee.skills.some(
+            (s, index) => s.task === skill.task && index !== employee.skills.indexOf(skill)
+          );
+          if (skillExists) {
+            alert(`Skill task must be unique for ${employee.lastName}, ${employee.firstName}.`);
+            return;
+          }
+        }
+      }
+    };
 
     if (!user) {
       alert("You must be logged in to perform this action.");
@@ -86,21 +252,67 @@ export default function EmployeesPage() {
 
     try {
           await updateDoc(employeesRef, { employees });
-          alert("Tasks saved successfully!");
+          alert("Employees saved successfully!");
         } catch (error) {
           // If the document doesn't exist, create it
           if ((error as { code?: string }).code === "not-found") {
             await setDoc(employeesRef, { employees });
-            alert("Tasks saved successfully!");
+            alert("Employees saved successfully!");
           } else {
-          console.error("Error saving tasks:", error);
-          alert("Failed to save tasks. Please try again.");
+          console.error("Error saving employees:", error);
+          alert("Failed to save employees. Please try again.");
         }
     }
   };
 
   const timeOptions = [2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12];
   
+  // Generate time options for availability (every 30 minutes)
+  const generateTimeOptions = () => {
+    const options = [];
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        options.push(<option key={time} value={time}>{time}</option>);
+      }
+    }
+    return options;
+  };
+
+  // Fetch tasks from Firestore
+  useEffect(() => {
+    const fetchTasks = async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        alert("You must be logged in to view tasks.");
+        return;
+      }
+
+      const userId = user.uid;
+      const tasksRef = doc(db, "scheduling", userId);
+
+      try {
+        const docSnap = await getDoc(tasksRef);
+        if (docSnap.exists()) {
+          const fetchedTasks = docSnap.data().tasks || [];
+          setTasks(fetchedTasks.map((task: { name: string }) => task.name)); // Extract task names
+        } else {
+          console.log("No tasks found for this user.");
+          setTasks([]);
+        }
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+        alert("Failed to fetch tasks. Please try again.");
+        setTasks([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, []);
+
+  // Fetch employees from Firestore
   useEffect(() => {
     const fetchEmployees = async () => {
       const user = auth.currentUser;
@@ -116,10 +328,17 @@ export default function EmployeesPage() {
         const docSnap = await getDoc(employeesRef);
         if (docSnap.exists()) {
           const fetchedEmployees = docSnap.data().employees || [];
-          // Sort employees alphabetically by last name
-          const sortedEmployees = fetchedEmployees.sort((a: { lastName: string; }, b: { lastName: string; }) =>
-            a.lastName.localeCompare(b.lastName)
-          );
+          // Ensure each employee has availability
+          const employeesWithAvailability = fetchedEmployees.map((emp: any) => ({
+            ...emp,
+            availability: emp.availability || JSON.parse(JSON.stringify(defaultAvailability))
+          }));
+          // Sort employees alphabetically by last name then first name
+          const sortedEmployees = employeesWithAvailability.sort((a: Employee, b: Employee) => {
+            const lastNameComparison = a.lastName.localeCompare(b.lastName);
+            if (lastNameComparison !== 0) return lastNameComparison;
+            return a.firstName.localeCompare(b.firstName);
+          });
           setEmployees(sortedEmployees);
         } else {
           console.log("No employees found for this user.");
@@ -145,14 +364,26 @@ export default function EmployeesPage() {
         <h1 className="text-2xl font-bold mb-4 text-black text-center">
           Manage Employees
         </h1>
-        {employees.map((employee, index) => (
+        {employees.map((employee, employeeIndex) => (
           <div
-            key={index}
-            className="mb-4 p-4 border rounded border-black text-black relative" // Added relative positioning
-          >
+            key={employeeIndex}
+            className={`mb-4 p-4 border rounded border-black text-black relative 
+              ${!employee.active ? 'bg-gray-400 opacity-80 border-gray-600' : 'bg-white border-black'}`}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-sm font-medium text-gray-700">Active:</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={employee.active}
+                  onChange={() => handleToggleActive(employeeIndex)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
             {/* Delete button - positioned at top right */}
             <button
-              onClick={() => handleDeleteEmployee(index)}
+              onClick={() => handleDeleteEmployee(employeeIndex)}
               className="absolute top-2 right-2 p-1 text-red-600 hover:text-red-800"
               title="Delete employee"
             >
@@ -168,7 +399,7 @@ export default function EmployeesPage() {
                   type="text"
                   value={employee.lastName}
                   onChange={(e) =>
-                    handleEmployeeChange(index, "lastName", e.target.value)
+                    handleEmployeeChange(employeeIndex, "lastName", e.target.value)
                   }
                   className="w-full p-2 border rounded border-black text-black text-sm"
                 />
@@ -180,7 +411,7 @@ export default function EmployeesPage() {
                   type="text"
                   value={employee.firstName}
                   onChange={(e) =>
-                    handleEmployeeChange(index, "firstName", e.target.value)
+                    handleEmployeeChange(employeeIndex, "firstName", e.target.value)
                   }
                   className="w-full p-2 border rounded border-black text-black text-sm"
                 />
@@ -192,7 +423,7 @@ export default function EmployeesPage() {
                   type="text"
                   value={employee.email}
                   onChange={(e) =>
-                    handleEmployeeChange(index, "email", e.target.value)
+                    handleEmployeeChange(employeeIndex, "email", e.target.value)
                   }
                   className="w-full p-2 border rounded border-black text-black text-sm"
                 />
@@ -203,7 +434,7 @@ export default function EmployeesPage() {
                 <select
                   value={employee.minShift}
                   onChange={(e) =>
-                    handleEmployeeChange(index, "minShift", e.target.value)
+                    handleEmployeeChange(employeeIndex, "minShift", parseFloat(e.target.value))
                   }
                   className="w-full p-2 border rounded border-black text-black text-sm"
                 >
@@ -221,7 +452,7 @@ export default function EmployeesPage() {
                 <select
                   value={employee.maxShift}
                   onChange={(e) =>
-                    handleEmployeeChange(index, "maxShift", e.target.value)
+                    handleEmployeeChange(employeeIndex, "maxShift", parseFloat(e.target.value))
                   }
                   className="w-full p-2 border rounded border-black text-black text-sm"
                 >
@@ -240,12 +471,130 @@ export default function EmployeesPage() {
                   type="text"
                   value={employee.maxHours}
                   onChange={(e) =>
-                    handleEmployeeChange(index, "maxHours", e.target.value)
+                    handleEmployeeChange(employeeIndex, "maxHours", e.target.value)
                   }
                   className="w-full p-2 border rounded border-black text-black text-sm"
                 />
               </label>
             </div>
+
+            {/* Skills Section */}
+            <div className="mt-4">
+              <h3 className="text-lg font-semibold mt-4">Skills</h3>
+              {employee.skills.map((skill, skillIndex) => (
+                <div key={skillIndex} className="flex items-center gap-4 mt-2 col-span-2">
+                  <button
+                    onClick={() => handleDeleteSkill(employeeIndex, skillIndex)}
+                    className="auto-mx p-1 text-red-500 hover:text-red-700"
+                    title="Delete skill"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  <label className="flex-1 max-w-[300px]">
+                    <span className="block text-sm font-medium text-gray-700">Task</span>
+                    <select
+                      value={skill.task}
+                      onChange={(e) =>
+                        handleSkillChange(employeeIndex, skillIndex, "task", e.target.value)
+                      }
+                      className="w-full p-2 border rounded border-black text-black"
+                    >
+                      <option value="">Select a task</option>
+                      {tasks.map((task) => (
+                        <option key={task} value={task}>
+                          {task}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex-1 max-w-[50px]">
+                    <span className="block text-sm font-medium text-gray-700">Rating</span>
+                    <select
+                      value={skill.rating}
+                      onChange={(e) =>
+                        handleSkillChange(
+                          employeeIndex,
+                          skillIndex,
+                          "rating",
+                          parseInt(e.target.value)
+                        )
+                      }
+                      className="w-full p-2 border rounded border-black text-black"
+                    >
+                      {[1, 2, 3, 4].map((rating) => (
+                        <option key={rating} value={rating}>
+                          {rating}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              ))}
+              <button
+                onClick={() => handleAddSkill(employeeIndex)}
+                className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                New Skill
+              </button>
+            </div>
+
+            {/* Compact Availability Grid */}
+            <div className="mt-4">
+              <h3 className="text-lg font-semibold mb-2">Weekly Availability</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="bg-gray-100 p-1 text-center font-medium text-sm sticky left-0 border border-gray-300">Time</th>
+                      {Object.keys(defaultAvailability).map((day) => (
+                        <th key={day} className="bg-gray-100 p-1 text-center font-medium text-sm border border-gray-300 capitalize">
+                          {day.slice(0, 3)}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: 24 }).map((_, hour) => {
+                      const time = `${hour.toString().padStart(2, '0')}:00`;
+                      return (
+                        <tr key={time}>
+                          <td className="bg-gray-50 p-1 text-xs text-center border border-gray-300 sticky left-0">
+                            {time}
+                          </td>
+                          {Object.keys(defaultAvailability).map((day) => (
+                            <td key={`${day}-${time}`} className="bg-white p-1 border border-gray-300">
+                              <select
+                                value={employees[employeeIndex].availability[day][time] || ''}
+                                onChange={(e) => 
+                                  handleAvailabilityChange(
+                                    employeeIndex, 
+                                    day, 
+                                    time, 
+                                    e.target.value as 'L' | 'D' | ''
+                                  )
+                                }
+                                className="w-full p-1 text-xs text-center h-7 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              >
+                                <option value=""></option>
+                                <option value="L">L</option>
+                                <option value="D">D</option>
+                              </select>
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-2 text-xs text-gray-600">
+                <span className="mr-3">L = Preferred (Like)</span>
+                <span>D = If Needed (Dislike)</span>
+              </div>
+            </div>
+
           </div>
         ))}
         <div className="flex justify-center gap-4">
