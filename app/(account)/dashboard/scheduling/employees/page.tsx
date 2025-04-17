@@ -355,7 +355,7 @@ export default function EmployeesPage() {
   }, []);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading employees...</div>;
+    return <div className="flex items-center justify-center min-h-screen text-black">Loading employees...</div>;
   }
 
   return (
