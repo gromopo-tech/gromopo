@@ -149,7 +149,7 @@ export default function TasksPage() {
   }, []);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading tasks...</div>;
+    return <div className="flex items-center justify-center min-h-screen text-black">Loading tasks...</div>;
   }
 
   return (
