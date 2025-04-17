@@ -21,7 +21,7 @@ type Employee = {
   minShift: number;
   maxShift: number;
   maxHours: string;
-  skills: { task: string; rating: number }[];
+  skills: { task: string; rating: string }[];
   availability: Availability;
 };
 
@@ -90,22 +90,36 @@ export default function EmployeesPage() {
     setEmployees(updatedEmployees);
   };
 
+  const [dragging, setDragging] = useState(false);
+  const [selectionMode, setSelectionMode] = useState<'L' | 'D' | ''>('L');
+
+  const handleSlotMouseDown = (employeeIndex: number, day: string, time: string) => {
+    setDragging(true);
+    handleAvailabilityChange(employeeIndex, day, time, selectionMode);
+  };
+
+  const handleSlotMouseEnter = (employeeIndex: number, day: string, time: string) => {
+    if (dragging) {
+      handleAvailabilityChange(employeeIndex, day, time, selectionMode);
+    }
+  };
+
   // Handle availability changes
   const handleAvailabilityChange = (
     employeeIndex: number,
     day: string,
-    hour: string,
+    time: string,
     value: 'L' | 'D' | ''
   ) => {
     const updatedEmployees = [...employees];
-    updatedEmployees[employeeIndex].availability[day][hour] = value;
+    updatedEmployees[employeeIndex].availability[day][time] = value;
     setEmployees(updatedEmployees);
   };
 
   // Add a skill to an employee
   const handleAddSkill = (employeeIndex: number) => {
     const updatedEmployees = [...employees];
-    updatedEmployees[employeeIndex].skills.push({ task: "", rating: 1 });
+    updatedEmployees[employeeIndex].skills.push({ task: "", rating: "" });
     setEmployees(updatedEmployees);
   };
 
@@ -228,6 +242,10 @@ export default function EmployeesPage() {
       for (const skill of employee.skills) {
         if (!skill.task.trim()) {
           alert(`Skill task is required for ${employee.lastName}, ${employee.firstName}.`);
+          return;
+        }
+        if (skill.rating === "" || skill.rating === null || skill.rating === undefined) {
+          alert(`Skill rating is required for ${employee.lastName}, ${employee.firstName} for skill ${skill.task}.`);
           return;
         }
         if (employee.skills.length > 1) {
@@ -509,7 +527,7 @@ export default function EmployeesPage() {
                       ))}
                     </select>
                   </label>
-                  <label className="flex-1 max-w-[50px]">
+                  <label className="flex-1 max-w-[100px]">
                     <span className="block text-sm font-medium text-gray-700">Rating</span>
                     <select
                       value={skill.rating}
@@ -523,8 +541,9 @@ export default function EmployeesPage() {
                       }
                       className="w-full p-2 border rounded border-black text-black"
                     >
+                      <option value="">Select</option>
                       {[1, 2, 3, 4].map((rating) => (
-                        <option key={rating} value={rating}>
+                        <option key={rating} value={rating.toString()}>
                           {rating}
                         </option>
                       ))}
@@ -540,7 +559,7 @@ export default function EmployeesPage() {
               </button>
             </div>
 
-            {/* Compact Availability Grid */}
+            {/* Draggable Availability Grid */}
             <div className="mt-4">
               <h3 className="text-lg font-semibold mb-2">Weekly Availability</h3>
               <div className="overflow-x-auto">
@@ -563,35 +582,56 @@ export default function EmployeesPage() {
                           <td className="bg-gray-50 p-1 text-xs text-center border border-gray-300 sticky left-0">
                             {time}
                           </td>
-                          {Object.keys(defaultAvailability).map((day) => (
-                            <td key={`${day}-${time}`} className="bg-white p-1 border border-gray-300">
-                              <select
-                                value={employees[employeeIndex].availability[day][time] || ''}
-                                onChange={(e) => 
-                                  handleAvailabilityChange(
-                                    employeeIndex, 
-                                    day, 
-                                    time, 
-                                    e.target.value as 'L' | 'D' | ''
-                                  )
-                                }
-                                className="w-full p-1 text-xs text-center h-7 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          {Object.keys(defaultAvailability).map((day) => {
+                            const currentValue = employees[employeeIndex].availability[day][time] || '';
+                            return (
+                              <td 
+                                key={`${day}-${time}`}
+                                className={`p-0 border border-gray-200 relative ${currentValue === 'L' ? 'bg-green-100' : currentValue === 'D' ? 'bg-yellow-100' : ''}`}
                               >
-                                <option value=""></option>
-                                <option value="L">L</option>
-                                <option value="D">D</option>
-                              </select>
-                            </td>
-                          ))}
+                                <button
+                                  className={`w-full h-8 focus:outline-none ${currentValue === 'L' ? 'bg-green-400' : currentValue === 'D' ? 'bg-yellow-400' : ''}`}
+                                  onMouseDown={() => handleSlotMouseDown(employeeIndex, day, time)}
+                                  onMouseEnter={() => handleSlotMouseEnter(employeeIndex, day, time)}
+                                  onMouseUp={() => setDragging(false)}
+                                  title={`${day} at ${time}`}
+                                />
+                              </td>
+                            );
+                          })}
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
               </div>
-              <div className="mt-2 text-xs text-gray-600">
-                <span className="mr-3">L = Preferred (Like)</span>
-                <span>D = If Needed (Dislike)</span>
+              <div className="mt-3 flex gap-4">
+                <div className="flex items-center">
+                  <span className="block w-4 h-4 bg-green-400 mr-2"></span>
+                  <span>Preferred</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="block w-4 h-4 bg-yellow-400 mr-2"></span>
+                  <span>If Needed</span>
+                </div>
+                <button 
+                  onClick={() => setSelectionMode('L')}
+                  className={`px-3 py-1 rounded ${selectionMode === 'L' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
+                >
+                  Set Preferred
+                </button>
+                <button 
+                  onClick={() => setSelectionMode('D')}
+                  className={`px-3 py-1 rounded ${selectionMode === 'D' ? 'bg-yellow-500 text-white' : 'bg-gray-200'}`}
+                >
+                  Set If Needed
+                </button>
+                <button 
+                  onClick={() => setSelectionMode('')}
+                  className="px-3 py-1 bg-gray-200 rounded"
+                >
+                  Clear
+                </button>
               </div>
             </div>
 
