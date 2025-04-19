@@ -188,12 +188,6 @@ export default function EmployeesPage() {
         alert(`Employee already exists for ${employee.lastName}, ${employee.firstName}.`);
         return;
       }
-      // check if email is valid
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(employee.email)) {
-        alert(`Employee email is invalid for ${employee.lastName}, ${employee.firstName}.`);
-        return;
-      }
       if (!employee.minShift) {
           alert(`Employee minimum shift is required for ${employee.lastName}, ${employee.firstName}.`);
           return;
@@ -241,7 +235,7 @@ export default function EmployeesPage() {
       // Validate skill cannot be empty
       for (const skill of employee.skills) {
         if (!skill.task.trim()) {
-          alert(`Skill task is required for ${employee.lastName}, ${employee.firstName}.`);
+          alert(`Skill task is cannot be empty for ${employee.lastName}, ${employee.firstName}.`);
           return;
         }
         if (skill.rating === "" || skill.rating === null || skill.rating === undefined) {
