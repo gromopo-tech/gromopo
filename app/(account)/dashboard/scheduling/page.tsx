@@ -198,7 +198,15 @@ export default function SchedulingPage() {
     const taskStartMinutes = startHour * 60 + startMin;
     const taskStopMinutes = stopHour * 60 + stopMin;
 
-    // Check each hour between start and stop time
+    // Check if the task's start time falls within available hours
+    const taskStartHourStr = startHour.toString().padStart(2, '0') + ':00';
+    const taskStartAvailability = dayAvailability[taskStartHourStr];
+    if (!taskStartAvailability) {
+      console.log(`Employee not available at start time ${taskStartHourStr}`);
+      return false;
+    }
+
+    // Check each hour between start and stop time, including the hour before stop time
     for (let hour = startHour; hour <= stopHour; hour++) {
       const hourStr = hour.toString().padStart(2, '0') + ':00';
       const availability = dayAvailability[hourStr];
@@ -210,15 +218,8 @@ export default function SchedulingPage() {
       }
     }
 
-    // Check if the task's start time falls within available hours
-    const taskStartHourStr = startHour.toString().padStart(2, '0') + ':00';
-    const taskStartAvailability = dayAvailability[taskStartHourStr];
-    if (!taskStartAvailability) {
-      console.log(`Employee not available at start time ${taskStartHourStr}`);
-      return false;
-    }
-
-    // Check if the task's end time falls within available hours
+    // For the end time, we need to check if the employee is available at the start of that hour
+    // This handles the case where a task ends at the same time as availability
     const taskStopHourStr = stopHour.toString().padStart(2, '0') + ':00';
     const taskStopAvailability = dayAvailability[taskStopHourStr];
     if (!taskStopAvailability) {
