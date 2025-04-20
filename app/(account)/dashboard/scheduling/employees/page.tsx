@@ -26,13 +26,13 @@ type Employee = {
 };
 
 const defaultAvailability: Availability = {
-  monday: {},
-  tuesday: {},
-  wednesday: {},
-  thursday: {},
-  friday: {},
-  saturday: {},
-  sunday: {},
+  mon: {},
+  tue: {},
+  wed: {},
+  thu: {},
+  fri: {},
+  sat: {},
+  sun: {},
 };
 
 // Initialize hours for each day
