@@ -17,6 +17,7 @@ interface Employee {
   hours: number;
   skills: EmployeeSkill[]; // Update to use EmployeeSkill interface
   availability: Record<string, Record<string, string>>; // Add availability map
+  active: boolean; // Add active field
 }
 
 interface Task {
@@ -72,14 +73,16 @@ export default function SchedulingPage() {
               lastName: emp.lastName || '',
               hours: emp.hours || 0,
               skills: emp.skills || [],
-              availability: emp.availability || {} // Add availability from Firestore
+              availability: emp.availability || {},
+              active: emp.active !== false // Default to true if not specified
             })));
           } else {
             const employeesRef = collection(db, `scheduling/${user.uid}/employees`);
             const querySnapshot = await getDocs(employeesRef);
             const employeesData = querySnapshot.docs.map(doc => ({
               id: doc.id,
-              ...doc.data()
+              ...doc.data(),
+              active: doc.data().active !== false // Default to true if not specified
             })) as Employee[];
             setEmployees(employeesData);
           }
@@ -419,7 +422,9 @@ export default function SchedulingPage() {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {employees.length > 0 ? (
-              employees.map((employee) => (
+              employees
+                .filter(employee => employee.active) // Filter active employees
+                .map((employee) => (
                 <tr key={employee.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {employee.lastName}, {employee.firstName}
