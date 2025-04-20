@@ -192,9 +192,11 @@ export default function SchedulingPage() {
       return false;
     }
 
-    // Convert times to 24-hour format for comparison
+    // Convert times to minutes for easier comparison
     const [startHour, startMin] = startTime.split(':').map(Number);
     const [stopHour, stopMin] = stopTime.split(':').map(Number);
+    const taskStartMinutes = startHour * 60 + startMin;
+    const taskStopMinutes = stopHour * 60 + stopMin;
 
     // Check each hour between start and stop time
     for (let hour = startHour; hour <= stopHour; hour++) {
@@ -206,6 +208,22 @@ export default function SchedulingPage() {
         console.log(`Employee not available at ${hourStr} on ${dayName}`);
         return false;
       }
+    }
+
+    // Check if the task's start time falls within available hours
+    const taskStartHourStr = startHour.toString().padStart(2, '0') + ':00';
+    const taskStartAvailability = dayAvailability[taskStartHourStr];
+    if (!taskStartAvailability) {
+      console.log(`Employee not available at start time ${taskStartHourStr}`);
+      return false;
+    }
+
+    // Check if the task's end time falls within available hours
+    const taskStopHourStr = stopHour.toString().padStart(2, '0') + ':00';
+    const taskStopAvailability = dayAvailability[taskStopHourStr];
+    if (!taskStopAvailability) {
+      console.log(`Employee not available at end time ${taskStopHourStr}`);
+      return false;
     }
 
     return true;
