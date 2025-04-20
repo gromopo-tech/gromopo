@@ -427,14 +427,14 @@ export default function SchedulingPage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Employee
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Hours
               </th>
               {weekDates.map((date) => (
-                <th key={date.toISOString()} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th key={date.toISOString()} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </th>
               ))}
@@ -443,63 +443,63 @@ export default function SchedulingPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {employees.length > 0 ? (
               employees
-                .filter(employee => employee.active) // Filter active employees
+                .filter(employee => employee.active)
                 .map((employee) => (
-                <tr key={employee.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {employee.lastName}, {employee.firstName}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {getTotalHoursForEmployee(employee.id)}
-                  </td>
-                  {weekDates.map((date) => {
-                    const dateStr = date.toISOString().split('T')[0];
-                    const dayName = getDayName(date);
-                    const employeeSchedule = schedule[employee.id]?.[dateStr];
-                    const employeeTasks = employeeSchedule?.tasks || [];
-                    const availableTasks = getAvailableTasksForDay(dayName, employee);
+                  <tr key={employee.id}>
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {employee.lastName}, {employee.firstName}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                      {getTotalHoursForEmployee(employee.id)}
+                    </td>
+                    {weekDates.map((date) => {
+                      const dateStr = date.toISOString().split('T')[0];
+                      const dayName = getDayName(date);
+                      const employeeSchedule = schedule[employee.id]?.[dateStr];
+                      const employeeTasks = employeeSchedule?.tasks || [];
+                      const availableTasks = getAvailableTasksForDay(dayName, employee);
 
-                    return (
-                      <td key={dateStr} className="px-6 py-4">
-                        <div className="flex flex-col space-y-2">
-                          {employeeTasks.map((task, index) => {
-                            const taskDetails = tasks.find(t => t.id === task.taskId);
-                            return (
-                              <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                <div className="flex flex-col">
-                                  <span className="text-sm">
-                                    {task.startTime}-{task.stopTime}
-                                  </span>
-                                  <span className="text-sm font-medium">
-                                    {taskDetails?.name || 'Unknown Task'}
-                                  </span>
+                      return (
+                        <td key={dateStr} className="px-3 py-2">
+                          <div className="flex flex-col space-y-1">
+                            {employeeTasks.map((task, index) => {
+                              const taskDetails = tasks.find(t => t.id === task.taskId);
+                              return (
+                                <div key={index} className="flex items-center justify-between bg-gray-50 p-1 rounded">
+                                  <div className="flex flex-col">
+                                    <span className="text-xs">
+                                      {task.startTime}-{task.stopTime}
+                                    </span>
+                                    <span className="text-xs font-medium">
+                                      {taskDetails?.name || 'Unknown Task'}
+                                    </span>
+                                  </div>
+                                  <button
+                                    onClick={() => handleRemoveTask(employee.id, dateStr, index)}
+                                    className="text-red-500 hover:text-red-700"
+                                  >
+                                    <Minus className="w-3 h-3" />
+                                  </button>
                                 </div>
-                                <button
-                                  onClick={() => handleRemoveTask(employee.id, dateStr, index)}
-                                  className="text-red-500 hover:text-red-700"
-                                >
-                                  <Minus className="w-4 h-4" />
-                                </button>
-                              </div>
-                            );
-                          })}
-                          {availableTasks.length > 0 && (
-                            <button
-                              onClick={() => setSelectedCell({ employeeId: employee.id, date: dateStr })}
-                              className="flex items-center justify-center w-full p-2 hover:text-gray-700 border border-dashed border-gray-300 rounded"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))
+                              );
+                            })}
+                            {availableTasks.length > 0 && (
+                              <button
+                                onClick={() => setSelectedCell({ employeeId: employee.id, date: dateStr })}
+                                className="flex items-center justify-center w-full p-1 hover:text-gray-700 border border-dashed border-gray-300 rounded"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))
             ) : (
               <tr>
-                <td colSpan={9} className="px-6 py-4 text-center text-sm text-gray-500">
+                <td colSpan={9} className="px-3 py-2 text-center text-sm text-gray-500">
                   No employees found. Add employees to get started.
                 </td>
               </tr>
@@ -507,14 +507,14 @@ export default function SchedulingPage() {
           </tbody>
           <tfoot className="bg-gray-50">
             <tr>
-              <td className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <td className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Total Hours
               </td>
-              <td className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+              <td className="px-3 py-2 text-left text-xs font-medium text-gray-500">
                 {employees.reduce((sum, employee) => sum + getTotalHoursForEmployee(employee.id), 0)}
               </td>
               {weekDates.map((date) => (
-                <td key={date.toISOString()} className="px-6 py-3"></td>
+                <td key={date.toISOString()} className="px-3 py-2"></td>
               ))}
             </tr>
           </tfoot>
