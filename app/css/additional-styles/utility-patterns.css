@@ -33,7 +33,7 @@ input[type='search']::-webkit-search-results-decoration {
 .form-textarea,
 .form-multiselect,
 .form-select {
-    @apply rounded-lg px-4 py-2.5 text-sm text-green-200;
+    @apply rounded-lg px-4 py-2.5 text-sm text-black;
 }
 
 .form-input,

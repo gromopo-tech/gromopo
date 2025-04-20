@@ -60,7 +60,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${nacelle.variable} bg-e9e7d5 font-inter text-base text-green-200 antialiased`}
+        className={`${inter.variable} ${nacelle.variable} bg-e9e7d5 font-inter text-base text-black-200 antialiased`}
       >
         {isAuthenticated ? <DashboardHeader /> : <MarketingHeader />}
         <main className="flex min-h-screen flex-col overflow-hidden supports-[overflow:clip]:overflow-clip">

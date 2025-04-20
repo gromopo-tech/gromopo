@@ -5,11 +5,18 @@ import { ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
 import { auth, db } from "@/lib/firebase/config";
 import { collection, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 
+interface EmployeeSkill {
+  rating: number;
+  task: string;
+}
+
 interface Employee {
   id: string;
   firstName: string;
   lastName: string;
   hours: number;
+  skills: EmployeeSkill[]; // Update to use EmployeeSkill interface
+  availability: Record<string, Record<string, string>>; // Add availability map
 }
 
 interface Task {
@@ -17,6 +24,7 @@ interface Task {
   name: string;
   startTime: string;
   stopTime: string;
+  days: string[]; // Array of days the task applies to (e.g., ["Monday", "Tuesday"])
 }
 
 interface EmployeeTask {
@@ -62,7 +70,9 @@ export default function SchedulingPage() {
               id: index.toString(),
               firstName: emp.firstName || '',
               lastName: emp.lastName || '',
-              hours: emp.hours || 0
+              hours: emp.hours || 0,
+              skills: emp.skills || [],
+              availability: emp.availability || {} // Add availability from Firestore
             })));
           } else {
             const employeesRef = collection(db, `scheduling/${user.uid}/employees`);
@@ -76,12 +86,15 @@ export default function SchedulingPage() {
 
           // Fetch tasks
           if (data.tasks && Array.isArray(data.tasks)) {
-            setTasks(data.tasks.map((task: any, index: number) => ({
+            const formattedTasks = data.tasks.map((task: any, index: number) => ({
               id: index.toString(),
               name: task.name || '',
               startTime: task.startTime || '',
-              stopTime: task.stopTime || ''
-            })));
+              stopTime: task.stopTime || '',
+              days: task.days || []
+            }));
+            console.log('Loaded tasks:', formattedTasks);
+            setTasks(formattedTasks);
           }
 
           // Fetch schedule if it exists
@@ -119,6 +132,148 @@ export default function SchedulingPage() {
     setCurrentWeek(newDate);
   };
 
+  const copyPreviousWeekSchedule = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const previousWeek = new Date(currentWeek);
+      previousWeek.setDate(currentWeek.getDate() - 7);
+      const previousWeekDates = getWeekDates(previousWeek);
+      const currentWeekDates = getWeekDates(currentWeek);
+
+      const updatedSchedule = { ...schedule };
+
+      // For each employee, copy their schedule from previous week to current week
+      employees.forEach(employee => {
+        previousWeekDates.forEach((prevDate, index) => {
+          const prevDateStr = prevDate.toISOString().split('T')[0];
+          const currentDateStr = currentWeekDates[index].toISOString().split('T')[0];
+          
+          if (schedule[employee.id]?.[prevDateStr]) {
+            if (!updatedSchedule[employee.id]) {
+              updatedSchedule[employee.id] = {};
+            }
+            updatedSchedule[employee.id][currentDateStr] = {
+              tasks: [...schedule[employee.id][prevDateStr].tasks]
+            };
+          }
+        });
+      });
+
+      const schedulingDocRef = doc(db, 'scheduling', user.uid);
+      await updateDoc(schedulingDocRef, {
+        schedule: updatedSchedule
+      });
+
+      setSchedule(updatedSchedule);
+    } catch (error) {
+      console.error("Error copying previous week schedule:", error);
+    }
+  };
+
+  const getDayName = (date: Date) => {
+    // Create a new date object to avoid timezone issues
+    const localDate = new Date(date);
+    // Get the day name in the local timezone
+    return localDate.toLocaleDateString('en-US', { 
+      weekday: 'short',
+      timeZone: 'UTC' // Use UTC to avoid timezone shifts
+    });
+  };
+
+  const isEmployeeAvailable = (employee: Employee, dayName: string, startTime: string, stopTime: string) => {
+    const dayAvailability = employee.availability[dayName.toLowerCase()];
+    if (!dayAvailability) {
+      console.log(`No availability data for ${dayName.toLowerCase()}`);
+      return false;
+    }
+
+    // Convert times to 24-hour format for comparison
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [stopHour, stopMin] = stopTime.split(':').map(Number);
+
+    // Check each hour between start and stop time
+    for (let hour = startHour; hour <= stopHour; hour++) {
+      const hourStr = hour.toString().padStart(2, '0') + ':00';
+      const availability = dayAvailability[hourStr];
+      
+      // If any hour is not available (empty string), return false
+      if (availability === '') {
+        console.log(`Employee not available at ${hourStr} on ${dayName}`);
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const getAvailableTasksForDay = (dayName: string, employee: Employee) => {
+    console.log('Checking tasks for:', {
+      dayName,
+      employeeName: `${employee.firstName} ${employee.lastName}`,
+      employeeSkills: employee.skills,
+      employeeAvailability: employee.availability[dayName.toLowerCase()]
+    });
+
+    const availableTasks = tasks.filter(task => {
+      const hasDay = task.days && task.days.includes(dayName);
+      const hasSkill = employee.skills.some(skill => skill.task === task.name);
+      const isAvailable = isEmployeeAvailable(employee, dayName, task.startTime, task.stopTime);
+
+      console.log('Task check:', {
+        taskName: task.name,
+        hasDay,
+        hasSkill,
+        isAvailable,
+        taskDays: task.days,
+        taskTimes: `${task.startTime}-${task.stopTime}`
+      });
+
+      return hasDay && hasSkill && isAvailable;
+    });
+
+    console.log('Available tasks:', availableTasks);
+    return availableTasks;
+  };
+
+  const isTimeOverlap = (start1: string, end1: string, start2: string, end2: string) => {
+    const [start1Hour, start1Min] = start1.split(':').map(Number);
+    const [end1Hour, end1Min] = end1.split(':').map(Number);
+    const [start2Hour, start2Min] = start2.split(':').map(Number);
+    const [end2Hour, end2Min] = end2.split(':').map(Number);
+
+    const start1Total = start1Hour * 60 + start1Min;
+    const end1Total = end1Hour * 60 + end1Min;
+    const start2Total = start2Hour * 60 + start2Min;
+    const end2Total = end2Hour * 60 + end2Min;
+
+    return !(end1Total <= start2Total || start1Total >= end2Total);
+  };
+
+  const isTaskAlreadyScheduled = (employeeId: string, date: string, taskId: string) => {
+    const employeeSchedule = schedule[employeeId]?.[date];
+    if (!employeeSchedule) return false;
+    return employeeSchedule.tasks.some(task => task.taskId === taskId);
+  };
+
+  const hasTimeOverlap = (employeeId: string, date: string, newTask: EmployeeTask) => {
+    const employeeSchedule = schedule[employeeId]?.[date];
+    if (!employeeSchedule) return false;
+
+    return employeeSchedule.tasks.some(existingTask => {
+      const existingTaskDetails = tasks.find(t => t.id === existingTask.taskId);
+      if (!existingTaskDetails) return false;
+
+      return isTimeOverlap(
+        existingTaskDetails.startTime,
+        existingTaskDetails.stopTime,
+        newTask.startTime,
+        newTask.stopTime
+      );
+    });
+  };
+
   const handleAddTask = async (employeeId: string, date: string, taskId: string) => {
     try {
       const user = auth.currentUser;
@@ -127,11 +282,23 @@ export default function SchedulingPage() {
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
 
+      // Check for duplicate task
+      if (isTaskAlreadyScheduled(employeeId, date, taskId)) {
+        alert('This task is already scheduled for this employee on this day.');
+        return;
+      }
+
       const newTask: EmployeeTask = {
         taskId,
         startTime: task.startTime,
         stopTime: task.stopTime
       };
+
+      // Check for time overlap
+      if (hasTimeOverlap(employeeId, date, newTask)) {
+        alert('This task overlaps with another task scheduled for this employee on this day.');
+        return;
+      }
 
       const updatedSchedule = { ...schedule };
       if (!updatedSchedule[employeeId]) {
@@ -173,6 +340,29 @@ export default function SchedulingPage() {
     }
   };
 
+  const getTotalHoursForEmployee = (employeeId: string) => {
+    let totalHours = 0;
+    const employeeSchedule = schedule[employeeId];
+    if (!employeeSchedule) return 0;
+
+    // Get all dates in the current week
+    const currentWeekDates = weekDates.map(date => date.toISOString().split('T')[0]);
+
+    // Only sum hours for tasks in the current week
+    currentWeekDates.forEach(date => {
+      if (employeeSchedule[date]?.tasks) {
+        employeeSchedule[date].tasks.forEach((task) => {
+          const [startHour, startMin] = task.startTime.split(':').map(Number);
+          const [stopHour, stopMin] = task.stopTime.split(':').map(Number);
+          const hours = stopHour - startHour + (stopMin - startMin) / 60;
+          totalHours += hours;
+        });
+      }
+    });
+
+    return Math.round(totalHours * 10) / 10; // Round to 1 decimal place
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -200,6 +390,12 @@ export default function SchedulingPage() {
             className="p-2 rounded-full hover:bg-gray-100 text-black"
           >
             <ChevronRight className="w-5 h-5" />
+          </button>
+          <button
+            onClick={copyPreviousWeekSchedule}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+          >
+            Copy Previous Week
           </button>
         </div>
       </div>
@@ -229,12 +425,14 @@ export default function SchedulingPage() {
                     {employee.lastName}, {employee.firstName}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {employee.hours || 0}
+                    {getTotalHoursForEmployee(employee.id)}
                   </td>
                   {weekDates.map((date) => {
                     const dateStr = date.toISOString().split('T')[0];
+                    const dayName = getDayName(date);
                     const employeeSchedule = schedule[employee.id]?.[dateStr];
                     const employeeTasks = employeeSchedule?.tasks || [];
+                    const availableTasks = getAvailableTasksForDay(dayName, employee);
 
                     return (
                       <td key={dateStr} className="px-6 py-4">
@@ -243,10 +441,14 @@ export default function SchedulingPage() {
                             const taskDetails = tasks.find(t => t.id === task.taskId);
                             return (
                               <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                <span className="text-sm">
-                                  {taskDetails?.name || 'Unknown Task'}
-                                  ({task.startTime}-{task.stopTime})
-                                </span>
+                                <div className="flex flex-col">
+                                  <span className="text-sm">
+                                    {task.startTime}-{task.stopTime}
+                                  </span>
+                                  <span className="text-sm font-medium">
+                                    {taskDetails?.name || 'Unknown Task'}
+                                  </span>
+                                </div>
                                 <button
                                   onClick={() => handleRemoveTask(employee.id, dateStr, index)}
                                   className="text-red-500 hover:text-red-700"
@@ -256,12 +458,14 @@ export default function SchedulingPage() {
                               </div>
                             );
                           })}
-                          <button
-                            onClick={() => setSelectedCell({ employeeId: employee.id, date: dateStr })}
-                            className="flex items-center justify-center w-full p-2 hover:text-gray-700 border border-dashed border-gray-300 rounded"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
+                          {availableTasks.length > 0 && (
+                            <button
+                              onClick={() => setSelectedCell({ employeeId: employee.id, date: dateStr })}
+                              className="flex items-center justify-center w-full p-2 hover:text-gray-700 border border-dashed border-gray-300 rounded"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     );
@@ -276,6 +480,19 @@ export default function SchedulingPage() {
               </tr>
             )}
           </tbody>
+          <tfoot className="bg-gray-50">
+            <tr>
+              <td className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total Hours
+              </td>
+              <td className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                {employees.reduce((sum, employee) => sum + getTotalHoursForEmployee(employee.id), 0)}
+              </td>
+              {weekDates.map((date) => (
+                <td key={date.toISOString()} className="px-6 py-3"></td>
+              ))}
+            </tr>
+          </tfoot>
         </table>
       </div>
 
@@ -293,7 +510,10 @@ export default function SchedulingPage() {
               }}
             >
               <option value="">Select a task</option>
-              {tasks.map((task) => (
+              {getAvailableTasksForDay(
+                getDayName(new Date(selectedCell.date)),
+                employees.find(e => e.id === selectedCell.employeeId) || {} as Employee
+              ).map((task) => (
                 <option key={task.id} value={task.id}>
                   {task.name} ({task.startTime}-{task.stopTime})
                 </option>
