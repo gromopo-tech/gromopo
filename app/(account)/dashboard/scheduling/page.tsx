@@ -192,38 +192,39 @@ export default function SchedulingPage() {
       return false;
     }
 
-    // Convert times to minutes for easier comparison
-    const [startHour, startMin] = startTime.split(':').map(Number);
-    const [stopHour, stopMin] = stopTime.split(':').map(Number);
-    const taskStartMinutes = startHour * 60 + startMin;
-    const taskStopMinutes = stopHour * 60 + stopMin;
+    // Get all available time slots for the day
+    const availableSlots = Object.entries(dayAvailability)
+      .filter(([_, value]) => value !== '')
+      .map(([time]) => time)
+      .sort();
 
-    // Check if the task's start time falls within available hours
-    const taskStartHourStr = startHour.toString().padStart(2, '0') + ':00';
-    const taskStartAvailability = dayAvailability[taskStartHourStr];
-    if (!taskStartAvailability) {
-      console.log(`Employee not available at start time ${taskStartHourStr}`);
+    if (availableSlots.length === 0) {
       return false;
     }
 
-    // Check each hour between start and stop time, including the hour before stop time
-    for (let hour = startHour; hour <= stopHour; hour++) {
-      const hourStr = hour.toString().padStart(2, '0') + ':00';
-      const availability = dayAvailability[hourStr];
-      
-      // If any hour is not available (empty string), return false
-      if (availability === '') {
-        console.log(`Employee not available at ${hourStr} on ${dayName}`);
-        return false;
-      }
-    }
+    // Find the earliest available time
+    const earliestAvailable = availableSlots[0];
+    // Find the latest available time (last slot + 1 hour)
+    const lastSlot = availableSlots[availableSlots.length - 1];
+    const [lastHour] = lastSlot.split(':').map(Number);
+    const latestAvailable = `${(lastHour + 1).toString().padStart(2, '0')}:00`;
 
-    // For the end time, we need to check if the employee is available at the start of that hour
-    // This handles the case where a task ends at the same time as availability
-    const taskStopHourStr = stopHour.toString().padStart(2, '0') + ':00';
-    const taskStopAvailability = dayAvailability[taskStopHourStr];
-    if (!taskStopAvailability) {
-      console.log(`Employee not available at end time ${taskStopHourStr}`);
+    // Convert all times to minutes for comparison
+    const [taskStartHour, taskStartMin] = startTime.split(':').map(Number);
+    const [taskStopHour, taskStopMin] = stopTime.split(':').map(Number);
+    const [earliestHour, earliestMin] = earliestAvailable.split(':').map(Number);
+    const [latestHour, latestMin] = latestAvailable.split(':').map(Number);
+
+    const taskStartMinutes = taskStartHour * 60 + taskStartMin;
+    const taskStopMinutes = taskStopHour * 60 + taskStopMin;
+    const earliestMinutes = earliestHour * 60 + earliestMin;
+    const latestMinutes = latestHour * 60 + latestMin;
+
+    // Check if task is within available time range
+    const isWithinRange = taskStartMinutes >= earliestMinutes && taskStopMinutes <= latestMinutes;
+    
+    if (!isWithinRange) {
+      console.log(`Task time range (${startTime}-${stopTime}) is outside available range (${earliestAvailable}-${latestAvailable})`);
       return false;
     }
 
