@@ -42,8 +42,10 @@ export default function DashboardLayout({
       <Sidebar />
 
       {/* Main Content */}
-      <div className="flex-grow p-6">
-        {children}
+      <div className="flex-grow overflow-hidden">
+        <div className="h-full overflow-auto p-6">
+          {children}
+        </div>
       </div>
     </div>
   )
