@@ -447,7 +447,10 @@ export default function SchedulingPage() {
                 .map((employee) => (
                   <tr key={employee.id}>
                     <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {employee.lastName}, {employee.firstName}
+                      <div className="flex flex-col">
+                        <span>{employee.lastName}</span>
+                        <span className="text-gray-500">{employee.firstName}</span>
+                      </div>
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {getTotalHoursForEmployee(employee.id)}
