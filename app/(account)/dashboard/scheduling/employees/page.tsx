@@ -58,7 +58,15 @@ export default function EmployeesPage() {
   ]);
   const [tasks, setTasks] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [collapsedSections, setCollapsedSections] = useState<{[key: string]: boolean}>({});
+  const [collapsedSections, setCollapsedSections] = useState<{[key: string]: boolean}>(() => {
+    // Initialize all sections as collapsed by default
+    const initialCollapsed: {[key: string]: boolean} = {};
+    employees.forEach((_, index) => {
+      initialCollapsed[`${index}-skills`] = true;
+      initialCollapsed[`${index}-availability`] = true;
+    });
+    return initialCollapsed;
+  });
 
   const toggleSection = (employeeIndex: number, section: 'skills' | 'availability') => {
     setCollapsedSections(prev => ({
@@ -68,7 +76,7 @@ export default function EmployeesPage() {
   };
 
   const isSectionCollapsed = (employeeIndex: number, section: 'skills' | 'availability') => {
-    return collapsedSections[`${employeeIndex}-${section}`] !== false; // Default to true (collapsed)
+    return collapsedSections[`${employeeIndex}-${section}`] ?? true; // Default to true if not set
   };
 
   const handleAddEmployee = () => {
@@ -165,6 +173,111 @@ export default function EmployeesPage() {
     const updatedEmployees = [...employees];
     updatedEmployees.splice(employeeIndex, 1);
     setEmployees(updatedEmployees);
+  };
+
+  const handleSaveEmployee = async (employeeIndex: number) => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("You must be logged in to perform this action.");
+      return;
+    }
+
+    const employee = employees[employeeIndex];
+
+    // Validate employee fields
+    if (!employee.firstName.trim()) {
+      alert("Employee first name is required.");
+      return;
+    }
+    if (!employee.lastName.trim()) {
+      alert("Employee last name is required.");
+      return;
+    }
+    // check if employee already exists
+    const existingEmployee = employees.find(
+      (emp, index) =>
+        emp.firstName === employee.firstName &&
+        emp.lastName === employee.lastName &&
+        index !== employeeIndex
+    );
+    if (existingEmployee) {
+      alert(`Employee already exists for ${employee.lastName}, ${employee.firstName}.`);
+      return;
+    }
+    if (!employee.minShift) {
+      alert(`Employee minimum shift is required for ${employee.lastName}, ${employee.firstName}.`);
+      return;
+    }
+    if (!employee.maxShift) {
+      alert(`Employee maximum shift is required for ${employee.lastName}, ${employee.firstName}.`);
+      return;
+    }
+    if (!employee.maxHours) {
+      alert(`Employee maximum hours is required for ${employee.lastName}, ${employee.firstName}.`);
+      return;
+    }
+    if (employee.minShift >= employee.maxShift) {
+      alert(`Minimum shift length must be smaller than max shift length for ${employee.lastName}, ${employee.firstName}.`);
+      return;
+    }
+    if (employee.minShift > Number(employee.maxHours)) {
+      alert(`Minimum shift length must be smaller than max hours for ${employee.lastName}, ${employee.firstName}.`);
+      return;
+    }
+    if (employee.maxShift > Number(employee.maxHours)) {
+      alert(`Maximum shift length must be smaller than max hours for ${employee.lastName}, ${employee.firstName}.`);
+      return;
+    }
+    if (Number(employee.maxHours) % 1 !== 0) {
+      alert(`Maximum weekly hours must be an integer for ${employee.lastName}, ${employee.firstName}.`);
+      return;
+    }
+    
+    // Validate employee availability
+    const isAvailable = Object.values(employee.availability).some((day) =>
+      Object.values(day).some((hour) => hour === "L" || hour === "D")
+    );
+    if (!isAvailable) {
+      alert(`Employee must be available at least one hour for any day for ${employee.lastName}, ${employee.firstName}.`);
+      return;
+    }
+
+    // Validate employee skills
+    if (employee.skills.length === 0) {
+      alert(`At least one skill is required for ${employee.lastName}, ${employee.firstName}.`);
+      return;
+    }
+    for (const skill of employee.skills) {
+      if (!skill.task.trim()) {
+        alert(`Skill task cannot be empty for ${employee.lastName}, ${employee.firstName}.`);
+        return;
+      }
+      if (!skill.rating || skill.rating === "") {
+        alert(`Skill rating is required for ${employee.lastName}, ${employee.firstName} for skill ${skill.task}.`);
+        return;
+      }
+    }
+
+    const userId = user.uid;
+    const schedulingRef = collection(db, "scheduling");
+    const employeesRef = doc(schedulingRef, userId);
+
+    try {
+      // Get current document
+      const currentDoc = await getDoc(employeesRef);
+      const currentData = currentDoc.exists() ? currentDoc.data() : {};
+      const currentEmployees = currentData.employees || [];
+
+      // Update only the specific employee
+      const updatedEmployees = [...currentEmployees];
+      updatedEmployees[employeeIndex] = employee;
+
+      await updateDoc(employeesRef, { employees: updatedEmployees });
+      alert(`Employee ${employee.lastName}, ${employee.firstName} saved successfully!`);
+    } catch (error) {
+      console.error("Error saving employee:", error);
+      alert("Failed to save employee. Please try again.");
+    }
   };
 
   const handleSubmit = async () => {
@@ -393,29 +506,30 @@ export default function EmployeesPage() {
             key={employeeIndex}
             className={`mb-4 p-4 border rounded border-black text-black relative 
               ${!employee.active ? 'bg-gray-400 opacity-80 border-gray-600' : 'bg-white border-black'}`}>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm font-medium text-gray-700">Active:</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={employee.active}
-                  onChange={() => handleToggleActive(employeeIndex)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => handleToggleActive(employeeIndex)}
+                  className={`px-3 py-1 rounded transition-colors duration-200 ${
+                    employee.active ? "bg-green-500 hover:bg-green-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
+                  }`}
+                >
+                  {employee.active ? "Active" : "Inactive"}
+                </button>
+                <button
+                  onClick={() => handleDeleteEmployee(employeeIndex)}
+                  className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded transition-colors duration-200"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={() => handleSaveEmployee(employeeIndex)}
+                  className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors duration-200"
+                >
+                  Save
+                </button>
+              </div>
             </div>
-            {/* Delete button - positioned at top right */}
-            <button
-              onClick={() => handleDeleteEmployee(employeeIndex)}
-              className="absolute top-2 right-2 p-1 text-red-600 hover:text-red-800"
-              title="Delete employee"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            </button>
-
             <div className="flex flex-wrap items-center gap-4">
               <label className="flex-1 max-w-[150px]">
                 <span className="block text-sm font-medium text-gray-700">Last Name</span>
@@ -680,15 +794,9 @@ export default function EmployeesPage() {
         <div className="flex justify-center gap-4">
           <button
             onClick={handleAddEmployee}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors duration-200"
           >
             New Employee
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Save Employees
           </button>
         </div>
       </div>

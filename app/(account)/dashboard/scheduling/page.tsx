@@ -275,11 +275,8 @@ export default function SchedulingPage() {
       return hasDay && hasSkill && isAvailable;
     });
 
-    console.log('Final available tasks:', availableTasks.map(t => ({
-      name: t.name,
-      days: t.days
-    })));
-    return availableTasks;
+    // Sort tasks alphabetically by name
+    return availableTasks.sort((a, b) => a.name.localeCompare(b.name));
   };
 
   const isTimeOverlap = (start1: string, end1: string, start2: string, end2: string) => {
