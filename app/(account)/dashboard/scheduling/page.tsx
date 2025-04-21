@@ -89,8 +89,8 @@ export default function SchedulingPage() {
 
           // Fetch tasks
           if (data.tasks && Array.isArray(data.tasks)) {
-            const formattedTasks = data.tasks.map((task: any, index: number) => ({
-              id: index.toString(),
+            const formattedTasks = data.tasks.map((task: any) => ({
+              id: task.id, // Use the existing ID
               name: task.name || '',
               startTime: task.startTime || '',
               stopTime: task.stopTime || '',
@@ -554,6 +554,7 @@ export default function SchedulingPage() {
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
             <h3 className="text-lg font-semibold mb-4">Add Task</h3>
             <select
+              key={`task-select-${selectedCell.employeeId}-${selectedCell.date}`}
               className="w-full p-2 border rounded mb-4"
               onChange={(e) => {
                 if (e.target.value) {
@@ -561,12 +562,12 @@ export default function SchedulingPage() {
                 }
               }}
             >
-              <option value="">Select a task</option>
+              <option key="default" value="">Select a task</option>
               {getAvailableTasksForDay(
                 getDayName(weekDates.find(date => formatDateForStorage(date) === selectedCell.date) || new Date()),
                 employees.find(e => e.id === selectedCell.employeeId) || {} as Employee
               ).map((task) => (
-                <option key={task.id} value={task.id}>
+                <option key={`${selectedCell.employeeId}-${selectedCell.date}-${task.id}`} value={task.id}>
                   {task.name} ({task.startTime}-{task.stopTime})
                 </option>
               ))}
