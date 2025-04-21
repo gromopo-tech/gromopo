@@ -185,11 +185,11 @@ export default function SchedulingPage() {
   const getDayName = (date: Date) => {
     // Create a new date object to avoid timezone issues
     const localDate = new Date(date);
-    // Get the day name in the local timezone
-    return localDate.toLocaleDateString('en-US', { 
-      weekday: 'short',
-      timeZone: 'UTC' // Use UTC to avoid timezone shifts
-    });
+    // Get the day of week (0-6, where 0 is Sunday)
+    const dayOfWeek = localDate.getDay();
+    // Map to our standard day names
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    return dayNames[dayOfWeek];
   };
 
   const isEmployeeAvailable = (employee: Employee, dayName: string, startTime: string, stopTime: string) => {
