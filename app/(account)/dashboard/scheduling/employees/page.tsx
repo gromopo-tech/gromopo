@@ -17,6 +17,7 @@ type Employee = {
   active: boolean;
   lastName: string;
   firstName: string;
+  id: string;
   email: string;
   minShift: number;
   maxShift: number;
@@ -48,6 +49,7 @@ export default function EmployeesPage() {
       active: true,
       lastName: "", 
       firstName: "", 
+      id: "",
       email: "", 
       minShift: 4, 
       maxShift: 8, 
@@ -85,6 +87,7 @@ export default function EmployeesPage() {
         active: true,
         lastName: "", 
         firstName: "", 
+        id: "",
         email: "", 
         minShift: 4, 
         maxShift: 8.5, 
@@ -193,15 +196,18 @@ export default function EmployeesPage() {
       alert("Employee last name is required.");
       return;
     }
-    // check if employee already exists
+    if (!employee.id.trim()) {
+      alert("Employee ID is required.");
+      return;
+    }
+    // check if employee ID already exists
     const existingEmployee = employees.find(
       (emp, index) =>
-        emp.firstName === employee.firstName &&
-        emp.lastName === employee.lastName &&
+        emp.id === employee.id &&
         index !== employeeIndex
     );
     if (existingEmployee) {
-      alert(`Employee already exists for ${employee.lastName}, ${employee.firstName}.`);
+      alert(`Employee ID already exists: ${employee.id}`);
       return;
     }
     if (!employee.minShift) {
@@ -465,9 +471,10 @@ export default function EmployeesPage() {
         const docSnap = await getDoc(employeesRef);
         if (docSnap.exists()) {
           const fetchedEmployees = docSnap.data().employees || [];
-          // Ensure each employee has availability
+          // Ensure each employee has availability and id
           const employeesWithAvailability = fetchedEmployees.map((emp: any) => ({
             ...emp,
+            id: emp.id || "", // Ensure id is always defined
             availability: emp.availability || JSON.parse(JSON.stringify(defaultAvailability))
           }));
           // Sort employees alphabetically by last name then first name
@@ -555,6 +562,17 @@ export default function EmployeesPage() {
                 />
               </label>
 
+              <label className="flex-1 max-w-[50px]">
+                <span className="block text-sm font-medium text-gray-700">ID</span>
+                <input
+                  type="text"
+                  value={employee.id}
+                  onChange={(e) => handleEmployeeChange(employeeIndex, "id", e.target.value)}
+                  className="w-full p-2 border rounded border-black text-black text-sm"
+                  placeholder="ID"
+                />
+              </label>
+
               <label className="flex-1 max-w-[300px]">
                 <span className="block text-sm font-medium text-gray-700">Email</span>
                 <input
@@ -614,6 +632,7 @@ export default function EmployeesPage() {
                   className="w-full p-2 border rounded border-black text-black text-sm"
                 />
               </label>
+
             </div>
 
             {/* Skills Section */}
