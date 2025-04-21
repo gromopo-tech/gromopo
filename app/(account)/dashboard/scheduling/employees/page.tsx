@@ -58,6 +58,18 @@ export default function EmployeesPage() {
   ]);
   const [tasks, setTasks] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [collapsedSections, setCollapsedSections] = useState<{[key: string]: boolean}>({});
+
+  const toggleSection = (employeeIndex: number, section: 'skills' | 'availability') => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [`${employeeIndex}-${section}`]: !prev[`${employeeIndex}-${section}`]
+    }));
+  };
+
+  const isSectionCollapsed = (employeeIndex: number, section: 'skills' | 'availability') => {
+    return collapsedSections[`${employeeIndex}-${section}`] !== false; // Default to true (collapsed)
+  };
 
   const handleAddEmployee = () => {
     setEmployees([...employees, 
@@ -492,141 +504,175 @@ export default function EmployeesPage() {
 
             {/* Skills Section */}
             <div className="mt-4">
-              <h3 className="text-lg font-semibold mt-4">Skills</h3>
-              {employee.skills.map((skill, skillIndex) => (
-                <div key={skillIndex} className="flex items-center gap-4 mt-2 col-span-2">
-                  <button
-                    onClick={() => handleDeleteSkill(employeeIndex, skillIndex)}
-                    className="auto-mx p-1 text-red-500 hover:text-red-700"
-                    title="Delete skill"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  <label className="flex-1 max-w-[300px]">
-                    <span className="block text-sm font-medium text-gray-700">Task</span>
-                    <select
-                      value={skill.task}
-                      onChange={(e) =>
-                        handleSkillChange(employeeIndex, skillIndex, "task", e.target.value)
-                      }
-                      className="w-full p-2 border rounded border-black text-black"
-                    >
-                      <option value="">Select a task</option>
-                      {tasks.map((task) => (
-                        <option key={task} value={task}>
-                          {task}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="flex-1 max-w-[100px]">
-                    <span className="block text-sm font-medium text-gray-700">Rating</span>
-                    <select
-                      value={skill.rating}
-                      onChange={(e) =>
-                        handleSkillChange(
-                          employeeIndex,
-                          skillIndex,
-                          "rating",
-                          parseInt(e.target.value)
-                        )
-                      }
-                      className="w-full p-2 border rounded border-black text-black"
-                    >
-                      <option value="">Select</option>
-                      {[1, 2, 3, 4].map((rating) => (
-                        <option key={rating} value={rating.toString()}>
-                          {rating}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-              ))}
-              <button
-                onClick={() => handleAddSkill(employeeIndex)}
-                className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              <div 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => toggleSection(employeeIndex, 'skills')}
               >
-                New Skill
-              </button>
+                <h3 className="text-lg font-semibold">Skills</h3>
+                <svg 
+                  className={`w-5 h-5 transform transition-transform ${isSectionCollapsed(employeeIndex, 'skills') ? 'rotate-180' : ''}`}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+              {!isSectionCollapsed(employeeIndex, 'skills') && (
+                <>
+                  {employee.skills.map((skill, skillIndex) => (
+                    <div key={skillIndex} className="flex items-center gap-4 mt-2 col-span-2">
+                      <button
+                        onClick={() => handleDeleteSkill(employeeIndex, skillIndex)}
+                        className="auto-mx p-1 text-red-500 hover:text-red-700"
+                        title="Delete skill"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      <label className="flex-1 max-w-[300px]">
+                        <span className="block text-sm font-medium text-gray-700">Task</span>
+                        <select
+                          value={skill.task}
+                          onChange={(e) =>
+                            handleSkillChange(employeeIndex, skillIndex, "task", e.target.value)
+                          }
+                          className="w-full p-2 border rounded border-black text-black"
+                        >
+                          <option value="">Select a task</option>
+                          {tasks.map((task) => (
+                            <option key={task} value={task}>
+                              {task}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="flex-1 max-w-[100px]">
+                        <span className="block text-sm font-medium text-gray-700">Rating</span>
+                        <select
+                          value={skill.rating}
+                          onChange={(e) =>
+                            handleSkillChange(
+                              employeeIndex,
+                              skillIndex,
+                              "rating",
+                              parseInt(e.target.value)
+                            )
+                          }
+                          className="w-full p-2 border rounded border-black text-black"
+                        >
+                          <option value="">Select</option>
+                          {[1, 2, 3, 4].map((rating) => (
+                            <option key={rating} value={rating.toString()}>
+                              {rating}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => handleAddSkill(employeeIndex)}
+                    className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  >
+                    New Skill
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Draggable Availability Grid */}
             <div className="mt-4">
-              <h3 className="text-lg font-semibold mb-2">Weekly Availability</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full border-collapse">
-                  <thead>
-                    <tr>
-                      <th className="bg-gray-100 p-1 text-center font-medium text-sm sticky left-0 border border-gray-300">Time</th>
-                      {Object.keys(defaultAvailability).map((day) => (
-                        <th key={day} className="bg-gray-100 p-1 text-center font-medium text-sm border border-gray-300 capitalize">
-                          {day.slice(0, 3)}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.from({ length: 24 }).map((_, hour) => {
-                      const time = `${hour.toString().padStart(2, '0')}:00`;
-                      return (
-                        <tr key={time}>
-                          <td className="bg-gray-50 p-1 text-xs text-center border border-gray-300 sticky left-0">
-                            {time}
-                          </td>
-                          {Object.keys(defaultAvailability).map((day) => {
-                            const currentValue = employees[employeeIndex].availability[day][time] || '';
-                            return (
-                              <td 
-                                key={`${day}-${time}`}
-                                className={`p-0 border border-gray-200 relative ${currentValue === 'L' ? 'bg-green-100' : currentValue === 'D' ? 'bg-yellow-100' : ''}`}
-                              >
-                                <button
-                                  className={`w-full h-8 focus:outline-none ${currentValue === 'L' ? 'bg-green-400' : currentValue === 'D' ? 'bg-yellow-400' : ''}`}
-                                  onMouseDown={() => handleSlotMouseDown(employeeIndex, day, time)}
-                                  onMouseEnter={() => handleSlotMouseEnter(employeeIndex, day, time)}
-                                  onMouseUp={() => setDragging(false)}
-                                  title={`${day} at ${time}`}
-                                />
-                              </td>
-                            );
-                          })}
+              <div 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => toggleSection(employeeIndex, 'availability')}
+              >
+                <h3 className="text-lg font-semibold">Weekly Availability</h3>
+                <svg 
+                  className={`w-5 h-5 transform transition-transform ${isSectionCollapsed(employeeIndex, 'availability') ? 'rotate-180' : ''}`}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+              {!isSectionCollapsed(employeeIndex, 'availability') && (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border-collapse">
+                      <thead>
+                        <tr>
+                          <th className="bg-gray-100 p-1 text-center font-medium text-sm sticky left-0 border border-gray-300">Time</th>
+                          {Object.keys(defaultAvailability).map((day) => (
+                            <th key={day} className="bg-gray-100 p-1 text-center font-medium text-sm border border-gray-300 capitalize">
+                              {day.slice(0, 3)}
+                            </th>
+                          ))}
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <div className="mt-3 flex gap-4">
-                <div className="flex items-center">
-                  <span className="block w-4 h-4 bg-green-400 mr-2"></span>
-                  <span>Preferred</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="block w-4 h-4 bg-yellow-400 mr-2"></span>
-                  <span>If Needed</span>
-                </div>
-                <button 
-                  onClick={() => setSelectionMode('L')}
-                  className={`px-3 py-1 rounded ${selectionMode === 'L' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
-                >
-                  Set Preferred
-                </button>
-                <button 
-                  onClick={() => setSelectionMode('D')}
-                  className={`px-3 py-1 rounded ${selectionMode === 'D' ? 'bg-yellow-500 text-white' : 'bg-gray-200'}`}
-                >
-                  Set If Needed
-                </button>
-                <button 
-                  onClick={() => setSelectionMode('')}
-                  className="px-3 py-1 bg-gray-200 rounded"
-                >
-                  Clear
-                </button>
-              </div>
+                      </thead>
+                      <tbody>
+                        {Array.from({ length: 24 }).map((_, hour) => {
+                          const time = `${hour.toString().padStart(2, '0')}:00`;
+                          return (
+                            <tr key={time}>
+                              <td className="bg-gray-50 p-1 text-xs text-center border border-gray-300 sticky left-0">
+                                {time}
+                              </td>
+                              {Object.keys(defaultAvailability).map((day) => {
+                                const currentValue = employees[employeeIndex].availability[day][time] || '';
+                                return (
+                                  <td 
+                                    key={`${day}-${time}`}
+                                    className={`p-0 border border-gray-200 relative ${currentValue === 'L' ? 'bg-green-100' : currentValue === 'D' ? 'bg-yellow-100' : ''}`}
+                                  >
+                                    <button
+                                      className={`w-full h-8 focus:outline-none ${currentValue === 'L' ? 'bg-green-400' : currentValue === 'D' ? 'bg-yellow-400' : ''}`}
+                                      onMouseDown={() => handleSlotMouseDown(employeeIndex, day, time)}
+                                      onMouseEnter={() => handleSlotMouseEnter(employeeIndex, day, time)}
+                                      onMouseUp={() => setDragging(false)}
+                                      title={`${day} at ${time}`}
+                                    />
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-3 flex gap-4">
+                    <div className="flex items-center">
+                      <span className="block w-4 h-4 bg-green-400 mr-2"></span>
+                      <span>Preferred</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="block w-4 h-4 bg-yellow-400 mr-2"></span>
+                      <span>If Needed</span>
+                    </div>
+                    <button 
+                      onClick={() => setSelectionMode('L')}
+                      className={`px-3 py-1 rounded ${selectionMode === 'L' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
+                    >
+                      Set Preferred
+                    </button>
+                    <button 
+                      onClick={() => setSelectionMode('D')}
+                      className={`px-3 py-1 rounded ${selectionMode === 'D' ? 'bg-yellow-500 text-white' : 'bg-gray-200'}`}
+                    >
+                      Set If Needed
+                    </button>
+                    <button 
+                      onClick={() => setSelectionMode('')}
+                      className="px-3 py-1 bg-gray-200 rounded"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
 
           </div>
