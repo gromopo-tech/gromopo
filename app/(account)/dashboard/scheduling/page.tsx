@@ -187,9 +187,11 @@ export default function SchedulingPage() {
     const localDate = new Date(date);
     // Get the day of week (0-6, where 0 is Sunday)
     const dayOfWeek = localDate.getDay();
-    // Map to our standard day names
+    // Map to our standard day names (must match exactly with tasks page)
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    return dayNames[dayOfWeek];
+    const dayName = dayNames[dayOfWeek];
+    console.log('Getting day name:', { date, dayOfWeek, dayName });
+    return dayName;
   };
 
   const isEmployeeAvailable = (employee: Employee, dayName: string, startTime: string, stopTime: string) => {
@@ -239,31 +241,44 @@ export default function SchedulingPage() {
   };
 
   const getAvailableTasksForDay = (dayName: string, employee: Employee) => {
-    console.log('Checking tasks for:', {
+    // Convert dayName to match the format used in tasks (e.g., "Tue" instead of "Tuesday")
+    const formattedDayName = dayName.substring(0, 3);
+    
+    console.log('Task availability check:', {
       dayName,
+      formattedDayName,
+      allTasks: tasks.map(t => ({
+        name: t.name,
+        days: t.days,
+        hasDay: t.days.includes(formattedDayName)
+      })),
       employeeName: `${employee.firstName} ${employee.lastName}`,
       employeeSkills: employee.skills,
       employeeAvailability: employee.availability[dayName.toLowerCase()]
     });
 
     const availableTasks = tasks.filter(task => {
-      const hasDay = task.days && task.days.includes(dayName);
+      const hasDay = task.days && task.days.includes(formattedDayName);
       const hasSkill = employee.skills.some(skill => skill.task === task.name);
       const isAvailable = isEmployeeAvailable(employee, dayName, task.startTime, task.stopTime);
 
-      console.log('Task check:', {
+      console.log('Task check details:', {
         taskName: task.name,
+        taskDays: task.days,
+        formattedDayName,
         hasDay,
         hasSkill,
         isAvailable,
-        taskDays: task.days,
         taskTimes: `${task.startTime}-${task.stopTime}`
       });
 
       return hasDay && hasSkill && isAvailable;
     });
 
-    console.log('Available tasks:', availableTasks);
+    console.log('Final available tasks:', availableTasks.map(t => ({
+      name: t.name,
+      days: t.days
+    })));
     return availableTasks;
   };
 
@@ -546,7 +561,7 @@ export default function SchedulingPage() {
             >
               <option value="">Select a task</option>
               {getAvailableTasksForDay(
-                getDayName(new Date(selectedCell.date)),
+                getDayName(weekDates.find(date => formatDateForStorage(date) === selectedCell.date) || new Date()),
                 employees.find(e => e.id === selectedCell.employeeId) || {} as Employee
               ).map((task) => (
                 <option key={task.id} value={task.id}>
