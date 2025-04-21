@@ -6,12 +6,12 @@ import { collection, doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState([
-    { name: "", days: [] as string[], startTime: "", stopTime: "" }, // Changed 'day' to 'days' as array
+    { id: crypto.randomUUID(), name: "", days: [] as string[], startTime: "", stopTime: "" },
   ]);
   const [isLoading, setIsLoading] = useState(true);
 
   const handleAddTask = () => {
-    setTasks([...tasks, { name: "", days: [], startTime: "", stopTime: "" }]);
+    setTasks([...tasks, { id: crypto.randomUUID(), name: "", days: [], startTime: "", stopTime: "" }]);
   };
 
   const handleTaskChange = (index: number, field: string, value: string | string[]) => {
@@ -129,8 +129,13 @@ export default function TasksPage() {
         const docSnap = await getDoc(tasksRef);
         if (docSnap.exists()) {
           const fetchedTasks = docSnap.data().tasks || [];
+          // Ensure each task has a stable ID
+          const tasksWithIds = fetchedTasks.map((task: any) => ({
+            ...task,
+            id: task.id || crypto.randomUUID() // Only generate new ID if one doesn't exist
+          }));
           // Sort tasks alphabetically by name
-          const sortedTasks = fetchedTasks.sort((a: { name: string; }, b: { name: string; }) =>
+          const sortedTasks = tasksWithIds.sort((a: { name: string; }, b: { name: string; }) =>
             a.name.localeCompare(b.name)
           );
           setTasks(sortedTasks);
