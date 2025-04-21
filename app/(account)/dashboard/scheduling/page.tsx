@@ -483,15 +483,21 @@ export default function SchedulingPage() {
                         const dayName = getDayName(date);
                         const employeeSchedule = schedule[employee.id]?.[dateStr];
                         const employeeTasks = employeeSchedule?.tasks || [];
+                        // Sort tasks by start time
+                        const sortedTasks = [...employeeTasks].sort((a, b) => {
+                          const [aHour, aMin] = a.startTime.split(':').map(Number);
+                          const [bHour, bMin] = b.startTime.split(':').map(Number);
+                          return (aHour * 60 + aMin) - (bHour * 60 + bMin);
+                        });
                         const availableTasks = getAvailableTasksForDay(dayName, employee);
 
                         return (
-                          <td key={dateStr} className="px-3 py-2">
+                          <td key={`${employee.id}-${dateStr}`} className="px-3 py-2">
                             <div className="flex flex-col space-y-1">
-                              {employeeTasks.map((task, index) => {
+                              {sortedTasks.map((task, index) => {
                                 const taskDetails = tasks.find(t => t.id === task.taskId);
                                 return (
-                                  <div key={index} className="flex items-center justify-between bg-gray-50 p-1 rounded">
+                                  <div key={`${employee.id}-${dateStr}-${task.taskId}-${index}`} className="flex items-center justify-between bg-gray-50 p-1 rounded">
                                     <div className="flex flex-col">
                                       <span className="text-xs">
                                         {task.startTime}-{task.stopTime}
