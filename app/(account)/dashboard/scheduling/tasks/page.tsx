@@ -47,7 +47,6 @@ export default function TasksPage() {
   };
 
   const handleSubmit = async () => {
-    
     const user = auth.currentUser;
     for (const task of tasks) {
       if (!task.name.trim()) {
@@ -81,7 +80,35 @@ export default function TasksPage() {
     const tasksRef = doc(schedulingRef, userId);
 
     try {
-      await updateDoc(tasksRef, { tasks });
+      // First, get the current employees data to update their skills
+      const currentDoc = await getDoc(tasksRef);
+      const currentData = currentDoc.exists() ? currentDoc.data() : {};
+      const currentEmployees = currentData.employees || [];
+      const currentTasks = currentData.tasks || [];
+
+      // Create a map of old task names to new task names
+      const taskNameMap = new Map();
+      currentTasks.forEach((oldTask: any) => {
+        const newTask = tasks.find(t => t.id === oldTask.id);
+        if (newTask && oldTask.name !== newTask.name) {
+          taskNameMap.set(oldTask.name, newTask.name);
+        }
+      });
+
+      // Update employee skills with new task names
+      const updatedEmployees = currentEmployees.map((emp: any) => ({
+        ...emp,
+        skills: emp.skills.map((skill: any) => ({
+          ...skill,
+          task: taskNameMap.get(skill.task) || skill.task
+        }))
+      }));
+
+      // Save both updated tasks and employees
+      await updateDoc(tasksRef, { 
+        tasks,
+        employees: updatedEmployees
+      });
       alert("Tasks saved successfully!");
     } catch (error) {
       // If the document doesn't exist, create it
@@ -89,12 +116,11 @@ export default function TasksPage() {
         await setDoc(tasksRef, { tasks });
         alert("Tasks saved successfully!");
       } else {
-      console.error("Error saving tasks:", error);
-      alert("Failed to save tasks. Please try again.");
+        console.error("Error saving tasks:", error);
+        alert("Failed to save tasks. Please try again.");
+      }
     }
-  }
-};
-
+  };
 
   const timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
     const hours = Math.floor(i / 4);
