@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase/config";
 import { collection, doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { formatTimeDisplay, parseTimeInput } from "@/lib/timeUtils";
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState([
@@ -137,11 +138,7 @@ export default function TasksPage() {
   const timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
     const hours = Math.floor(i / 4);
     const minutes = (i % 4) * 15;
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 || 12; // Convert to 12-hour format
-    return `${displayHours.toString().padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")} ${period}`;
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
   });
 
   const daysOfWeek = [
@@ -259,7 +256,7 @@ export default function TasksPage() {
                   <option value="">Select time</option>
                   {timeOptions.map((time) => (
                     <option key={time} value={time}>
-                      {time}
+                      {formatTimeDisplay(time)}
                     </option>
                   ))}
                 </select>
@@ -276,7 +273,7 @@ export default function TasksPage() {
                   <option value="">Select time</option>
                   {timeOptions.map((time) => (
                     <option key={time} value={time}>
-                      {time}
+                      {formatTimeDisplay(time)}
                     </option>
                   ))}
                 </select>

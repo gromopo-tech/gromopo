@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
 import { auth, db } from "@/lib/firebase/config";
 import { collection, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { formatTimeDisplay } from "@/lib/timeUtils";
 
 interface EmployeeSkill {
   rating: number;
@@ -649,29 +650,29 @@ export default function SchedulingPage() {
                           return (
                             <td key={`${employee.id}-${dateStr}`} className="px-3 py-2">
                               <div className="flex flex-col space-y-1">
-                                {employeeTasks.map((task, taskIndex) => {
-                                  const taskDetails = tasks.find(t => t.id === task.taskId);
-                                  return (
-                                    <div key={`${employee.id}-${dateStr}-${task.taskId}-${taskIndex}`} className="flex items-center justify-between bg-gray-50 p-1 rounded">
-                                      <div className="flex flex-col">
-                                        <span className="text-xs">
-                                          {task.startTime || '00:00'}-{task.stopTime || '00:00'}
-                                        </span>
-                                        <span className="text-xs font-medium">
-                                          {taskDetails?.name || task.name || 'Unknown Task'}
-                                        </span>
-                                      </div>
-                                      <button
-                                        onClick={() => handleRemoveTask(index, dateStr, taskIndex)}
-                                        className="text-red-500 hover:text-red-700"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                        </svg>
-                                      </button>
+                              {employeeTasks.map((task, taskIndex) => {
+                                const taskDetails = tasks.find(t => t.id === task.taskId);
+                                return (
+                                  <div key={`${employee.id}-${dateStr}-${task.taskId}-${taskIndex}`} className="flex items-center justify-between bg-gray-50 p-1 rounded">
+                                    <div className="flex flex-col">
+                                      <span className="text-xs">
+                                        {formatTimeDisplay(task.startTime)}-{formatTimeDisplay(task.stopTime)}
+                                      </span>
+                                      <span className="text-xs font-medium">
+                                        {taskDetails?.name || task.name || 'Unknown Task'}
+                                      </span>
                                     </div>
-                                  );
-                                })}
+                                    <button
+                                      onClick={() => handleRemoveTask(index, dateStr, taskIndex)}
+                                      className="text-red-500 hover:text-red-700"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                );
+                              })}
                                 {/* Always show the add task button */}
                                 <button
                                   onClick={() => setSelectedCell({ employeeIndex: index, date: dateStr })}
@@ -736,7 +737,7 @@ export default function SchedulingPage() {
                     employees[selectedCell.employeeIndex]
                   ).map((task) => (
                     <option key={`${selectedCell.employeeIndex}-${selectedCell.date}-${task.id}`} value={task.id}>
-                      {task.name} ({task.startTime}-{task.stopTime})
+                      {task.name} ({formatTimeDisplay(task.startTime)}-{formatTimeDisplay(task.stopTime)})
                     </option>
                   ))}
                 </select>
@@ -769,7 +770,7 @@ export default function SchedulingPage() {
                     >
                       <option value="">Select start time</option>
                       {timeOptions.map((time) => (
-                        <option key={time} value={time}>{time}</option>
+                        <option key={time} value={time}>{formatTimeDisplay(time)}</option>
                       ))}
                     </select>
                   </div>
@@ -782,7 +783,7 @@ export default function SchedulingPage() {
                     >
                       <option value="">Select end time</option>
                       {timeOptions.map((time) => (
-                        <option key={time} value={time}>{time}</option>
+                        <option key={time} value={time}>{formatTimeDisplay(time)}</option>
                       ))}
                     </select>
                   </div>
