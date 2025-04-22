@@ -637,7 +637,7 @@ export default function EmployeesPage() {
 
             {/* Skills Section */}
             <div className="mt-4">
-              <div 
+              <div
                 className="flex items-center cursor-pointer group"
                 onClick={() => toggleSection(employeeIndex, 'skills')}
               >
