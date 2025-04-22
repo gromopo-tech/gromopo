@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase/config";
 import { collection, doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
-import { set } from "react-hook-form";
+import { formatTimeDisplay } from "@/lib/timeUtils";
 import React from "react";
 
 // Define types for better type safety
@@ -637,19 +637,19 @@ export default function EmployeesPage() {
 
             {/* Skills Section */}
             <div className="mt-4">
-              <div 
-                className="flex items-center justify-between cursor-pointer"
+              <div
+                className="flex items-center cursor-pointer group"
                 onClick={() => toggleSection(employeeIndex, 'skills')}
               >
-                <h3 className="text-lg font-semibold">Skills</h3>
                 <svg 
-                  className={`w-5 h-5 transform transition-transform ${isSectionCollapsed(employeeIndex, 'skills') ? 'rotate-180' : ''}`}
+                  className={`w-5 h-5 transform transition-transform mr-2 group-hover:text-blue-600 ${isSectionCollapsed(employeeIndex, 'skills') ? 'rotate-180' : ''}`}
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
+                <h3 className="text-lg font-semibold group-hover:text-blue-600 transition-colors duration-200">Skills</h3>
               </div>
               {!isSectionCollapsed(employeeIndex, 'skills') && (
                 <>
@@ -718,18 +718,18 @@ export default function EmployeesPage() {
             {/* Draggable Availability Grid */}
             <div className="mt-4">
               <div 
-                className="flex items-center justify-between cursor-pointer"
+                className="flex items-center cursor-pointer group"
                 onClick={() => toggleSection(employeeIndex, 'availability')}
               >
-                <h3 className="text-lg font-semibold">Weekly Availability</h3>
                 <svg 
-                  className={`w-5 h-5 transform transition-transform ${isSectionCollapsed(employeeIndex, 'availability') ? 'rotate-180' : ''}`}
+                  className={`w-5 h-5 transform transition-transform mr-2 group-hover:text-blue-600 ${isSectionCollapsed(employeeIndex, 'availability') ? 'rotate-180' : ''}`}
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
+                <h3 className="text-lg font-semibold group-hover:text-blue-600 transition-colors duration-200">Weekly Availability</h3>
               </div>
               {!isSectionCollapsed(employeeIndex, 'availability') && (
                 <>
@@ -748,10 +748,11 @@ export default function EmployeesPage() {
                       <tbody>
                         {Array.from({ length: 24 }).map((_, hour) => {
                           const time = `${hour.toString().padStart(2, '0')}:00`;
+                          const displayTime = formatTimeDisplay(time);
                           return (
                             <tr key={time}>
                               <td className="bg-gray-50 p-1 text-xs text-center border border-gray-300 sticky left-0">
-                                {time}
+                                {displayTime}
                               </td>
                               {Object.keys(defaultAvailability).map((day) => {
                                 const currentValue = employees[employeeIndex].availability[day][time] || '';
@@ -765,7 +766,7 @@ export default function EmployeesPage() {
                                       onMouseDown={() => handleSlotMouseDown(employeeIndex, day, time)}
                                       onMouseEnter={() => handleSlotMouseEnter(employeeIndex, day, time)}
                                       onMouseUp={() => setDragging(false)}
-                                      title={`${day} at ${time}`}
+                                      title={`${day} at ${displayTime}`}
                                     />
                                   </td>
                                 );
