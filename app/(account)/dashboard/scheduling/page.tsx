@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
 import { auth, db } from "@/lib/firebase/config";
 import { collection, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { usePrint } from "@/app/contexts/PrintContext";
 
 interface EmployeeSkill {
   rating: number;
@@ -49,6 +50,11 @@ type EmployeeSchedule = Record<string, DaySchedule>; // Maps day of week to task
 type WeekSchedule = Record<string, EmployeeSchedule>; // Maps employeeId to their schedule
 type Schedules = Record<string, WeekSchedule>; // Maps week start date to week schedule
 
+// Add this interface for settings
+interface UserSettings {
+  timeFormat: '12h' | '24h';
+}
+
 export default function SchedulingPage() {
   const [currentWeek, setCurrentWeek] = useState<Date>(new Date());
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -60,6 +66,40 @@ export default function SchedulingPage() {
   const [customTaskName, setCustomTaskName] = useState("");
   const [customStartTime, setCustomStartTime] = useState("");
   const [customStopTime, setCustomStopTime] = useState("");
+  const { isPrintView, setIsPrintView } = usePrint();
+  const [timeFormat, setTimeFormat] = useState<'12h' | '24h'>('12h');
+
+  // Add this function to format time based on user preference
+  const formatTime = (time: string) => {
+    if (timeFormat === '24h') return time;
+    
+    const [hours, minutes] = time.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
+  // Add this useEffect to fetch user settings
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const settingsDocRef = doc(db, 'settings', user.uid);
+        const settingsDoc = await getDoc(settingsDocRef);
+        
+        if (settingsDoc.exists()) {
+          const data = settingsDoc.data() as UserSettings;
+          setTimeFormat(data.timeFormat || '12h');
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
 
   // Generate time options for the custom task form
   const timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
@@ -84,13 +124,13 @@ export default function SchedulingPage() {
           // Fetch employees
           if (data.employees && Array.isArray(data.employees)) {
             setEmployees(data.employees.map((emp: any) => ({
-              id: emp.id, // Use the actual employee ID
+              id: emp.id,
               firstName: emp.firstName || '',
               lastName: emp.lastName || '',
               hours: emp.hours || 0,
               skills: emp.skills || [],
               availability: emp.availability || {},
-              active: emp.active !== false // Default to true if not specified
+              active: emp.active !== false
             })));
           } else {
             const employeesRef = collection(db, `scheduling/${user.uid}/employees`);
@@ -98,7 +138,7 @@ export default function SchedulingPage() {
             const employeesData = querySnapshot.docs.map(doc => ({
               id: doc.id,
               ...doc.data(),
-              active: doc.data().active !== false // Default to true if not specified
+              active: doc.data().active !== false
             })) as Employee[];
             setEmployees(employeesData);
           }
@@ -120,23 +160,25 @@ export default function SchedulingPage() {
           }
 
           // Add custom tasks from schedule
-          if (data.schedule) {
-            Object.values(data.schedule).forEach((employeeSchedule: any) => {
-              Object.values(employeeSchedule).forEach((daySchedule: any) => {
-                if (daySchedule.tasks) {
-                  daySchedule.tasks.forEach((task: EmployeeTask) => {
-                    // Only add if it's a custom task (not in regular tasks)
-                    if (!Array.from(allTasks).some(t => t.id === task.taskId)) {
-                      allTasks.add({
-                        id: task.taskId,
-                        name: task.name,
-                        startTime: task.startTime,
-                        stopTime: task.stopTime,
-                        days: [getDayName(new Date())] // Default to current day
-                      });
-                    }
-                  });
-                }
+          if (data.schedules) {
+            Object.values(data.schedules).forEach((weekSchedule: any) => {
+              Object.values(weekSchedule).forEach((employeeSchedule: any) => {
+                Object.values(employeeSchedule).forEach((daySchedule: any) => {
+                  if (daySchedule.tasks) {
+                    daySchedule.tasks.forEach((task: EmployeeTask) => {
+                      // Only add if it's a custom task (not in regular tasks)
+                      if (!Array.from(allTasks).some(t => t.id === task.taskId)) {
+                        allTasks.add({
+                          id: task.taskId,
+                          name: task.name,
+                          startTime: task.startTime,
+                          stopTime: task.stopTime,
+                          days: [getDayName(new Date())] // Default to current day
+                        });
+                      }
+                    });
+                  }
+                });
               });
             });
           }
@@ -144,8 +186,8 @@ export default function SchedulingPage() {
           setTasks(Array.from(allTasks));
 
           // Fetch schedule if it exists
-          if (data.schedule) {
-            setSchedules(data.schedule);
+          if (data.schedules) {
+            setSchedules(data.schedules);
           }
         }
       } catch (error) {
@@ -548,7 +590,84 @@ export default function SchedulingPage() {
       }
     });
 
-    return Math.round(totalHours * 10) / 10; // Round to 1 decimal place
+    return Math.round(totalHours * 100) / 100; // Round to 2 decimal places
+  };
+
+  const PrintSchedule = () => {
+    const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
+    
+    return (
+      <div className="print-schedule">
+        <table className="w-full border-collapse border border-black">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="border border-black p-2 text-left">Employee</th>
+              <th className="border border-black p-2 text-left">Hours</th>
+              {weekDates.map((date) => (
+                <th key={date.toISOString()} className="border border-black p-2 text-left">
+                  {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {employees
+              .filter(employee => employee.active)
+              .map((employee, index) => {
+                const employeeSchedule = schedules[weekStartDate]?.[employee.id];
+                return (
+                  <tr key={employee.id} className="border-b border-black">
+                    <td className="border border-black p-2">
+                      <div className="font-medium">
+                        {employee.lastName}, {employee.firstName}
+                      </div>
+                    </td>
+                    <td className="border border-black p-2">
+                      {getTotalHoursForEmployee(index).toFixed(2)}
+                    </td>
+                    {weekDates.map((date) => {
+                      const dateStr = formatDateForStorage(date);
+                      const daySchedule = employeeSchedule?.[dateStr];
+                      const employeeTasks = daySchedule?.tasks || [];
+                      
+                      return (
+                        <td key={`${employee.id}-${dateStr}`} className="border border-black p-2">
+                          <div className="space-y-1">
+                            {employeeTasks.map((task, taskIndex) => {
+                              const taskDetails = tasks.find(t => t.id === task.taskId);
+                              return (
+                                <div key={`${employee.id}-${dateStr}-${task.taskId}-${taskIndex}`} className="text-sm">
+                                  <div className="text-xs text-gray-500">
+                                    {formatTime(task.startTime)}-{formatTime(task.stopTime)}
+                                  </div>
+                                  <div className="font-medium">
+                                    {taskDetails?.name || 'Unknown Task'}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+          </tbody>
+          <tfoot>
+            <tr className="bg-gray-100">
+              <td className="border border-black p-2 font-medium">Total Hours</td>
+              <td className="border border-black p-2">
+                {employees.reduce((sum, _, index) => sum + getTotalHoursForEmployee(index), 0).toFixed(2)}
+              </td>
+              {weekDates.map((date) => (
+                <td key={date.toISOString()} className="border border-black p-2"></td>
+              ))}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -561,140 +680,161 @@ export default function SchedulingPage() {
 
   return (
     <div className="flex flex-col h-full space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-gray-800">Employee Schedule</h2>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => navigateWeek("prev")}
-            className="p-2 rounded-full hover:bg-gray-100 text-black"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <span className="text-lg font-medium text-black">
-            {weekDates[0].toLocaleDateString()} - {weekDates[6].toLocaleDateString()}
-          </span>
-          <button
-            onClick={() => navigateWeek("next")}
-            className="p-2 rounded-full hover:bg-gray-100 text-black"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-          <button
-            onClick={copyPreviousWeekSchedule}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-          >
-            Copy Previous Week
-          </button>
+      {!isPrintView && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-semibold text-gray-800">Employee Schedule</h2>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigateWeek("prev")}
+              className="p-2 rounded-full hover:bg-gray-100 text-black"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <span className="text-lg font-medium text-black">
+              {weekDates[0].toLocaleDateString()} - {weekDates[6].toLocaleDateString()}
+            </span>
+            <button
+              onClick={() => navigateWeek("next")}
+              className="p-2 rounded-full hover:bg-gray-100 text-black"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+            <button
+              onClick={copyPreviousWeekSchedule}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+            >
+              Copy Previous Week
+            </button>
+            <button
+              onClick={() => {
+                setIsPrintView(!isPrintView);
+                if (!isPrintView) {
+                  // Wait for the print view to render
+                  setTimeout(() => {
+                    window.print();
+                    setIsPrintView(false);
+                  }, 100);
+                }
+              }}
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+            >
+              {isPrintView ? 'Back to Edit' : 'Print Schedule'}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="flex-1 overflow-x-auto">
-        <div className="bg-white rounded-lg shadow">
-          <table className="w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employee
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Hours
-                </th>
-                {weekDates.map((date) => (
-                  <th key={date.toISOString()} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {employees.length > 0 ? (
-                employees
-                  .filter(employee => employee.active)
-                  .map((employee, index) => {
-                    const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
-                    const employeeSchedule = schedules[weekStartDate]?.[employee.id];
-                    return (
-                      <tr key={employee.id}>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                          <div className="flex flex-col">
-                            <span>{employee.lastName}</span>
-                            <span className="text-gray-500">{employee.firstName}</span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                          {getTotalHoursForEmployee(index)}
-                        </td>
-                        {weekDates.map((date) => {
-                          const dateStr = formatDateForStorage(date);
-                          const dayName = getDayName(date);
-                          const daySchedule = employeeSchedule?.[dateStr];
-                          const employeeTasks = daySchedule?.tasks || [];
-                          const availableTasks = getAvailableTasksForDay(dayName, employee);
-
-                          return (
-                            <td key={`${employee.id}-${dateStr}`} className="px-3 py-2">
-                              <div className="flex flex-col space-y-1">
-                                {employeeTasks.map((task, taskIndex) => {
-                                  const taskDetails = tasks.find(t => t.id === task.taskId);
-                                  return (
-                                    <div key={`${employee.id}-${dateStr}-${task.taskId}-${taskIndex}`} className="flex items-center justify-between bg-gray-50 p-1 rounded">
-                                      <div className="flex flex-col">
-                                        <span className="text-xs">
-                                          {task.startTime}-{task.stopTime}
-                                        </span>
-                                        <span className="text-xs font-medium">
-                                          {taskDetails?.name || 'Unknown Task'}
-                                        </span>
-                                      </div>
-                                      <button
-                                        onClick={() => handleRemoveTask(index, dateStr, taskIndex)}
-                                        className="text-red-500 hover:text-red-700"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                  );
-                                })}
-                                {/* Always show the add task button */}
-                                <button
-                                  onClick={() => setSelectedCell({ employeeIndex: index, date: dateStr })}
-                                  className="flex items-center justify-center w-full p-1 text-gray-500 hover:bg-gray-100 border border-dashed border-gray-300 rounded transition-colors duration-200"
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })
-              ) : (
+      {isPrintView ? (
+        <PrintSchedule />
+      ) : (
+        <div className="flex-1 overflow-x-auto">
+          <div className="bg-white rounded-lg shadow">
+            <table className="w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={9} className="px-3 py-2 text-center text-sm text-gray-500">
-                    No employees found. Add employees to get started.
-                  </td>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Employee
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Hours
+                  </th>
+                  {weekDates.map((date) => (
+                    <th key={date.toISOString()} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </th>
+                  ))}
                 </tr>
-              )}
-            </tbody>
-            <tfoot className="bg-gray-50">
-              <tr>
-                <td className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Hours
-                </td>
-                <td className="px-3 py-2 text-left text-xs font-medium text-gray-500">
-                  {employees.reduce((sum, _, index) => sum + getTotalHoursForEmployee(index), 0)}
-                </td>
-                {weekDates.map((date) => (
-                  <td key={date.toISOString()} className="px-3 py-2"></td>
-                ))}
-              </tr>
-            </tfoot>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {employees.length > 0 ? (
+                  employees
+                    .filter(employee => employee.active)
+                    .map((employee, index) => {
+                      const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
+                      const employeeSchedule = schedules[weekStartDate]?.[employee.id];
+                      return (
+                        <tr key={employee.id}>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <div className="flex flex-col">
+                              <span>{employee.lastName}</span>
+                              <span className="text-gray-500">{employee.firstName}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                            {getTotalHoursForEmployee(index).toFixed(2)}
+                          </td>
+                          {weekDates.map((date) => {
+                            const dateStr = formatDateForStorage(date);
+                            const dayName = getDayName(date);
+                            const daySchedule = employeeSchedule?.[dateStr];
+                            const employeeTasks = daySchedule?.tasks || [];
+                            const availableTasks = getAvailableTasksForDay(dayName, employee);
+
+                            return (
+                              <td key={`${employee.id}-${dateStr}`} className="px-3 py-2">
+                                <div className="flex flex-col space-y-1">
+                                  {employeeTasks.map((task, taskIndex) => {
+                                    const taskDetails = tasks.find(t => t.id === task.taskId);
+                                    return (
+                                      <div key={`${employee.id}-${dateStr}-${task.taskId}-${taskIndex}`} className="flex items-center justify-between bg-gray-50 p-1 rounded">
+                                        <div className="flex flex-col">
+                                          <span className="text-xs">
+                                            {formatTime(task.startTime)}-{formatTime(task.stopTime)}
+                                          </span>
+                                          <span className="text-xs font-medium">
+                                            {taskDetails?.name || 'Unknown Task'}
+                                          </span>
+                                        </div>
+                                        <button
+                                          onClick={() => handleRemoveTask(index, dateStr, taskIndex)}
+                                          className="text-red-500 hover:text-red-700"
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                  {/* Always show the add task button */}
+                                  <button
+                                    onClick={() => setSelectedCell({ employeeIndex: index, date: dateStr })}
+                                    className="flex items-center justify-center w-full p-1 text-gray-500 hover:bg-gray-100 border border-dashed border-gray-300 rounded transition-colors duration-200"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })
+                ) : (
+                  <tr>
+                    <td colSpan={9} className="px-3 py-2 text-center text-sm text-gray-500">
+                      No employees found. Add employees to get started.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot className="bg-gray-50">
+                <tr>
+                  <td className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total Hours
+                  </td>
+                  <td className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                    {employees.reduce((sum, _, index) => sum + getTotalHoursForEmployee(index), 0).toFixed(2)}
+                  </td>
+                  {weekDates.map((date) => (
+                    <td key={date.toISOString()} className="px-3 py-2"></td>
+                  ))}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Task Selection Modal */}
       {selectedCell && (

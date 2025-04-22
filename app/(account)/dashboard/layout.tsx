@@ -1,17 +1,15 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { redirect } from 'next/navigation';
+import { redirect, usePathname } from 'next/navigation';
 import { auth } from '@/lib/firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
 import Sidebar from "@/components/dashboard/ui/sidebar";
+import { PrintProvider, usePrint } from "@/app/contexts/PrintContext";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isPrintView } = usePrint();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -23,30 +21,32 @@ export default function DashboardLayout({
       setIsLoading(false);
     });
 
-    return () => unsubscribe(); // Cleanup the listener on unmount
+    return () => unsubscribe();
   }, []);
 
   if (isLoading) {
-    // Show a loading state while checking auth
     return <div className="flex items-center justify-center min-h-screen text-black">Loading...</div>;
   }
 
   if (!isAuthenticated) {
-    // Redirect logic is already handled in onAuthStateChanged
     return null;
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Main Content */}
-      <div className="flex-grow overflow-hidden">
-        <div className="h-full overflow-auto p-6">
-          {children}
-        </div>
-      </div>
+    <div className="flex h-screen">
+      {!isPrintView && <Sidebar />}
+      <main className="flex-1 overflow-y-auto bg-gray-50 px-6 py-8">
+        {children}
+      </main>
     </div>
-  )
+  );
+}
+
+// Wrap the layout with the PrintProvider
+export default function WrappedDashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <PrintProvider>
+      <DashboardLayout>{children}</DashboardLayout>
+    </PrintProvider>
+  );
 }

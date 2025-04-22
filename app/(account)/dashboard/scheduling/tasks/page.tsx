@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase/config";
 import { collection, doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { useTimeFormat } from "@/app/hooks/useTimeFormat";
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState([
     { id: crypto.randomUUID(), name: "", days: [] as string[], startTime: "", stopTime: "" },
   ]);
   const [isLoading, setIsLoading] = useState(true);
+  const { formatTime } = useTimeFormat();
 
   const handleAddTask = () => {
     setTasks([...tasks, { id: crypto.randomUUID(), name: "", days: [], startTime: "", stopTime: "" }]);
@@ -220,74 +222,48 @@ export default function TasksPage() {
               </svg>
             </button>
 
-            <div className="flex flex-wrap items-center gap-4">
-              <label className="flex-1 min-w-[200px]">
-                <span className="block text-sm font-medium text-gray-700">Task Name</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Task Name</label>
                 <input
                   type="text"
                   value={task.name}
-                  onChange={(e) =>
-                    handleTaskChange(index, "name", e.target.value)
-                  }
-                  className="w-full p-2 border rounded border-black text-black text-sm"
+                  onChange={(e) => handleTaskChange(index, "name", e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
-              </label>
-              
-              <label className="flex-1 min-w-[300px]">
-                <span className="block text-sm font-medium text-gray-700 mb-1">Days</span>
-                <div className="flex flex-wrap gap-2">
-                  {daysOfWeek.map((day) => (
-                    <label key={day} className="inline-flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={task.days.includes(day)}
-                        onChange={(e) => 
-                          handleDayChange(index, day, e.target.checked)
-                        }
-                        className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">
-                        {day.substring(0, 3)}
-                      </span>
-                    </label>
-                  ))}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Start Time</label>
+                  <select
+                    value={task.startTime}
+                    onChange={(e) => handleTaskChange(index, "startTime", e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  >
+                    <option value="">Select start time</option>
+                    {timeOptions.map((time) => (
+                      <option key={time} value={time}>
+                        {formatTime(time)}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </label>
-
-              <label className="flex-1 min-w-[120px]">
-                <span className="block text-sm font-medium text-gray-700">Start Time</span>
-                <select
-                  value={task.startTime}
-                  onChange={(e) =>
-                    handleTaskChange(index, "startTime", e.target.value)
-                  }
-                  className="w-full p-2 border rounded border-black text-black text-sm"
-                >
-                  <option value="">Select time</option>
-                  {timeOptions.map((time) => (
-                    <option key={time} value={time}>
-                      {time}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex-1 min-w-[120px]">
-                <span className="block text-sm font-medium text-gray-700">End Time</span>
-                <select
-                  value={task.stopTime}
-                  onChange={(e) =>
-                    handleTaskChange(index, "stopTime", e.target.value)
-                  }
-                  className="w-full p-2 border rounded border-black text-black text-sm"
-                >
-                  <option value="">Select time</option>
-                  {timeOptions.map((time) => (
-                    <option key={time} value={time}>
-                      {time}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">End Time</label>
+                  <select
+                    value={task.stopTime}
+                    onChange={(e) => handleTaskChange(index, "stopTime", e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  >
+                    <option value="">Select end time</option>
+                    {timeOptions.map((time) => (
+                      <option key={time} value={time}>
+                        {formatTime(time)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
         ))}

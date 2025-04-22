@@ -5,6 +5,7 @@ import { auth, db } from "@/lib/firebase/config";
 import { collection, doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { set } from "react-hook-form";
 import React from "react";
+import { useTimeFormat } from "@/app/hooks/useTimeFormat";
 
 // Define types for better type safety
 type Availability = {
@@ -69,6 +70,7 @@ export default function EmployeesPage() {
     });
     return initialCollapsed;
   });
+  const { formatTime } = useTimeFormat();
 
   const toggleSection = (employeeIndex: number, section: 'skills' | 'availability') => {
     setCollapsedSections(prev => ({
@@ -414,10 +416,12 @@ export default function EmployeesPage() {
   const generateTimeOptions = () => {
     const options = [];
     for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        options.push(<option key={time} value={time}>{time}</option>);
-      }
+      const time = `${hour.toString().padStart(2, '0')}:00`;
+      options.push(
+        <div key={time} className="text-xs text-center py-1">
+          {formatTime(time)}
+        </div>
+      );
     }
     return options;
   };
@@ -638,18 +642,18 @@ export default function EmployeesPage() {
             {/* Skills Section */}
             <div className="mt-4">
               <div 
-                className="flex items-center justify-between cursor-pointer"
+                className="flex items-center cursor-pointer"
                 onClick={() => toggleSection(employeeIndex, 'skills')}
               >
-                <h3 className="text-lg font-semibold">Skills</h3>
                 <svg 
-                  className={`w-5 h-5 transform transition-transform ${isSectionCollapsed(employeeIndex, 'skills') ? 'rotate-180' : ''}`}
+                  className={`w-5 h-5 mr-2 transform transition-transform ${isSectionCollapsed(employeeIndex, 'skills') ? 'rotate-180' : ''}`}
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
+                <h3 className="text-lg font-semibold">Skills</h3>
               </div>
               {!isSectionCollapsed(employeeIndex, 'skills') && (
                 <>
@@ -718,18 +722,18 @@ export default function EmployeesPage() {
             {/* Draggable Availability Grid */}
             <div className="mt-4">
               <div 
-                className="flex items-center justify-between cursor-pointer"
+                className="flex items-center cursor-pointer"
                 onClick={() => toggleSection(employeeIndex, 'availability')}
               >
-                <h3 className="text-lg font-semibold">Weekly Availability</h3>
                 <svg 
-                  className={`w-5 h-5 transform transition-transform ${isSectionCollapsed(employeeIndex, 'availability') ? 'rotate-180' : ''}`}
+                  className={`w-5 h-5 mr-2 transform transition-transform ${isSectionCollapsed(employeeIndex, 'availability') ? 'rotate-180' : ''}`}
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
+                <h3 className="text-lg font-semibold">Weekly Availability</h3>
               </div>
               {!isSectionCollapsed(employeeIndex, 'availability') && (
                 <>
@@ -751,7 +755,7 @@ export default function EmployeesPage() {
                           return (
                             <tr key={time}>
                               <td className="bg-gray-50 p-1 text-xs text-center border border-gray-300 sticky left-0">
-                                {time}
+                                {formatTime(time)}
                               </td>
                               {Object.keys(defaultAvailability).map((day) => {
                                 const currentValue = employees[employeeIndex].availability[day][time] || '';
@@ -765,7 +769,7 @@ export default function EmployeesPage() {
                                       onMouseDown={() => handleSlotMouseDown(employeeIndex, day, time)}
                                       onMouseEnter={() => handleSlotMouseEnter(employeeIndex, day, time)}
                                       onMouseUp={() => setDragging(false)}
-                                      title={`${day} at ${time}`}
+                                      title={`${day} at ${formatTime(time)}`}
                                     />
                                   </td>
                                 );
