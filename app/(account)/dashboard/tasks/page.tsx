@@ -46,6 +46,18 @@ export default function TasksPage() {
     setTasks(updatedTasks);
   };
 
+  const handleSelectAllDays = (index: number) => {
+    const updatedTasks = [...tasks];
+    // If all days are already selected, deselect all
+    if (updatedTasks[index].days.length === daysOfWeek.length) {
+      updatedTasks[index].days = [];
+    } else {
+      // Otherwise, select all days
+      updatedTasks[index].days = [...daysOfWeek];
+    }
+    setTasks(updatedTasks);
+  };
+
   const handleSubmit = async () => {
     const user = auth.currentUser;
     for (const task of tasks) {
@@ -125,9 +137,11 @@ export default function TasksPage() {
   const timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
     const hours = Math.floor(i / 4);
     const minutes = (i % 4) * 15;
-    return `${hours.toString().padStart(2, "0")}:${minutes
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12; // Convert to 12-hour format
+    return `${displayHours.toString().padStart(2, "0")}:${minutes
       .toString()
-      .padStart(2, "0")}`;
+      .padStart(2, "0")} ${period}`;
   });
 
   const daysOfWeek = [
@@ -221,7 +235,7 @@ export default function TasksPage() {
             </button>
 
             <div className="flex flex-wrap items-center gap-4">
-              <label className="flex-1 min-w-[200px]">
+              <label className="flex-1 max-w-[200px]">
                 <span className="block text-sm font-medium text-gray-700">Task Name</span>
                 <input
                   type="text"
@@ -232,29 +246,8 @@ export default function TasksPage() {
                   className="w-full p-2 border rounded border-black text-black text-sm"
                 />
               </label>
-              
-              <label className="flex-1 min-w-[300px]">
-                <span className="block text-sm font-medium text-gray-700 mb-1">Days</span>
-                <div className="flex flex-wrap gap-2">
-                  {daysOfWeek.map((day) => (
-                    <label key={day} className="inline-flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={task.days.includes(day)}
-                        onChange={(e) => 
-                          handleDayChange(index, day, e.target.checked)
-                        }
-                        className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">
-                        {day.substring(0, 3)}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </label>
 
-              <label className="flex-1 min-w-[120px]">
+              <label className="flex-1 max-w-[110px]">
                 <span className="block text-sm font-medium text-gray-700">Start Time</span>
                 <select
                   value={task.startTime}
@@ -271,7 +264,7 @@ export default function TasksPage() {
                   ))}
                 </select>
               </label>
-              <label className="flex-1 min-w-[120px]">
+              <label className="flex-1 max-w-[110px]">
                 <span className="block text-sm font-medium text-gray-700">End Time</span>
                 <select
                   value={task.stopTime}
@@ -287,6 +280,34 @@ export default function TasksPage() {
                     </option>
                   ))}
                 </select>
+              </label>
+              
+              <label className="flex-1 min-w-[300px]">
+                <span className="block text-sm font-medium text-gray-700 mb-1">Days</span>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectAllDays(index)}
+                    className="text-sm text-blue-600 hover:text-blue-800 mb-2"
+                  >
+                    {task.days.length === daysOfWeek.length ? "Deselect All" : "Select All"}
+                  </button>
+                  {daysOfWeek.map((day) => (
+                    <label key={day} className="inline-flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={task.days.includes(day)}
+                        onChange={(e) => 
+                          handleDayChange(index, day, e.target.checked)
+                        }
+                        className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">
+                        {day.substring(0, 3)}
+                      </span>
+                    </label>
+                  ))}
+                </div>
               </label>
             </div>
           </div>
