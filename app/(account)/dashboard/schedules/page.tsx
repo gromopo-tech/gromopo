@@ -310,11 +310,15 @@ export default function SchedulingPage() {
     // Convert dayName to match the format used in tasks (e.g., "Tue" instead of "Tuesday")
     const formattedDayName = dayName.substring(0, 3);
     
-    // Filter tasks by day and employee skills
+    // Check if employee is available on this day
+    const dayAvailability = employee.availability[dayName.toLowerCase()];
+    const isAvailable = dayAvailability && Object.values(dayAvailability).some(value => value !== '');
+    
+    // Filter tasks by day, employee skills, and availability
     const availableTasks = tasks.filter(task => {
       const hasDay = task.days && task.days.includes(formattedDayName);
       const hasSkill = employee.skills.some(skill => skill.task === task.name);
-      return hasDay && hasSkill;
+      return hasDay && hasSkill && isAvailable;
     });
 
     // Sort tasks alphabetically by name
@@ -378,6 +382,17 @@ export default function SchedulingPage() {
 
       let task: Task;
       if (isCustom) {
+        // Check if employee is available on this day
+        const dayName = getDayName(weekDates.find(d => formatDateForStorage(d) === date) || new Date());
+        const dayAvailability = employee.availability[dayName.toLowerCase()];
+        const isAvailable = dayAvailability && Object.values(dayAvailability).some(value => value !== '');
+        
+        if (!isAvailable) {
+          if (!confirm(`Warning: This employee is not available on ${dayName}. Do you want to add a custom task anyway?`)) {
+            return;
+          }
+        }
+
         // Create a new task object for the custom task
         const customTaskId = crypto.randomUUID();
         const currentDate = weekDates.find(d => formatDateForStorage(d) === date);
@@ -640,10 +655,10 @@ export default function SchedulingPage() {
                                     <div key={`${employee.id}-${dateStr}-${task.taskId}-${taskIndex}`} className="flex items-center justify-between bg-gray-50 p-1 rounded">
                                       <div className="flex flex-col">
                                         <span className="text-xs">
-                                          {task.startTime}-{task.stopTime}
+                                          {task.startTime || '00:00'}-{task.stopTime || '00:00'}
                                         </span>
                                         <span className="text-xs font-medium">
-                                          {taskDetails?.name || 'Unknown Task'}
+                                          {taskDetails?.name || task.name || 'Unknown Task'}
                                         </span>
                                       </div>
                                       <button
