@@ -288,6 +288,10 @@ export default function EmployeesPage() {
 
   const handleSubmit = async () => {
     const user = auth.currentUser;
+    if (!user) {
+      alert("You must be logged in to perform this action.");
+      return;
+    }
 
     for (let employeeIndex = 0; employeeIndex < employees.length; employeeIndex++) {
       const employee = employees[employeeIndex];
@@ -817,6 +821,12 @@ export default function EmployeesPage() {
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors duration-200"
           >
             New Employee
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors duration-200"
+          >
+            Save All
           </button>
         </div>
       </div>
