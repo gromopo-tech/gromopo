@@ -51,13 +51,13 @@ type EmployeeSchedule = Record<string, DaySchedule>; // Maps day of week to task
 type WeekSchedule = Record<string, EmployeeSchedule>; // Maps employeeId to their schedule
 type Schedules = Record<string, WeekSchedule>; // Maps week start date to week schedule
 
-export default function SchedulingPage() {
+export default function SchedulesPage() {
   const [currentWeek, setCurrentWeek] = useState<Date>(new Date());
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [schedules, setSchedules] = useState<Schedules>({});
-  const [selectedCell, setSelectedCell] = useState<{employeeIndex: number, date: string} | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{employeeId: string, date: string} | null>(null);
   const [isCustomTask, setIsCustomTask] = useState(false);
   const [customTaskName, setCustomTaskName] = useState("");
   const [customStartTime, setCustomStartTime] = useState("");
@@ -367,19 +367,14 @@ export default function SchedulingPage() {
     });
   };
 
-  const handleAddTask = async (employeeIndex: number, date: string, taskId: string, isCustom: boolean = false) => {
+  const handleAddTask = async (employeeId: string, date: string, taskId: string, isCustom: boolean = false) => {
     try {
       const user = auth.currentUser;
       if (!user) return;
 
-      if (employeeIndex < 0 || employeeIndex >= employees.length) {
-        console.error('Invalid employee index:', employeeIndex);
-        return;
-      }
-
-      const employee = employees[employeeIndex];
+      const employee = employees.find(emp => emp.id === employeeId);
       if (!employee) {
-        console.error('Employee not found at index:', employeeIndex);
+        console.error('Employee not found with ID:', employeeId);
         return;
       }
 
@@ -518,23 +513,20 @@ export default function SchedulingPage() {
     }
   };
 
-  const handleRemoveTask = async (employeeIndex: number, date: string, taskIndex: number) => {
+  const handleRemoveTask = async (employeeId: string, date: string, taskIndex: number) => {
     try {
       const user = auth.currentUser;
       if (!user) return;
-
-      const employee = employees[employeeIndex];
-      if (!employee) return;
-
+  
       const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
       const updatedSchedules = { ...schedules };
-      updatedSchedules[weekStartDate][employee.id][date].tasks.splice(taskIndex, 1);
-
+      updatedSchedules[weekStartDate][employeeId][date].tasks.splice(taskIndex, 1);
+  
       const schedulingDocRef = doc(db, 'scheduling', user.uid);
       await updateDoc(schedulingDocRef, {
         schedules: updatedSchedules
       });
-
+  
       setSchedules(updatedSchedules);
     } catch (error) {
       console.error("Error removing task:", error);
@@ -644,10 +636,8 @@ export default function SchedulingPage() {
                         </td>
                         {weekDates.map((date) => {
                           const dateStr = formatDateForStorage(date);
-                          const dayName = getDayName(date);
                           const daySchedule = employeeSchedule?.[dateStr];
                           const employeeTasks = daySchedule?.tasks || [];
-                          const availableTasks = getAvailableTasksForDay(dayName, employee);
 
                           return (
                             <td key={`${employee.id}-${dateStr}`} className="px-3 py-2">
@@ -670,19 +660,17 @@ export default function SchedulingPage() {
                                       </span>
                                     </div>
                                     <button
-                                      onClick={() => handleRemoveTask(index, dateStr, taskIndex)}
+                                      onClick={() => handleRemoveTask(employee.id, dateStr, taskIndex)}
                                       className="text-red-500 hover:text-red-700"
                                     >
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                      </svg>
+                                      {/* SVG icon */}
                                     </button>
                                   </div>
                                 );
                               })}
                                 {/* Always show the add task button */}
                                 <button
-                                  onClick={() => setSelectedCell({ employeeIndex: index, date: dateStr })}
+                                  onClick={() => setSelectedCell({ employeeId: employee.id, date: dateStr })}
                                   className="flex items-center justify-center w-full p-1 text-gray-500 hover:bg-gray-100 border border-dashed border-gray-300 rounded transition-colors duration-200"
                                 >
                                   <Plus className="w-3 h-3" />
@@ -705,7 +693,7 @@ export default function SchedulingPage() {
             <tfoot className="bg-gray-50">
               <tr>
                 <td className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Hours
+                  Total <br /> Hours
                 </td>
                 <td className="px-3 py-2 text-left text-xs font-medium text-gray-500">
                 {employees.reduce((sum, _, index) => {
@@ -730,13 +718,13 @@ export default function SchedulingPage() {
             {!isCustomTask ? (
               <>
                 <select
-                  key={`task-select-${selectedCell.employeeIndex}-${selectedCell.date}`}
+                  key={`task-select-${selectedCell.employeeId}-${selectedCell.date}`}
                   className="w-full p-2 border rounded mb-4"
                   onChange={(e) => {
                     if (e.target.value === "custom") {
                       setIsCustomTask(true);
                     } else if (e.target.value) {
-                      handleAddTask(selectedCell.employeeIndex, selectedCell.date, e.target.value);
+                      handleAddTask(selectedCell.employeeId, selectedCell.date, e.target.value);
                     }
                   }}
                 >
@@ -744,9 +732,9 @@ export default function SchedulingPage() {
                   <option key="custom" value="custom">CUSTOM TASK</option>
                   {getAvailableTasksForDay(
                     getDayName(weekDates.find(date => formatDateForStorage(date) === selectedCell.date) || new Date()),
-                    employees[selectedCell.employeeIndex]
+                    employees.find(emp => emp.id === selectedCell.employeeId)!
                   ).map((task) => (
-                    <option key={`${selectedCell.employeeIndex}-${selectedCell.date}-${task.id}`} value={task.id}>
+                    <option key={`${selectedCell.employeeId}-${selectedCell.date}-${task.id}`} value={task.id}>
                       {task.name} ({formatTimeDisplay(task.startTime)}-{formatTimeDisplay(task.stopTime)})
                     </option>
                   ))}
@@ -817,7 +805,7 @@ export default function SchedulingPage() {
                         alert("Start time must be before end time.");
                         return;
                       }
-                      handleAddTask(selectedCell.employeeIndex, selectedCell.date, "", true);
+                      handleAddTask(selectedCell.employeeId, selectedCell.date, "", true);
                     }}
                     className="flex-1 p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                   >
