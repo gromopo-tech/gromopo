@@ -373,7 +373,7 @@ export default function SchedulesPage() {
             // Update the task structure for printing
             taskElement.innerHTML = `
               <div class="task">
-                <span class="task-time" style="font-weight: bold;">${timeSpan.textContent}</span>
+                <span class="task-time" style="font-weight: bold;">${timeSpan.textContent}</span><br />
                 <span class="task-name" style="font-style: italic;">${formattedTaskName}</span>
               </div>
             `;
@@ -436,6 +436,20 @@ export default function SchedulesPage() {
       }
       td .task-name {
         font-style: italic;
+      }
+      tfoot {
+        display: table-row-group; /* Ensure the footer only appears at the end of the table */
+      }
+      tr {
+        page-break-inside: avoid; /* Prevent page breaks inside a row */
+      }
+      tr.employee-row {
+        break-inside: avoid; /* Prevent page breaks inside an employee's row */
+      }
+      @media print {
+        tr.employee-row {
+          page-break-before: auto; /* Automatically add a page break if the row doesn't fit */
+        }
       }
     `;
     head.appendChild(style);
