@@ -263,52 +263,6 @@ export default function SchedulesPage() {
     return dayName;
   };
 
-  const isEmployeeAvailable = (employee: Employee, dayName: string, startTime: string, stopTime: string) => {
-    const dayAvailability = employee.availability[dayName.toLowerCase()];
-    if (!dayAvailability) {
-      console.log(`No availability data for ${dayName.toLowerCase()}`);
-      return false;
-    }
-
-    // Get all available time slots for the day
-    const availableSlots: string[] = Object.entries(dayAvailability)
-      .filter(([_, value]) => value !== '')
-      .map(([time]) => time)
-      .sort();
-
-    if (availableSlots.length === 0) {
-      return false;
-    }
-
-    // Find the earliest available time
-    const earliestAvailable = availableSlots[0];
-    // Find the latest available time (last slot + 1 hour)
-    const lastSlot = availableSlots[availableSlots.length - 1];
-    const [lastHour] = lastSlot.split(':').map(Number);
-    const latestAvailable = `${(lastHour + 1).toString().padStart(2, '0')}:00`;
-
-    // Convert all times to minutes for comparison
-    const [taskStartHour, taskStartMin] = startTime.split(':').map(Number);
-    const [taskStopHour, taskStopMin] = stopTime.split(':').map(Number);
-    const [earliestHour, earliestMin] = earliestAvailable.split(':').map(Number);
-    const [latestHour, latestMin] = latestAvailable.split(':').map(Number);
-
-    const taskStartMinutes = taskStartHour * 60 + taskStartMin;
-    const taskStopMinutes = taskStopHour * 60 + taskStopMin;
-    const earliestMinutes = earliestHour * 60 + earliestMin;
-    const latestMinutes = latestHour * 60 + latestMin;
-
-    // Check if task is within available time range
-    const isWithinRange = taskStartMinutes >= earliestMinutes && taskStopMinutes <= latestMinutes;
-    
-    if (!isWithinRange) {
-      console.log(`Task time range (${startTime}-${stopTime}) is outside available range (${earliestAvailable}-${latestAvailable})`);
-      return false;
-    }
-
-    return true;
-  };
-
   const getAvailableTasksForDay = (dayName: string, employee: Employee) => {
     // Convert dayName to match the format used in tasks (e.g., "Tue" instead of "Tuesday")
     const formattedDayName = dayName.substring(0, 3);
@@ -365,6 +319,133 @@ export default function SchedulesPage() {
         newTask.stopTime
       );
     });
+  };
+
+  const handlePrintSchedule = () => {
+    const printContent = document.getElementById("schedule-table")?.cloneNode(true) as HTMLElement;
+    if (!printContent) return;
+  
+    // Remove trash and "+" buttons from the cloned content
+    printContent.querySelectorAll("button").forEach((button) => button.remove());
+  
+    // Ensure employee names are structured correctly for printing
+    printContent.querySelectorAll("td.employee-column").forEach((row) => {
+      const employeeContainer = row.querySelector(".flex.flex-col");
+      if (employeeContainer) {
+        const lastName = employeeContainer.querySelector("span:first-child")?.textContent || "";
+        const firstName = employeeContainer.querySelector("span:last-child")?.textContent || "";
+
+        // Replace the content with structured spans for printing
+        employeeContainer.innerHTML = `
+          <div class="employee-name">
+            <span class="last-name">${lastName}</span>
+            <span class="first-name">${firstName}</span>
+          </div>
+        `;
+      }
+    });
+
+    // Ensure tasks are structured correctly for printing
+    printContent.querySelectorAll("td").forEach((td) => {
+      const taskContainer = td.querySelector(".flex.flex-col");
+      if (taskContainer) {
+        taskContainer.querySelectorAll(".flex.items-center").forEach((taskElement) => {
+          const timeSpan = taskElement.querySelector("span:nth-child(1)");
+          const nameSpan = taskElement.querySelector("span:nth-child(2)");
+
+          if (timeSpan && nameSpan) {
+            // Check if the task name contains ' /' and add a line break
+            const taskName = nameSpan.textContent || "";
+            const formattedTaskName = taskName.includes(" /")
+              ? taskName.replace(" /", " <br />/")
+              : taskName;
+
+            // Update the task structure for printing
+            taskElement.innerHTML = `
+              <div class="task">
+                <span class="task-time" style="font-weight: bold;">${timeSpan.textContent}</span>
+                <span class="task-name" style="font-style: italic;">${formattedTaskName}</span>
+              </div>
+            `;
+          }
+        });
+      }
+    });
+
+    // Create a new window for printing
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+  
+    // Dynamically create and append content to the new window
+    const doc = printWindow.document;
+
+    // Create the HTML structure
+    const html = doc.createElement("html");
+    const head = doc.createElement("head");
+    const body = doc.createElement("body");
+
+    // Add title
+    const title = doc.createElement("title");
+    title.textContent = "Print Schedule";
+    head.appendChild(title);
+
+    // Add styles
+    const style = doc.createElement("style");
+    style.textContent = `
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f4f4f4;
+      }
+      td.employee-column .employee-name {
+        display: flex;
+        flex-direction: column;
+      }
+      td.employee-column .employee-name .last-name {
+        font-weight: bold;
+      }
+      td.employee-column .employee-name .first-name {
+        color: gray;
+      }
+      td .task {
+        margin-bottom: 8px; /* Add space between tasks */
+      }
+      td .task-time {
+        font-weight: bold;
+      }
+      td .task-name {
+        font-style: italic;
+      }
+    `;
+    head.appendChild(style);
+    
+    // Add content to the body
+    const heading = doc.createElement("h2");
+    heading.textContent = `Schedule for ${weekDates[0].toLocaleDateString()} - ${weekDates[6].toLocaleDateString()}`;
+    body.appendChild(heading);
+    
+    // Append the cloned table
+    body.appendChild(printContent);
+    
+    // Append head and body to the HTML
+    html.appendChild(head);
+    html.appendChild(body);
+    
+    // Replace the document content
+    doc.replaceChild(html, doc.documentElement);
+
+    printWindow.print();
   };
 
   const handleAddTask = async (employeeId: string, date: string, taskId: string, isCustom: boolean = false) => {
@@ -603,11 +684,16 @@ export default function SchedulesPage() {
           >
             Copy Previous Week
           </button>
+          <button
+            onClick={handlePrintSchedule}
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+          >
+            Print Schedule
+          </button>
         </div>
       </div>
-
       <div className="flex-1 overflow-x-auto">
-        <div className="bg-white rounded-lg shadow">
+        <div id="schedule-table" className="bg-white rounded-lg shadow">
           <table className="w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -633,7 +719,7 @@ export default function SchedulesPage() {
                     const employeeSchedule = schedules[weekStartDate]?.[employee.id];
                     return (
                       <tr key={employee.id}>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 employee-column">
                           <div className="flex flex-col">
                             <span>{employee.lastName}</span>
                             <span className="text-gray-500">{employee.firstName}</span>
