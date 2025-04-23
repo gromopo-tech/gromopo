@@ -520,31 +520,39 @@ export default function SchedulesPage() {
   
       const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
       const updatedSchedules = { ...schedules };
-      updatedSchedules[weekStartDate][employeeId][date].tasks.splice(taskIndex, 1);
-  
-      const schedulingDocRef = doc(db, 'scheduling', user.uid);
-      await updateDoc(schedulingDocRef, {
-        schedules: updatedSchedules
-      });
-  
-      setSchedules(updatedSchedules);
+      // Check if the schedule exists before trying to remove the task
+      if (
+        updatedSchedules[weekStartDate] &&
+        updatedSchedules[weekStartDate][employeeId] &&
+        updatedSchedules[weekStartDate][employeeId][date] &&
+        updatedSchedules[weekStartDate][employeeId][date].tasks
+      ) {
+        updatedSchedules[weekStartDate][employeeId][date].tasks.splice(taskIndex, 1);
+
+        const schedulingDocRef = doc(db, 'scheduling', user.uid);
+        await updateDoc(schedulingDocRef, {
+          schedules: updatedSchedules
+        });
+      
+        setSchedules(updatedSchedules);
+      }
     } catch (error) {
       console.error("Error removing task:", error);
     }
   };
 
-  const getTotalHoursForEmployee = (employeeIndex: number) => {
-    const employee = employees[employeeIndex];
+  const getTotalHoursForEmployee = (employeeId: string) => {
+    const employee = employees.find(emp => emp.id === employeeId);
     if (!employee) return 0;
-
+    
     const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
-    const employeeSchedule = schedules[weekStartDate]?.[employee.id];
+    const employeeSchedule = schedules[weekStartDate]?.[employeeId];
     if (!employeeSchedule) return 0;
-
+    
     let totalHours = 0;
     // Get all dates in the current week
     const currentWeekDates = weekDates.map(date => formatDateForStorage(date));
-
+    
     // Sum hours for tasks in the current week
     currentWeekDates.forEach(date => {
       const daySchedule = employeeSchedule[date];
@@ -557,7 +565,7 @@ export default function SchedulesPage() {
         });
       }
     });
-
+  
     return Math.round(totalHours * 100) / 100; // Round to 2 decimal places
   };
 
@@ -632,7 +640,7 @@ export default function SchedulesPage() {
                           </div>
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                          {getTotalHoursForEmployee(index)}
+                          {getTotalHoursForEmployee(employee.id).toFixed(2)}
                         </td>
                         {weekDates.map((date) => {
                           const dateStr = formatDateForStorage(date);
@@ -663,7 +671,9 @@ export default function SchedulesPage() {
                                       onClick={() => handleRemoveTask(employee.id, dateStr, taskIndex)}
                                       className="text-red-500 hover:text-red-700"
                                     >
-                                      {/* SVG icon */}
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                      </svg>
                                     </button>
                                   </div>
                                 );
@@ -696,10 +706,12 @@ export default function SchedulesPage() {
                   Total <br /> Hours
                 </td>
                 <td className="px-3 py-2 text-left text-xs font-medium text-gray-500">
-                {employees.reduce((sum, _, index) => {
-                  const hours = getTotalHoursForEmployee(index);
-                  return sum + hours;
-                }, 0).toFixed(2)}
+                {employees
+                  .filter(emp => emp.active)
+                  .reduce((sum, emp) => {
+                    const hours = getTotalHoursForEmployee(emp.id);
+                    return sum + hours;
+                  }, 0).toFixed(2)}
                 </td>
                 {weekDates.map((date) => (
                   <td key={date.toISOString()} className="px-3 py-2"></td>
