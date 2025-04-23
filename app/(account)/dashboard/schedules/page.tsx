@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
 import { auth, db } from "@/lib/firebase/config";
 import { collection, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { formatTimeDisplay } from "@/lib/timeUtils";
+import React from "react";
 
 interface EmployeeSkill {
   rating: number;
@@ -171,9 +172,11 @@ export default function SchedulingPage() {
     return `${year}-${month}-${day}`;
   };
 
-  const getCurrentSchedule = () => {
-    const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
-    return schedules[weekStartDate] || {};
+  const formatTaskName = (name: string) => {
+    if (!name) return ['Unknown Task'];
+    const parts = name.split(/ \//);
+    if (parts.length === 1) return parts;
+    return [parts[0], `${parts.slice(1).join('/')}`];
   };
 
   const getWeekDates = (date: Date) => {
@@ -658,7 +661,12 @@ export default function SchedulingPage() {
                                         {formatTimeDisplay(task.startTime)}-{formatTimeDisplay(task.stopTime)}
                                       </span>
                                       <span className="text-xs font-medium">
-                                        {taskDetails?.name || task.name || 'Unknown Task'}
+                                        {formatTaskName(taskDetails?.name || task.name).map((part, i) => (
+                                          <React.Fragment key={i}>
+                                            {i > 0 ? ' /' : ''}{part}
+                                            {i === 0 && taskDetails?.name.includes(' /') && <br />}
+                                          </React.Fragment>
+                                        ))}
                                       </span>
                                     </div>
                                     <button
