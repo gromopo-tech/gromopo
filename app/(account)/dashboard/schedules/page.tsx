@@ -92,7 +92,9 @@ export default function SchedulesPage() {
               skills: emp.skills || [],
               availability: emp.availability || {},
               active: emp.active !== false
-            })));
+            }))
+            .filter((emp, index, self) => self.findIndex(e => e.id === emp.id) === index)
+          );
           } else {
             const employeesRef = collection(db, `scheduling/${user.uid}/employees`);
             const querySnapshot = await getDocs(employeesRef);
@@ -118,13 +120,6 @@ export default function SchedulesPage() {
             });
           }
   
-          // Fetch schedules - this is the key change
-          if (data.schedules) {
-            setSchedules(data.schedules);
-          } else if (data.schedule) { // Handle legacy 'schedule' field
-            setSchedules(data.schedule);
-          }
-  
           // Add custom tasks from schedule
           const currentSchedule = data.schedules || data.schedule || {};
           Object.values(currentSchedule).forEach((weekSchedule: any) => {
@@ -148,7 +143,22 @@ export default function SchedulesPage() {
           });
   
           setTasks(Array.from(allTasks));
-        }
+
+          // Ensure `data.schedules` is typed as `Schedules`
+          const schedulesData = data.schedules as Schedules;
+
+          // Remove schedules for employees that no longer exist
+          const validEmployeeIds = new Set(data.employees.map((emp: any) => emp.id));
+          const cleanedSchedules = Object.fromEntries(
+            Object.entries(schedulesData || {}).map(([weekStartDate, weekSchedule]) => [
+              weekStartDate,
+              Object.fromEntries(
+                Object.entries(weekSchedule).filter(([employeeId]) => validEmployeeIds.has(employeeId))
+              ),
+            ])
+          );
+          setSchedules(cleanedSchedules);
+          }
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -715,10 +725,11 @@ export default function SchedulesPage() {
                 employees
                   .filter(employee => employee.active)
                   .map((employee, index) => {
+                    const uniqueKey = `${employee.id}-${index}`;
                     const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
                     const employeeSchedule = schedules[weekStartDate]?.[employee.id];
                     return (
-                      <tr key={employee.id}>
+                      <tr key={uniqueKey}>
                         <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 employee-column">
                           <div className="flex flex-col">
                             <span>{employee.lastName}</span>
