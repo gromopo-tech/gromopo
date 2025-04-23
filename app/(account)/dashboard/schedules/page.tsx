@@ -74,8 +74,7 @@ export default function SchedulingPage() {
       try {
         const user = auth.currentUser;
         if (!user) return;
-
-        // Get scheduling document
+  
         const schedulingDocRef = doc(db, 'scheduling', user.uid);
         const schedulingDoc = await getDoc(schedulingDocRef);
         
@@ -85,13 +84,13 @@ export default function SchedulingPage() {
           // Fetch employees
           if (data.employees && Array.isArray(data.employees)) {
             setEmployees(data.employees.map((emp: any) => ({
-              id: emp.id, // Use the actual employee ID
+              id: emp.id,
               firstName: emp.firstName || '',
               lastName: emp.lastName || '',
               hours: emp.hours || 0,
               skills: emp.skills || [],
               availability: emp.availability || {},
-              active: emp.active !== false // Default to true if not specified
+              active: emp.active !== false
             })));
           } else {
             const employeesRef = collection(db, `scheduling/${user.uid}/employees`);
@@ -99,15 +98,13 @@ export default function SchedulingPage() {
             const employeesData = querySnapshot.docs.map(doc => ({
               id: doc.id,
               ...doc.data(),
-              active: doc.data().active !== false // Default to true if not specified
+              active: doc.data().active !== false
             })) as Employee[];
             setEmployees(employeesData);
           }
-
-          // Fetch tasks and custom tasks from schedule
+  
+          // Fetch tasks
           const allTasks = new Set<Task>();
-          
-          // Add regular tasks
           if (data.tasks && Array.isArray(data.tasks)) {
             data.tasks.forEach((task: any) => {
               allTasks.add({
@@ -119,35 +116,37 @@ export default function SchedulingPage() {
               });
             });
           }
-
+  
+          // Fetch schedules - this is the key change
+          if (data.schedules) {
+            setSchedules(data.schedules);
+          } else if (data.schedule) { // Handle legacy 'schedule' field
+            setSchedules(data.schedule);
+          }
+  
           // Add custom tasks from schedule
-          if (data.schedule) {
-            Object.values(data.schedule).forEach((employeeSchedule: any) => {
+          const currentSchedule = data.schedules || data.schedule || {};
+          Object.values(currentSchedule).forEach((weekSchedule: any) => {
+            Object.values(weekSchedule).forEach((employeeSchedule: any) => {
               Object.values(employeeSchedule).forEach((daySchedule: any) => {
                 if (daySchedule.tasks) {
                   daySchedule.tasks.forEach((task: EmployeeTask) => {
-                    // Only add if it's a custom task (not in regular tasks)
                     if (!Array.from(allTasks).some(t => t.id === task.taskId)) {
                       allTasks.add({
                         id: task.taskId,
                         name: task.name,
                         startTime: task.startTime,
                         stopTime: task.stopTime,
-                        days: [getDayName(new Date())] // Default to current day
+                        days: [getDayName(new Date())]
                       });
                     }
                   });
                 }
               });
             });
-          }
-
+          });
+  
           setTasks(Array.from(allTasks));
-
-          // Fetch schedule if it exists
-          if (data.schedule) {
-            setSchedules(data.schedule);
-          }
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -155,9 +154,9 @@ export default function SchedulingPage() {
         setIsLoading(false);
       }
     };
-
+  
     fetchData();
-  }, []);
+  }, [currentWeek]);
 
   const getWeekStartDate = (date: Date) => {
     const start = new Date(date);
@@ -564,7 +563,7 @@ export default function SchedulingPage() {
       }
     });
 
-    return Math.round(totalHours * 10) / 10; // Round to 1 decimal place
+    return Math.round(totalHours * 100) / 100; // Round to 2 decimal places
   };
 
   if (isLoading) {
@@ -701,7 +700,10 @@ export default function SchedulingPage() {
                   Total Hours
                 </td>
                 <td className="px-3 py-2 text-left text-xs font-medium text-gray-500">
-                  {employees.reduce((sum, _, index) => sum + getTotalHoursForEmployee(index), 0)}
+                {employees.reduce((sum, _, index) => {
+                  const hours = getTotalHoursForEmployee(index);
+                  return sum + hours;
+                }, 0).toFixed(2)}
                 </td>
                 {weekDates.map((date) => (
                   <td key={date.toISOString()} className="px-3 py-2"></td>
