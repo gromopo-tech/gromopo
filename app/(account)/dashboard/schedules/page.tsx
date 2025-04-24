@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
 import { auth, db } from "@/lib/firebase/config";
 import { collection, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { formatTimeDisplay } from "@/lib/timeUtils";
+import { useRouter, useSearchParams } from "next/navigation";
 import React from "react";
 
 interface EmployeeSkill {
@@ -52,6 +53,8 @@ type WeekSchedule = Record<string, EmployeeSchedule>; // Maps employeeId to thei
 type Schedules = Record<string, WeekSchedule>; // Maps week start date to week schedule
 
 export default function SchedulesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentWeek, setCurrentWeek] = useState<Date>(new Date());
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -62,6 +65,9 @@ export default function SchedulesPage() {
   const [customTaskName, setCustomTaskName] = useState("");
   const [customStartTime, setCustomStartTime] = useState("");
   const [customStopTime, setCustomStopTime] = useState("");
+  const [daysOff, setDaysOff] = useState<{ employeeName: string; date: string }[]>([]);
+  const [isCalendarConnected, setIsCalendarConnected] = useState(false);
+
 
   // Generate time options for the custom task form
   const timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
@@ -70,21 +76,45 @@ export default function SchedulesPage() {
     return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const user = auth.currentUser;
-        if (!user) return;
+  // Fetch employees' days off from calendar
+  const fetchDaysOff = async () => {
+    try {
+      const response = await fetch("/api/calendar");
+      const data = await response.json();
   
-        const schedulingDocRef = doc(db, 'scheduling', user.uid);
-        const schedulingDoc = await getDoc(schedulingDocRef);
+      if (data.authUrl) {
+        window.location.href = data.authUrl; // Redirect to Google authentication
+      } else {
+        const fetchedDaysOff = data.events.map((event: any) => ({
+          employeeName: event.summary,
+          date: event.start.date || event.start.dateTime,
+        }));
+        // Process days off and update the schedule
+        console.log(fetchedDaysOff);
+        setDaysOff(fetchedDaysOff);
+        setIsCalendarConnected(true);
+      }
+    } catch (error) {
+      console.error("Error fetching days off:", error);
+    }
+  };
+
+  const fetchData = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const schedulingDocRef = doc(db, 'scheduling', user.uid);
+      const schedulingDoc = await getDoc(schedulingDocRef);
+      
+      if (schedulingDoc.exists()) {
+        const data = schedulingDoc.data();
         
-        if (schedulingDoc.exists()) {
-          const data = schedulingDoc.data();
-          
-          // Fetch employees
-          if (data.employees && Array.isArray(data.employees)) {
-            setEmployees(data.employees.map((emp: any) => ({
+        // Fetch employees
+        if (data.employees && Array.isArray(data.employees)) {
+          setEmployees(
+            data.employees
+              .map((emp: any) => ({
               id: emp.id,
               firstName: emp.firstName || '',
               lastName: emp.lastName || '',
@@ -93,81 +123,113 @@ export default function SchedulesPage() {
               availability: emp.availability || {},
               active: emp.active !== false
             }))
-            .filter((emp, index, self) => self.findIndex(e => e.id === emp.id) === index)
-          );
-          } else {
-            const employeesRef = collection(db, `scheduling/${user.uid}/employees`);
-            const querySnapshot = await getDocs(employeesRef);
-            const employeesData = querySnapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data(),
-              active: doc.data().active !== false
-            })) as Employee[];
-            setEmployees(employeesData);
-          }
-  
-          // Fetch tasks
-          const allTasks = new Set<Task>();
-          if (data.tasks && Array.isArray(data.tasks)) {
-            data.tasks.forEach((task: any) => {
-              allTasks.add({
-                id: task.id,
-                name: task.name || '',
-                startTime: task.startTime || '',
-                stopTime: task.stopTime || '',
-                days: task.days || []
-              });
-            });
-          }
-  
-          // Add custom tasks from schedule
-          const currentSchedule = data.schedules || data.schedule || {};
-          Object.values(currentSchedule).forEach((weekSchedule: any) => {
-            Object.values(weekSchedule).forEach((employeeSchedule: any) => {
-              Object.values(employeeSchedule).forEach((daySchedule: any) => {
-                if (daySchedule.tasks) {
-                  daySchedule.tasks.forEach((task: EmployeeTask) => {
-                    if (!Array.from(allTasks).some(t => t.id === task.taskId)) {
-                      allTasks.add({
-                        id: task.taskId,
-                        name: task.name,
-                        startTime: task.startTime,
-                        stopTime: task.stopTime,
-                        days: [getDayName(new Date())]
-                      });
-                    }
-                  });
-                }
-              });
+          .filter((emp, index, self) => self.findIndex(e => e.id === emp.id) === index)
+        );
+        } else {
+          const employeesRef = collection(db, `scheduling/${user.uid}/employees`);
+          const querySnapshot = await getDocs(employeesRef);
+          const employeesData = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            active: doc.data().active !== false
+          })) as Employee[];
+          setEmployees(employeesData);
+        }
+
+        // Fetch tasks
+        const allTasks = new Set<Task>();
+        if (data.tasks && Array.isArray(data.tasks)) {
+          data.tasks.forEach((task: any) => {
+            allTasks.add({
+              id: task.id,
+              name: task.name || '',
+              startTime: task.startTime || '',
+              stopTime: task.stopTime || '',
+              days: task.days || []
             });
           });
-  
-          setTasks(Array.from(allTasks));
+        }
 
-          // Ensure `data.schedules` is typed as `Schedules`
-          const schedulesData = data.schedules as Schedules;
+        // Add custom tasks from schedule
+        const currentSchedule = data.schedules || data.schedule || {};
+        Object.values(currentSchedule).forEach((weekSchedule: any) => {
+          Object.values(weekSchedule).forEach((employeeSchedule: any) => {
+            Object.values(employeeSchedule).forEach((daySchedule: any) => {
+              if (daySchedule.tasks) {
+                daySchedule.tasks.forEach((task: EmployeeTask) => {
+                  if (!Array.from(allTasks).some(t => t.id === task.taskId)) {
+                    allTasks.add({
+                      id: task.taskId,
+                      name: task.name,
+                      startTime: task.startTime,
+                      stopTime: task.stopTime,
+                      days: [getDayName(new Date())]
+                    });
+                  }
+                });
+              }
+            });
+          });
+        });
 
-          // Remove schedules for employees that no longer exist
-          const validEmployeeIds = new Set(data.employees.map((emp: any) => emp.id));
-          const cleanedSchedules = Object.fromEntries(
-            Object.entries(schedulesData || {}).map(([weekStartDate, weekSchedule]) => [
-              weekStartDate,
-              Object.fromEntries(
-                Object.entries(weekSchedule).filter(([employeeId]) => validEmployeeIds.has(employeeId))
-              ),
-            ])
-          );
-          setSchedules(cleanedSchedules);
-          }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  
+        setTasks(Array.from(allTasks));
+
+        // Ensure `data.schedules` is typed as `Schedules`
+        const schedulesData = data.schedules as Schedules;
+
+        // Remove schedules for employees that no longer exist
+        const validEmployeeIds = new Set(data.employees.map((emp: any) => emp.id));
+        const cleanedSchedules = Object.fromEntries(
+          Object.entries(schedulesData || {}).map(([weekStartDate, weekSchedule]) => [
+            weekStartDate,
+            Object.fromEntries(
+              Object.entries(weekSchedule).filter(([employeeId]) => validEmployeeIds.has(employeeId))
+            ),
+          ])
+        );
+        setSchedules(cleanedSchedules);
+        }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [currentWeek]);
+
+  // Process fetchedDaysOff from the query parameter
+  useEffect(() => {
+    const fetchedDaysOff = searchParams.get("fetchedDaysOff");
+
+    if (fetchedDaysOff) {
+      try {
+        const events = JSON.parse(fetchedDaysOff);
+        const processedDaysOff: { employeeName: string; date: string }[] = [];
+
+        events.forEach((event: any) => {
+          const employeeName = event.summary.replace("Day off: ", "").trim();
+          const startDate = new Date(event.start.date);
+          const endDate = new Date(event.end.date);
+
+          // Generate all dates in the range [startDate, endDate)
+          for (let date = new Date(startDate); date < endDate; date.setDate(date.getDate() + 1)) {
+            processedDaysOff.push({
+              employeeName,
+              date: date.toISOString().split("T")[0], // Format as YYYY-MM-DD
+            });
+          }
+        });
+
+        setDaysOff(processedDaysOff);
+        setIsCalendarConnected(true);
+      } catch (error) {
+        console.error("Error processing fetchedDaysOff:", error);
+      }
+    }
+  }, [searchParams]);
 
   const getWeekStartDate = (date: Date) => {
     const start = new Date(date);
@@ -697,6 +759,14 @@ export default function SchedulesPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold text-gray-800">Employee Schedule</h2>
         <div className="flex items-center space-x-4">
+          {!isCalendarConnected && (
+            <button
+              onClick={fetchDaysOff}
+              className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 text-sm"
+            >
+              Connect Calendar
+            </button>
+          )}
           <button
             onClick={() => navigateWeek("prev")}
             className="p-2 rounded-full hover:bg-gray-100 text-black"
@@ -765,16 +835,27 @@ export default function SchedulesPage() {
                         </td>
                         {weekDates.map((date) => {
                           const dateStr = formatDateForStorage(date);
+                          const isDayOff = daysOff.some(
+                            (off) => 
+                              off.date === dateStr && 
+                              off.employeeName === `${employee.lastName}, ${employee.firstName}`
+                          );
                           const daySchedule = employeeSchedule?.[dateStr];
                           const employeeTasks = daySchedule?.tasks || [];
 
                           return (
-                            <td key={`${employee.id}-${dateStr}`} className="px-3 py-2">
+                            <td 
+                              key={`${employee.id}-${dateStr}`} 
+                              className={`px-3 py-2 ${isDayOff ? "bg-red-100" : ""}`}
+                            >
                               <div className="flex flex-col space-y-1">
                               {employeeTasks.map((task, taskIndex) => {
                                 const taskDetails = tasks.find(t => t.id === task.taskId);
                                 return (
-                                  <div key={`${employee.id}-${dateStr}-${task.taskId}-${taskIndex}`} className="flex items-center justify-between bg-gray-50 p-1 rounded">
+                                  <div 
+                                    key={`${employee.id}-${dateStr}-${task.taskId}-${taskIndex}`} 
+                                    className="flex items-center justify-between bg-gray-50 p-1 rounded"
+                                  >
                                     <div className="flex flex-col">
                                       <span className="text-xs">
                                         {formatTimeDisplay(task.startTime)}-{formatTimeDisplay(task.stopTime)}
@@ -782,7 +863,8 @@ export default function SchedulesPage() {
                                       <span className="text-xs font-medium">
                                         {formatTaskName(taskDetails?.name || task.name).map((part, i) => (
                                           <React.Fragment key={i}>
-                                            {i > 0 ? ' /' : ''}{part}
+                                            {i > 0 ? ' /' : ''}
+                                            {part}
                                             {i === 0 && taskDetails?.name.includes(' /') && <br />}
                                           </React.Fragment>
                                         ))}
@@ -792,9 +874,7 @@ export default function SchedulesPage() {
                                       onClick={() => handleRemoveTask(employee.id, dateStr, taskIndex)}
                                       className="text-red-500 hover:text-red-700"
                                     >
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                      </svg>
+                                      <Minus className="w-3 h-3" />
                                     </button>
                                   </div>
                                 );
