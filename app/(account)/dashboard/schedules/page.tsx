@@ -451,6 +451,16 @@ export default function SchedulesPage() {
           page-break-before: auto; /* Automatically add a page break if the row doesn't fit */
         }
       }
+      /* Adjust column widths */
+      th:nth-child(1), td:nth-child(1) {
+        width: 10%; /* Employee column */
+      }
+      th:nth-child(2), td:nth-child(2) {
+        width: 6%; /* Hours column */
+      }
+      th:nth-child(n+3), td:nth-child(n+3) {
+        width: 12%; /* Date columns */
+      }
     `;
     head.appendChild(style);
     
