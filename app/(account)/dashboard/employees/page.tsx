@@ -44,6 +44,8 @@ for (const day in defaultAvailability) {
 }
 
 export default function EmployeesPage() {
+  const user = auth.currentUser!;
+  const userRef = doc(db, "users", user.uid);
   const [employees, setEmployees] = useState<Employee[]>([
     { 
       active: true,
@@ -179,12 +181,6 @@ export default function EmployeesPage() {
   };
 
   const handleSaveEmployee = async (employeeIndex: number) => {
-    const user = auth.currentUser;
-    if (!user) {
-      alert("You must be logged in to perform this action.");
-      return;
-    }
-
     const employee = employees[employeeIndex];
 
     // Validate employee fields
@@ -264,13 +260,9 @@ export default function EmployeesPage() {
       }
     }
 
-    const userId = user.uid;
-    const schedulingRef = collection(db, "scheduling");
-    const employeesRef = doc(schedulingRef, userId);
-
     try {
       // Get current document
-      const currentDoc = await getDoc(employeesRef);
+      const currentDoc = await getDoc(userRef);
       const currentData = currentDoc.exists() ? currentDoc.data() : {};
       const currentEmployees = currentData.employees || [];
 
@@ -278,7 +270,7 @@ export default function EmployeesPage() {
       const updatedEmployees = [...currentEmployees];
       updatedEmployees[employeeIndex] = employee;
 
-      await updateDoc(employeesRef, { employees: updatedEmployees });
+      await updateDoc(userRef, { employees: updatedEmployees });
       alert(`Employee ${employee.lastName}, ${employee.firstName} saved successfully!`);
     } catch (error) {
       console.error("Error saving employee:", error);
@@ -287,12 +279,6 @@ export default function EmployeesPage() {
   };
 
   const handleSubmit = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      alert("You must be logged in to perform this action.");
-      return;
-    }
-
     for (let employeeIndex = 0; employeeIndex < employees.length; employeeIndex++) {
       const employee = employees[employeeIndex];
 
@@ -393,17 +379,14 @@ export default function EmployeesPage() {
       alert("You must be logged in to perform this action.");
       return;
     }
-    const userId = user.uid;
-    const schedulingRef = collection(db, "scheduling");
-    const employeesRef = doc(schedulingRef, userId);
 
     try {
-          await updateDoc(employeesRef, { employees });
+          await updateDoc(userRef, { employees });
           alert("Employees saved successfully!");
         } catch (error) {
           // If the document doesn't exist, create it
           if ((error as { code?: string }).code === "not-found") {
-            await setDoc(employeesRef, { employees });
+            await setDoc(userRef, { employees });
             alert("Employees saved successfully!");
           } else {
           console.error("Error saving employees:", error);
@@ -429,17 +412,8 @@ export default function EmployeesPage() {
   // Fetch tasks from Firestore
   useEffect(() => {
     const fetchTasks = async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        alert("You must be logged in to view tasks.");
-        return;
-      }
-
-      const userId = user.uid;
-      const tasksRef = doc(db, "scheduling", userId);
-
       try {
-        const docSnap = await getDoc(tasksRef);
+        const docSnap = await getDoc(userRef);
         if (docSnap.exists()) {
           const fetchedTasks = docSnap.data().tasks || [];
           setTasks(fetchedTasks.map((task: { name: string }) => task.name)); // Extract task names
@@ -462,17 +436,8 @@ export default function EmployeesPage() {
   // Fetch employees from Firestore
   useEffect(() => {
     const fetchEmployees = async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        alert("You must be logged in to view employees.");
-        return;
-      }
-
-      const userId = user.uid;
-      const employeesRef = doc(db, "scheduling", userId);
-
       try {
-        const docSnap = await getDoc(employeesRef);
+        const docSnap = await getDoc(userRef);
         if (docSnap.exists()) {
           const fetchedEmployees = docSnap.data().employees || [];
           // Ensure each employee has availability and id

@@ -6,6 +6,9 @@ import { collection, doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { formatTimeDisplay, parseTimeInput } from "@/lib/timeUtils";
 
 export default function TasksPage() {
+  const user = auth.currentUser!;
+  const userRef = doc(db, "users", user.uid);
+
   const [tasks, setTasks] = useState([
     { id: crypto.randomUUID(), name: "", days: [] as string[], startTime: "", stopTime: "" },
   ]);
@@ -60,7 +63,6 @@ export default function TasksPage() {
   };
 
   const handleSubmit = async () => {
-    const user = auth.currentUser;
     for (const task of tasks) {
       if (!task.name.trim()) {
         alert("Task name is required.");
@@ -84,17 +86,9 @@ export default function TasksPage() {
       }
     }
 
-    if (!user) {
-      alert("You must be logged in to perform this action.");
-      return;
-    }
-    const userId = user.uid;
-    const schedulingRef = collection(db, "scheduling");
-    const tasksRef = doc(schedulingRef, userId);
-
     try {
       // First, get the current employees data to update their skills
-      const currentDoc = await getDoc(tasksRef);
+      const currentDoc = await getDoc(userRef);
       const currentData = currentDoc.exists() ? currentDoc.data() : {};
       const currentEmployees = currentData.employees || [];
       const currentTasks = currentData.tasks || [];
@@ -118,7 +112,7 @@ export default function TasksPage() {
       }));
 
       // Save both updated tasks and employees
-      await updateDoc(tasksRef, { 
+      await updateDoc(userRef, { 
         tasks,
         employees: updatedEmployees
       });
@@ -126,7 +120,7 @@ export default function TasksPage() {
     } catch (error) {
       // If the document doesn't exist, create it
       if ((error as { code?: string }).code === "not-found") {
-        await setDoc(tasksRef, { tasks });
+        await setDoc(userRef, { tasks });
         alert("Tasks saved successfully!");
       } else {
         console.error("Error saving tasks:", error);
@@ -153,17 +147,8 @@ export default function TasksPage() {
 
   useEffect(() => {
     const fetchTasks = async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        alert("You must be logged in to view tasks.");
-        return;
-      }
-
-      const userId = user.uid;
-      const tasksRef = doc(db, "scheduling", userId);
-
       try {
-        const docSnap = await getDoc(tasksRef);
+        const docSnap = await getDoc(userRef);
         if (docSnap.exists()) {
           const fetchedTasks = docSnap.data().tasks || [];
           // Ensure each task has a stable ID

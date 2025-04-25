@@ -52,6 +52,8 @@ type WeekSchedule = Record<string, EmployeeSchedule>; // Maps employeeId to thei
 type Schedules = Record<string, WeekSchedule>; // Maps week start date to week schedule
 
 export default function SchedulesPage() {
+  const user = auth.currentUser!;
+  const userRef = doc(db, "users", user.uid);
   const [currentWeek, setCurrentWeek] = useState<Date>(new Date());
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -73,14 +75,10 @@ export default function SchedulesPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const user = auth.currentUser;
-        if (!user) return;
-  
-        const schedulingDocRef = doc(db, 'scheduling', user.uid);
-        const schedulingDoc = await getDoc(schedulingDocRef);
+        const userDoc = await getDoc(userRef);
         
-        if (schedulingDoc.exists()) {
-          const data = schedulingDoc.data();
+        if (userDoc.exists()) {
+          const data = userDoc.data();
           
           // Fetch employees
           if (data.employees && Array.isArray(data.employees)) {
@@ -96,7 +94,7 @@ export default function SchedulesPage() {
             .filter((emp, index, self) => self.findIndex(e => e.id === emp.id) === index)
           );
           } else {
-            const employeesRef = collection(db, `scheduling/${user.uid}/employees`);
+            const employeesRef = collection(db, `users/${user.uid}/employees`);
             const querySnapshot = await getDocs(employeesRef);
             const employeesData = querySnapshot.docs.map(doc => ({
               id: doc.id,
@@ -218,9 +216,6 @@ export default function SchedulesPage() {
 
   const copyPreviousWeekSchedule = async () => {
     try {
-      const user = auth.currentUser;
-      if (!user) return;
-
       const previousWeek = new Date(currentWeek);
       previousWeek.setDate(currentWeek.getDate() - 7);
       const previousWeekDates = getWeekDates(previousWeek);
@@ -250,8 +245,7 @@ export default function SchedulesPage() {
         });
       });
 
-      const schedulingDocRef = doc(db, 'scheduling', user.uid);
-      await updateDoc(schedulingDocRef, {
+      await updateDoc(userRef, {
         schedules: updatedSchedules
       });
 
@@ -484,9 +478,6 @@ export default function SchedulesPage() {
 
   const handleAddTask = async (employeeId: string, date: string, taskId: string, isCustom: boolean = false) => {
     try {
-      const user = auth.currentUser;
-      if (!user) return;
-
       const employee = employees.find(emp => emp.id === employeeId);
       if (!employee) {
         console.error('Employee not found with ID:', employeeId);
@@ -585,7 +576,6 @@ export default function SchedulesPage() {
       }
 
       // Add the task to the schedule in Firestore
-      const schedulingDocRef = doc(db, 'scheduling', user.uid);
       const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
       const updatedSchedules = { ...schedules };
       
@@ -609,7 +599,7 @@ export default function SchedulesPage() {
         return (aHour * 60 + aMin) - (bHour * 60 + bMin);
       });
       
-      await updateDoc(schedulingDocRef, {
+      await updateDoc(userRef, {
         schedules: updatedSchedules
       });
       
@@ -630,9 +620,6 @@ export default function SchedulesPage() {
 
   const handleRemoveTask = async (employeeId: string, date: string, taskIndex: number) => {
     try {
-      const user = auth.currentUser;
-      if (!user) return;
-  
       const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
       const updatedSchedules = { ...schedules };
       // Check if the schedule exists before trying to remove the task
@@ -644,8 +631,7 @@ export default function SchedulesPage() {
       ) {
         updatedSchedules[weekStartDate][employeeId][date].tasks.splice(taskIndex, 1);
 
-        const schedulingDocRef = doc(db, 'scheduling', user.uid);
-        await updateDoc(schedulingDocRef, {
+        await updateDoc(userRef, {
           schedules: updatedSchedules
         });
       
