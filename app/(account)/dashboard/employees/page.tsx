@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase/config";
-import { collection, doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { formatTimeDisplay } from "@/lib/timeUtils";
 import React from "react";
 
@@ -22,7 +22,7 @@ type Employee = {
   minShift: number;
   maxShift: number;
   maxHours: string;
-  skills: { task: string; rating: string }[];
+  skills: { name: string; rating: string }[];
   availability: Availability;
 };
 
@@ -144,7 +144,7 @@ export default function EmployeesPage() {
   // Add a skill to an employee
   const handleAddSkill = (employeeIndex: number) => {
     const updatedEmployees = [...employees];
-    updatedEmployees[employeeIndex].skills.push({ task: "", rating: "" });
+    updatedEmployees[employeeIndex].skills.push({ name: "", rating: "" }); // Ensure default values
     setEmployees(updatedEmployees);
   };
 
@@ -250,12 +250,12 @@ export default function EmployeesPage() {
       return;
     }
     for (const skill of employee.skills) {
-      if (!skill.task.trim()) {
-        alert(`Skill task cannot be empty for ${employee.lastName}, ${employee.firstName}.`);
+      if (!skill.name.trim()) {
+        alert(`Skill name cannot be empty for ${employee.lastName}, ${employee.firstName}.`);
         return;
       }
       if (!skill.rating || skill.rating === "") {
-        alert(`Skill rating is required for ${employee.lastName}, ${employee.firstName} for skill ${skill.task}.`);
+        alert(`Skill rating is required for ${employee.lastName}, ${employee.firstName} for skill ${skill.name}.`);
         return;
       }
     }
@@ -355,20 +355,20 @@ export default function EmployeesPage() {
       }
       // Validate skill cannot be empty
       for (const skill of employee.skills) {
-        if (!skill.task.trim()) {
-          alert(`Skill task is cannot be empty for ${employee.lastName}, ${employee.firstName}.`);
+        if (!skill.name.trim()) {
+          alert(`Skill name cannot be empty for ${employee.lastName}, ${employee.firstName}.`);
           return;
         }
         if (skill.rating === "" || skill.rating === null || skill.rating === undefined) {
-          alert(`Skill rating is required for ${employee.lastName}, ${employee.firstName} for skill ${skill.task}.`);
+          alert(`Skill rating is required for ${employee.lastName}, ${employee.firstName} for skill ${skill.name}.`);
           return;
         }
         if (employee.skills.length > 1) {
           const skillExists = employee.skills.some(
-            (s, index) => s.task === skill.task && index !== employee.skills.indexOf(skill)
+            (s, index) => s.name === skill.name && index !== employee.skills.indexOf(skill)
           );
           if (skillExists) {
-            alert(`Skill task must be unique for ${employee.lastName}, ${employee.firstName}.`);
+            alert(`Skill name must be unique for ${employee.lastName}, ${employee.firstName}.`);
             return;
           }
         }
@@ -408,30 +408,6 @@ export default function EmployeesPage() {
     }
     return options;
   };
-
-  // Fetch tasks from Firestore
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const docSnap = await getDoc(userRef);
-        if (docSnap.exists()) {
-          const fetchedTasks = docSnap.data().tasks || [];
-          setTasks(fetchedTasks.map((task: { name: string }) => task.name)); // Extract task names
-        } else {
-          console.log("No tasks found for this user.");
-          setTasks([]);
-        }
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
-        alert("Failed to fetch tasks. Please try again.");
-        setTasks([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTasks();
-  }, []);
 
   // Fetch employees from Firestore
   useEffect(() => {
@@ -634,26 +610,20 @@ export default function EmployeesPage() {
                         </svg>
                       </button>
                       <label className="flex-1 max-w-[300px]">
-                        <span className="block text-sm font-medium text-gray-700">Task</span>
-                        <select
-                          value={skill.task}
+                        <span className="block text-sm font-medium text-gray-700">Name</span>
+                        <input
+                          type="text"
+                          value={skill.name || ""}
                           onChange={(e) =>
-                            handleSkillChange(employeeIndex, skillIndex, "task", e.target.value)
+                            handleSkillChange(employeeIndex, skillIndex, "name", e.target.value)
                           }
                           className="w-full p-2 border rounded border-black text-black"
-                        >
-                          <option value="">Select a task</option>
-                          {tasks.map((task) => (
-                            <option key={task} value={task}>
-                              {task}
-                            </option>
-                          ))}
-                        </select>
+                        />
                       </label>
                       <label className="flex-1 max-w-[100px]">
                         <span className="block text-sm font-medium text-gray-700">Rating</span>
                         <select
-                          value={skill.rating}
+                          value={skill.rating || ""}
                           onChange={(e) =>
                             handleSkillChange(
                               employeeIndex,
