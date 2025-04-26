@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase/config";
-import { collection, doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { formatTimeDisplay } from "@/lib/timeUtils";
 import React from "react";
 
@@ -22,18 +22,18 @@ type Employee = {
   minShift: number;
   maxShift: number;
   maxHours: string;
-  skills: { task: string; rating: string }[];
+  skills: { name: string; rating: string }[];
   availability: Availability;
 };
 
 const defaultAvailability: Availability = {
+  sun: {},
   mon: {},
   tue: {},
   wed: {},
   thu: {},
   fri: {},
   sat: {},
-  sun: {},
 };
 
 // Initialize hours for each day
@@ -44,6 +44,8 @@ for (const day in defaultAvailability) {
 }
 
 export default function EmployeesPage() {
+  const user = auth.currentUser!;
+  const userRef = doc(db, "users", user.uid);
   const [employees, setEmployees] = useState<Employee[]>([
     { 
       active: true,
@@ -142,7 +144,7 @@ export default function EmployeesPage() {
   // Add a skill to an employee
   const handleAddSkill = (employeeIndex: number) => {
     const updatedEmployees = [...employees];
-    updatedEmployees[employeeIndex].skills.push({ task: "", rating: "" });
+    updatedEmployees[employeeIndex].skills.push({ name: "", rating: "" }); // Ensure default values
     setEmployees(updatedEmployees);
   };
 
@@ -156,7 +158,7 @@ export default function EmployeesPage() {
     const updatedEmployees = [...employees];
     updatedEmployees[employeeIndex].skills[skillIndex] = {
       ...updatedEmployees[employeeIndex].skills[skillIndex],
-      [field]: value,
+      [field]: field === "name" && typeof value === "string" ? value.trim().toUpperCase() : value,
     };
     setEmployees(updatedEmployees);
   };
@@ -179,12 +181,6 @@ export default function EmployeesPage() {
   };
 
   const handleSaveEmployee = async (employeeIndex: number) => {
-    const user = auth.currentUser;
-    if (!user) {
-      alert("You must be logged in to perform this action.");
-      return;
-    }
-
     const employee = employees[employeeIndex];
 
     // Validate employee fields
@@ -254,23 +250,19 @@ export default function EmployeesPage() {
       return;
     }
     for (const skill of employee.skills) {
-      if (!skill.task.trim()) {
-        alert(`Skill task cannot be empty for ${employee.lastName}, ${employee.firstName}.`);
+      if (!skill.name.trim()) {
+        alert(`Skill name cannot be empty for ${employee.lastName}, ${employee.firstName}.`);
         return;
       }
       if (!skill.rating || skill.rating === "") {
-        alert(`Skill rating is required for ${employee.lastName}, ${employee.firstName} for skill ${skill.task}.`);
+        alert(`Skill rating is required for ${employee.lastName}, ${employee.firstName} for skill ${skill.name}.`);
         return;
       }
     }
 
-    const userId = user.uid;
-    const schedulingRef = collection(db, "scheduling");
-    const employeesRef = doc(schedulingRef, userId);
-
     try {
       // Get current document
-      const currentDoc = await getDoc(employeesRef);
+      const currentDoc = await getDoc(userRef);
       const currentData = currentDoc.exists() ? currentDoc.data() : {};
       const currentEmployees = currentData.employees || [];
 
@@ -278,7 +270,7 @@ export default function EmployeesPage() {
       const updatedEmployees = [...currentEmployees];
       updatedEmployees[employeeIndex] = employee;
 
-      await updateDoc(employeesRef, { employees: updatedEmployees });
+      await updateDoc(userRef, { employees: updatedEmployees });
       alert(`Employee ${employee.lastName}, ${employee.firstName} saved successfully!`);
     } catch (error) {
       console.error("Error saving employee:", error);
@@ -287,12 +279,6 @@ export default function EmployeesPage() {
   };
 
   const handleSubmit = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      alert("You must be logged in to perform this action.");
-      return;
-    }
-
     for (let employeeIndex = 0; employeeIndex < employees.length; employeeIndex++) {
       const employee = employees[employeeIndex];
 
@@ -369,20 +355,20 @@ export default function EmployeesPage() {
       }
       // Validate skill cannot be empty
       for (const skill of employee.skills) {
-        if (!skill.task.trim()) {
-          alert(`Skill task is cannot be empty for ${employee.lastName}, ${employee.firstName}.`);
+        if (!skill.name.trim()) {
+          alert(`Skill name cannot be empty for ${employee.lastName}, ${employee.firstName}.`);
           return;
         }
         if (skill.rating === "" || skill.rating === null || skill.rating === undefined) {
-          alert(`Skill rating is required for ${employee.lastName}, ${employee.firstName} for skill ${skill.task}.`);
+          alert(`Skill rating is required for ${employee.lastName}, ${employee.firstName} for skill ${skill.name}.`);
           return;
         }
         if (employee.skills.length > 1) {
           const skillExists = employee.skills.some(
-            (s, index) => s.task === skill.task && index !== employee.skills.indexOf(skill)
+            (s, index) => s.name === skill.name && index !== employee.skills.indexOf(skill)
           );
           if (skillExists) {
-            alert(`Skill task must be unique for ${employee.lastName}, ${employee.firstName}.`);
+            alert(`Skill name must be unique for ${employee.lastName}, ${employee.firstName}.`);
             return;
           }
         }
@@ -393,17 +379,14 @@ export default function EmployeesPage() {
       alert("You must be logged in to perform this action.");
       return;
     }
-    const userId = user.uid;
-    const schedulingRef = collection(db, "scheduling");
-    const employeesRef = doc(schedulingRef, userId);
 
     try {
-          await updateDoc(employeesRef, { employees });
+          await updateDoc(userRef, { employees });
           alert("Employees saved successfully!");
         } catch (error) {
           // If the document doesn't exist, create it
           if ((error as { code?: string }).code === "not-found") {
-            await setDoc(employeesRef, { employees });
+            await setDoc(userRef, { employees });
             alert("Employees saved successfully!");
           } else {
           console.error("Error saving employees:", error);
@@ -426,53 +409,11 @@ export default function EmployeesPage() {
     return options;
   };
 
-  // Fetch tasks from Firestore
-  useEffect(() => {
-    const fetchTasks = async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        alert("You must be logged in to view tasks.");
-        return;
-      }
-
-      const userId = user.uid;
-      const tasksRef = doc(db, "scheduling", userId);
-
-      try {
-        const docSnap = await getDoc(tasksRef);
-        if (docSnap.exists()) {
-          const fetchedTasks = docSnap.data().tasks || [];
-          setTasks(fetchedTasks.map((task: { name: string }) => task.name)); // Extract task names
-        } else {
-          console.log("No tasks found for this user.");
-          setTasks([]);
-        }
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
-        alert("Failed to fetch tasks. Please try again.");
-        setTasks([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTasks();
-  }, []);
-
   // Fetch employees from Firestore
   useEffect(() => {
     const fetchEmployees = async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        alert("You must be logged in to view employees.");
-        return;
-      }
-
-      const userId = user.uid;
-      const employeesRef = doc(db, "scheduling", userId);
-
       try {
-        const docSnap = await getDoc(employeesRef);
+        const docSnap = await getDoc(userRef);
         if (docSnap.exists()) {
           const fetchedEmployees = docSnap.data().employees || [];
           // Ensure each employee has availability and id
@@ -669,26 +610,20 @@ export default function EmployeesPage() {
                         </svg>
                       </button>
                       <label className="flex-1 max-w-[300px]">
-                        <span className="block text-sm font-medium text-gray-700">Task</span>
-                        <select
-                          value={skill.task}
+                        <span className="block text-sm font-medium text-gray-700">Name</span>
+                        <input
+                          type="text"
+                          value={skill.name || ""}
                           onChange={(e) =>
-                            handleSkillChange(employeeIndex, skillIndex, "task", e.target.value)
+                            handleSkillChange(employeeIndex, skillIndex, "name", e.target.value)
                           }
                           className="w-full p-2 border rounded border-black text-black"
-                        >
-                          <option value="">Select a task</option>
-                          {tasks.map((task) => (
-                            <option key={task} value={task}>
-                              {task}
-                            </option>
-                          ))}
-                        </select>
+                        />
                       </label>
                       <label className="flex-1 max-w-[100px]">
                         <span className="block text-sm font-medium text-gray-700">Rating</span>
                         <select
-                          value={skill.rating}
+                          value={skill.rating || ""}
                           onChange={(e) =>
                             handleSkillChange(
                               employeeIndex,
@@ -744,7 +679,7 @@ export default function EmployeesPage() {
                           <th className="bg-gray-100 p-1 text-center font-medium text-sm sticky left-0 border border-gray-300">Time</th>
                           {Object.keys(defaultAvailability).map((day) => (
                             <th key={day} className="bg-gray-100 p-1 text-center font-medium text-sm border border-gray-300 capitalize">
-                              {day.slice(0, 3)}
+                              {day.slice(0, 3)} {/* Display the first three letters of the day */}
                             </th>
                           ))}
                         </tr>
