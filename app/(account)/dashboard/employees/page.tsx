@@ -26,26 +26,31 @@ type Employee = {
   availability: Availability;
 };
 
-const defaultAvailability: Availability = {
-  sun: {},
-  mon: {},
-  tue: {},
-  wed: {},
-  thu: {},
-  fri: {},
-  sat: {},
-};
-
-// Initialize hours for each day
-for (const day in defaultAvailability) {
-  for (let hour = 0; hour < 24; hour++) {
-    defaultAvailability[day][`${hour.toString().padStart(2, '0')}:00`] = '';
-  }
-}
+const timeOptions = [2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12];
+const daysOfWeek = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 export default function EmployeesPage() {
   const user = auth.currentUser!;
   const userRef = doc(db, "users", user.uid);
+  const [startDay, setStartDay] = useState<string>("sun"); // Default to Sunday
+  const startDayIndex = daysOfWeek.indexOf(startDay);
+  const orderedDays = [...daysOfWeek.slice(startDayIndex), ...daysOfWeek.slice(0, startDayIndex)];
+
+  const defaultAvailability: Availability = orderedDays.reduce((acc, day) => {
+    acc[day] = {};
+    for (let hour = 0; hour < 24; hour++) {
+      acc[day][`${hour.toString().padStart(2, '0')}:00`] = '';
+    }
+    return acc;
+  }, {} as Availability);
+
+  // Initialize hours for each day
+  for (const day in defaultAvailability) {
+    for (let hour = 0; hour < 24; hour++) {
+      defaultAvailability[day][`${hour.toString().padStart(2, '0')}:00`] = '';
+    }
+  }
+
   const [employees, setEmployees] = useState<Employee[]>([
     { 
       active: true,
@@ -60,7 +65,6 @@ export default function EmployeesPage() {
       availability: JSON.parse(JSON.stringify(defaultAvailability)) // Deep copy
     },
   ]);
-  const [tasks, setTasks] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [collapsedSections, setCollapsedSections] = useState<{[key: string]: boolean}>(() => {
     // Initialize all sections as collapsed by default
@@ -158,7 +162,7 @@ export default function EmployeesPage() {
     const updatedEmployees = [...employees];
     updatedEmployees[employeeIndex].skills[skillIndex] = {
       ...updatedEmployees[employeeIndex].skills[skillIndex],
-      [field]: field === "name" && typeof value === "string" ? value.trim().toUpperCase() : value,
+      [field]: field === "name" && typeof value === "string" ? value.toUpperCase() : value,
     };
     setEmployees(updatedEmployees);
   };
@@ -395,19 +399,21 @@ export default function EmployeesPage() {
     }
   };
 
-  const timeOptions = [2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12];
-  
-  // Generate time options for availability (every 30 minutes)
-  const generateTimeOptions = () => {
-    const options = [];
-    for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        options.push(<option key={time} value={time}>{time}</option>);
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const docSnap = await getDoc(userRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setStartDay(data.settings?.startDay || "sun"); // Default to Sunday if no settings exist
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
       }
-    }
-    return options;
-  };
+    };
+
+    fetchSettings();
+  }, []);
 
   // Fetch employees from Firestore
   useEffect(() => {
@@ -677,7 +683,7 @@ export default function EmployeesPage() {
                       <thead>
                         <tr>
                           <th className="bg-gray-100 p-1 text-center font-medium text-sm sticky left-0 border border-gray-300">Time</th>
-                          {Object.keys(defaultAvailability).map((day) => (
+                          {orderedDays.map((day) => (
                             <th key={day} className="bg-gray-100 p-1 text-center font-medium text-sm border border-gray-300 capitalize">
                               {day.slice(0, 3)} {/* Display the first three letters of the day */}
                             </th>
@@ -693,7 +699,7 @@ export default function EmployeesPage() {
                               <td className="bg-gray-50 p-1 text-xs text-center border border-gray-300 sticky left-0">
                                 {displayTime}
                               </td>
-                              {Object.keys(defaultAvailability).map((day) => {
+                              {orderedDays.map((day) => {
                                 const currentValue = employees[employeeIndex].availability[day][time] || '';
                                 return (
                                   <td 
