@@ -39,6 +39,7 @@ type Schedules = Record<string, WeekSchedule>; // Maps week start date to week s
 export default function SchedulesPage() {
   const user = auth.currentUser!;
   const userRef = doc(db, "users", user.uid);
+  const [startDay, setStartDay] = useState<string>("sun"); // Default to Sunday
   const [currentWeek, setCurrentWeek] = useState<Date>(new Date());
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,6 +52,22 @@ export default function SchedulesPage() {
     stopTime: "",
   });
 
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const docSnap = await getDoc(userRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setStartDay(data.settings?.startDay || "sun"); // Default to Sunday if no settings exist
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -108,9 +125,12 @@ export default function SchedulesPage() {
     fetchData();
   }, [currentWeek]);
 
-  const getWeekStartDate = (date: Date) => {
+  const getWeekStartDate = (date: Date, startDay: string) => {
     const start = new Date(date);
-    start.setDate(date.getDate() - date.getDay()); // Start from Monday
+    const dayOfWeek = start.getDay();
+    const startDayIndex = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"].indexOf(startDay);
+    const diff = (dayOfWeek - startDayIndex + 7) % 7; // Calculate the difference
+    start.setDate(start.getDate() - diff);
     return start;
   };
 
@@ -128,8 +148,8 @@ export default function SchedulesPage() {
     return [parts[0], `${parts.slice(1).join('/')}`];
   };
 
-  const getWeekDates = (date: Date) => {
-    const start = getWeekStartDate(date); // Use the updated getWeekStartDate
+  const getWeekDates = (date: Date, startDay: string) => {
+    const start = getWeekStartDate(date, startDay);
     const dates = [];
     for (let i = 0; i < 7; i++) {
       const current = new Date(start);
@@ -138,7 +158,7 @@ export default function SchedulesPage() {
     }
     return dates;
   };
-  const weekDates = getWeekDates(currentWeek);
+  const weekDates = getWeekDates(currentWeek, startDay);
 
   const formatDateForStorage = (date: Date) => {
     const year = date.getFullYear();
@@ -171,10 +191,10 @@ export default function SchedulesPage() {
     try {
       const previousWeek = new Date(currentWeek);
       previousWeek.setDate(currentWeek.getDate() - 7);
-      const previousWeekDates = getWeekDates(previousWeek);
-      const currentWeekDates = getWeekDates(currentWeek);
-      const prevWeekStartDate = formatWeekStartDate(getWeekStartDate(previousWeek));
-      const currentWeekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
+      const previousWeekDates = getWeekDates(previousWeek, startDay);
+      const currentWeekDates = getWeekDates(currentWeek, startDay);
+      const prevWeekStartDate = formatWeekStartDate(getWeekStartDate(previousWeek, startDay));
+      const currentWeekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek, startDay));
   
       const updatedSchedules = { ...schedules };
   
@@ -374,7 +394,7 @@ export default function SchedulesPage() {
   // Helper function to create a task object
   const createTask = (name: string, startTime: string, stopTime: string): Task => {
     return {
-      name: name.trim().toUpperCase(), // Ensure task name is uppercase
+      name: name.toUpperCase(), // Ensure task name is uppercase
       startTime,
       stopTime,
     };
@@ -419,7 +439,7 @@ export default function SchedulesPage() {
   };
 
   const hasTimeOverlap = (employeeId: string, date: string, newTask: Task) => {
-    const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
+    const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek, startDay));
     const employeeSchedule = schedules[weekStartDate]?.[employeeId];
     if (!employeeSchedule) {
       console.log(`No schedule found for employeeId: ${employeeId} on weekStartDate: ${weekStartDate}`);
@@ -504,7 +524,7 @@ export default function SchedulesPage() {
       }
 
       // Add the task to the schedule in Firestore
-      const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
+      const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek, startDay));
       const updatedSchedules = { ...schedules };
       
       if (!updatedSchedules[weekStartDate]) {
@@ -543,7 +563,7 @@ export default function SchedulesPage() {
 
   const handleRemoveTask = async (employeeId: string, date: string, taskIndex: number) => {
     try {
-      const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
+      const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek, startDay));
       const updatedSchedules = { ...schedules };
       // Check if the schedule exists before trying to remove the task
       if (
@@ -569,7 +589,7 @@ export default function SchedulesPage() {
     const employee = employees.find(emp => emp.id === employeeId);
     if (!employee) return 0;
     
-    const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
+    const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek, startDay));
     const employeeSchedule = schedules[weekStartDate]?.[employeeId];
     if (!employeeSchedule) return 0;
     
@@ -659,7 +679,7 @@ export default function SchedulesPage() {
                   .filter(employee => employee.active)
                   .map((employee, index) => {
                     const uniqueKey = `${employee.id}-${index}`;
-                    const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
+                    const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek, startDay));
                     const employeeSchedule = schedules[weekStartDate]?.[employee.id];
                     return (
                       <tr key={uniqueKey}>
