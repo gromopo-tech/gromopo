@@ -17,22 +17,16 @@ export default function Sidebar() {
         <ul className="space-y-2 items-center text-left">
           <li className="items-center text-left">
             <Link
-                href="/dashboard/schedules"
-                className="hover:text-orange-400"
-            >
-              Schedules
-            </Link>
-            <Link
               href="/dashboard/employees"
               className="block hover:text-orange-400"
             >
               Employees
             </Link>
             <Link
-              href="/dashboard/tasks"
-              className="block hover:text-orange-400"
+                href="/dashboard/schedules"
+                className="hover:text-orange-400"
             >
-              Tasks
+              Schedules
             </Link>
           </li>
 
