@@ -7,7 +7,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 export default function SettingsPage() {
   const user = auth.currentUser!;
   const userRef = doc(db, "users", user.uid);
-  const [startDay, setStartDay] = useState<string>("sun");
+  const [settings, setSettings] = useState<{ startDay: string }>({ startDay: "sun" }); // Default settings
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -15,7 +15,7 @@ export default function SettingsPage() {
         const docSnap = await getDoc(userRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setStartDay(data.startDay || "sun"); // Default to Sunday
+          setSettings(data.settings || { startDay: "sun" }); // Default to Sunday if no settings exist
         }
       } catch (error) {
         console.error("Error fetching settings:", error);
@@ -27,10 +27,10 @@ export default function SettingsPage() {
 
   const handleStartDayChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedDay = event.target.value;
-    setStartDay(selectedDay);
+    setSettings((prev) => ({ ...prev, startDay: selectedDay }));
 
     try {
-      await updateDoc(userRef, { startDay: selectedDay });
+      await updateDoc(userRef, { settings: { ...settings, startDay: selectedDay } });
       alert("Start day updated successfully!");
     } catch (error) {
       console.error("Error updating start day:", error);
@@ -49,7 +49,7 @@ export default function SettingsPage() {
               Start Day of the Week
             </label>
             <select
-              value={startDay}
+              value={settings.startDay}
               onChange={handleStartDayChange}
               className="w-full p-2 border rounded mt-2"
             >

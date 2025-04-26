@@ -405,13 +405,13 @@ export default function EmployeesPage() {
         const docSnap = await getDoc(userRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setStartDay(data.startDay || "sun"); // Default to Sunday
+          setStartDay(data.settings?.startDay || "sun"); // Default to Sunday if no settings exist
         }
       } catch (error) {
         console.error("Error fetching settings:", error);
       }
     };
-  
+
     fetchSettings();
   }, []);
 
