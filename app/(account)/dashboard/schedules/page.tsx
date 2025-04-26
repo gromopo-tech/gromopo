@@ -8,8 +8,8 @@ import { formatTimeDisplay } from "@/lib/timeUtils";
 import React from "react";
 
 interface EmployeeSkill {
+  name: string;
   rating: number;
-  task: string;
 }
 
 interface Employee {
@@ -17,34 +17,19 @@ interface Employee {
   firstName: string;
   lastName: string;
   hours: number;
-  skills: EmployeeSkill[]; // Update to use EmployeeSkill interface
-  availability: Record<string, Record<string, string>>; // Add availability map
-  active: boolean; // Add active field
+  skills: EmployeeSkill[];
+  availability: Record<string, Record<string, string>>;
+  active: boolean;
 }
 
 interface Task {
-  id: string;
   name: string;
   startTime: string;
   stopTime: string;
-  days: string[]; // Array of days the task applies to (e.g., ["Monday", "Tuesday"])
-}
-
-interface EmployeeTask {
-  taskId: string;
-  startTime: string;
-  stopTime: string;
-  name: string;
 }
 
 interface DaySchedule {
-  tasks: EmployeeTask[];
-}
-
-interface ScheduleEntry {
-  employee: string;
-  hours: number;
-  [key: string]: string | number | DaySchedule;
+  tasks: Task[];
 }
 
 type EmployeeSchedule = Record<string, DaySchedule>; // Maps day of week to tasks for an employee
@@ -56,20 +41,14 @@ export default function SchedulesPage() {
   const userRef = doc(db, "users", user.uid);
   const [currentWeek, setCurrentWeek] = useState<Date>(new Date());
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [schedules, setSchedules] = useState<Schedules>({});
   const [selectedCell, setSelectedCell] = useState<{employeeId: string, date: string} | null>(null);
   const [isCustomTask, setIsCustomTask] = useState(false);
-  const [customTaskName, setCustomTaskName] = useState("");
-  const [customStartTime, setCustomStartTime] = useState("");
-  const [customStopTime, setCustomStopTime] = useState("");
-
-  // Generate time options for the custom task form
-  const timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
-    const hours = Math.floor(i / 4);
-    const minutes = (i % 4) * 15;
-    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+  const [taskInProgress, setTaskInProgress] = useState<Task>({
+    name: "",
+    startTime: "",
+    stopTime: "",
   });
 
   useEffect(() => {
@@ -103,44 +82,6 @@ export default function SchedulesPage() {
             })) as Employee[];
             setEmployees(employeesData);
           }
-  
-          // Fetch tasks
-          const allTasks = new Set<Task>();
-          if (data.tasks && Array.isArray(data.tasks)) {
-            data.tasks.forEach((task: any) => {
-              allTasks.add({
-                id: task.id,
-                name: task.name || '',
-                startTime: task.startTime || '',
-                stopTime: task.stopTime || '',
-                days: task.days || []
-              });
-            });
-          }
-  
-          // Add custom tasks from schedule
-          const currentSchedule = data.schedules || data.schedule || {};
-          Object.values(currentSchedule).forEach((weekSchedule: any) => {
-            Object.values(weekSchedule).forEach((employeeSchedule: any) => {
-              Object.values(employeeSchedule).forEach((daySchedule: any) => {
-                if (daySchedule.tasks) {
-                  daySchedule.tasks.forEach((task: EmployeeTask) => {
-                    if (!Array.from(allTasks).some(t => t.id === task.taskId)) {
-                      allTasks.add({
-                        id: task.taskId,
-                        name: task.name,
-                        startTime: task.startTime,
-                        stopTime: task.stopTime,
-                        days: [getDayName(new Date())]
-                      });
-                    }
-                  });
-                }
-              });
-            });
-          });
-  
-          setTasks(Array.from(allTasks));
 
           // Ensure `data.schedules` is typed as `Schedules`
           const schedulesData = data.schedules as Schedules;
@@ -169,7 +110,7 @@ export default function SchedulesPage() {
 
   const getWeekStartDate = (date: Date) => {
     const start = new Date(date);
-    start.setDate(date.getDate() - date.getDay() + 1); // Start from Monday
+    start.setDate(date.getDate() - date.getDay()); // Start from Monday
     return start;
   };
 
@@ -188,8 +129,7 @@ export default function SchedulesPage() {
   };
 
   const getWeekDates = (date: Date) => {
-    const start = new Date(date);
-    start.setDate(date.getDate() - date.getDay() + 1); // Start from Monday
+    const start = getWeekStartDate(date); // Use the updated getWeekStartDate
     const dates = [];
     for (let i = 0; i < 7; i++) {
       const current = new Date(start);
@@ -198,6 +138,7 @@ export default function SchedulesPage() {
     }
     return dates;
   };
+  const weekDates = getWeekDates(currentWeek);
 
   const formatDateForStorage = (date: Date) => {
     const year = date.getFullYear();
@@ -206,7 +147,19 @@ export default function SchedulesPage() {
     return `${year}-${month}-${day}`;
   };
 
-  const weekDates = getWeekDates(currentWeek);
+  const fullDayName = (day: string) => {
+    const lowerCaseDay = day.toLowerCase();
+    const dayNames = {
+      sun: "Sunday",
+      mon: "Monday",
+      tue: "Tuesday",
+      wed: "Wednesday",
+      thu: "Thursday",
+      fri: "Friday",
+      sat: "Saturday"
+    };
+    return dayNames[lowerCaseDay as keyof typeof dayNames] || "Unknown Day";
+  };
 
   const navigateWeek = (direction: "prev" | "next") => {
     const newDate = new Date(currentWeek);
@@ -222,9 +175,9 @@ export default function SchedulesPage() {
       const currentWeekDates = getWeekDates(currentWeek);
       const prevWeekStartDate = formatWeekStartDate(getWeekStartDate(previousWeek));
       const currentWeekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
-
+  
       const updatedSchedules = { ...schedules };
-
+  
       // For each employee, copy their schedule from previous week to current week
       employees.forEach((employee) => {
         previousWeekDates.forEach((prevDate, prevIndex) => {
@@ -244,85 +197,27 @@ export default function SchedulesPage() {
           }
         });
       });
-
+  
       await updateDoc(userRef, {
         schedules: updatedSchedules
       });
-
+  
       setSchedules(updatedSchedules);
     } catch (error) {
       console.error("Error copying previous week schedule:", error);
     }
   };
 
-  const getDayName = (date: Date | undefined) => {
-    if (!date) return "Sun"; // Default to Sunday if date is undefined
-    // Create a new date object to avoid timezone issues
-    const localDate = new Date(date);
-    // Get the day of week (0-6, where 0 is Sunday)
+  const getDayName = (date: Date): string => {
+    // Ensure the date is in the local timezone
+    const localDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+    
+    // Get the day of the week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
     const dayOfWeek = localDate.getDay();
-    // Map to our standard day names (must match exactly with tasks page)
+    
+    // Map to our standard day names
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const dayName = dayNames[dayOfWeek];
-    return dayName;
-  };
-
-  const getAvailableTasksForDay = (dayName: string, employee: Employee) => {
-    // Convert dayName to match the format used in tasks (e.g., "Tue" instead of "Tuesday")
-    const formattedDayName = dayName.substring(0, 3);
-    
-    // Check if employee is available on this day
-    const dayAvailability = employee.availability[dayName.toLowerCase()];
-    const isAvailable = dayAvailability && Object.values(dayAvailability).some(value => value !== '');
-    
-    // Filter tasks by day, employee skills, and availability
-    const availableTasks = tasks.filter(task => {
-      const hasDay = task.days && task.days.includes(formattedDayName);
-      const hasSkill = employee.skills.some(skill => skill.task === task.name);
-      return hasDay && hasSkill && isAvailable;
-    });
-
-    // Sort tasks alphabetically by name
-    return availableTasks.sort((a, b) => a.name.localeCompare(b.name));
-  };
-
-  const isTimeOverlap = (start1: string, end1: string, start2: string, end2: string) => {
-    const [start1Hour, start1Min] = start1.split(':').map(Number);
-    const [end1Hour, end1Min] = end1.split(':').map(Number);
-    const [start2Hour, start2Min] = start2.split(':').map(Number);
-    const [end2Hour, end2Min] = end2.split(':').map(Number);
-
-    const start1Total = start1Hour * 60 + start1Min;
-    const end1Total = end1Hour * 60 + end1Min;
-    const start2Total = start2Hour * 60 + start2Min;
-    const end2Total = end2Hour * 60 + end2Min;
-
-    return !(end1Total <= start2Total || start1Total >= end2Total);
-  };
-
-  const isTaskAlreadyScheduled = (employeeId: string, date: string, taskId: string) => {
-    const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
-    const daySchedule = schedules[weekStartDate]?.[employeeId]?.[date];
-    if (!daySchedule) return false;
-    return daySchedule.tasks.some(task => task.taskId === taskId);
-  };
-
-  const hasTimeOverlap = (employeeId: string, date: string, newTask: EmployeeTask) => {
-    const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
-    const daySchedule = schedules[weekStartDate]?.[employeeId]?.[date];
-    if (!daySchedule) return false;
-
-    return daySchedule.tasks.some(existingTask => {
-      const existingTaskDetails = tasks.find(t => t.id === existingTask.taskId);
-      if (!existingTaskDetails) return false;
-
-      return isTimeOverlap(
-        existingTaskDetails.startTime,
-        existingTaskDetails.stopTime,
-        newTask.startTime,
-        newTask.stopTime
-      );
-    });
+    return dayNames[dayOfWeek];
   };
 
   const handlePrintSchedule = () => {
@@ -476,7 +371,119 @@ export default function SchedulesPage() {
     printWindow.print();
   };
 
-  const handleAddTask = async (employeeId: string, date: string, taskId: string, isCustom: boolean = false) => {
+  // Helper function to create a task object
+  const createTask = (name: string, startTime: string, stopTime: string): Task => {
+    return {
+      name: name.trim().toUpperCase(), // Ensure task name is uppercase
+      startTime,
+      stopTime,
+    };
+  };
+
+  const updateTaskInProgress = (field: keyof Task, value: string) => {
+    setTaskInProgress((prev) => ({
+      ...prev,
+      [field]: field === "name" ? value.toUpperCase() : value, // Ensure task name is uppercase
+    }));
+  };
+  
+  const isTaskWithinAvailability = (employee: Employee, task: Task, day: string): boolean => {
+    const startHour = parseInt(task.startTime.split(":")[0], 10);
+    const stopHour = parseInt(task.stopTime.split(":")[0], 10);
+  
+    const availability = employee.availability[day];
+    for (let hour = startHour; hour < stopHour; hour++) {
+      const timeSlot = `${hour.toString().padStart(2, "0")}:00`;
+      if (!availability[timeSlot] || availability[timeSlot] === "") {
+        return false; // Time slot is unavailable
+      }
+    }
+  
+    return true; // All time slots are available
+  };
+
+  const isTimeOverlap = (start1: string, end1: string, start2: string, end2: string) => {
+    const [start1Hour, start1Min] = start1.split(':').map(Number);
+    const [end1Hour, end1Min] = end1.split(':').map(Number);
+    const [start2Hour, start2Min] = start2.split(':').map(Number);
+    const [end2Hour, end2Min] = end2.split(':').map(Number);
+
+    const start1Total = start1Hour * 60 + start1Min;
+    const end1Total = end1Hour * 60 + end1Min;
+    const start2Total = start2Hour * 60 + start2Min;
+    const end2Total = end2Hour * 60 + end2Min;
+
+    const overlap = !(end1Total <= start2Total || start1Total >= end2Total);
+    console.log(`Comparing times: [${start1}-${end1}] with [${start2}-${end2}] => Overlap: ${overlap}`);
+    return overlap;
+  };
+
+  const hasTimeOverlap = (employeeId: string, date: string, newTask: Task) => {
+    const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek));
+    const employeeSchedule = schedules[weekStartDate]?.[employeeId];
+    if (!employeeSchedule) {
+      console.log(`No schedule found for employeeId: ${employeeId} on weekStartDate: ${weekStartDate}`);
+      return false;
+    }
+  
+    // Get the schedule for the given 
+    const daySchedule = employeeSchedule[date];
+    if (!daySchedule || !daySchedule.tasks) {
+      console.log(`No tasks found for employeeId: ${employeeId} on dayName: ${date}`);
+      return false;
+    }
+
+    console.log(`Checking for overlaps on dayName: ${date} for employeeId: ${employeeId}`);
+    console.log(`Existing tasks:`, daySchedule.tasks);
+    console.log(`New task:`, newTask);
+
+    // Iterate over all tasks for the given dayName
+    return daySchedule.tasks.some(task => {
+      const overlap = isTimeOverlap(
+        task.startTime,
+        task.stopTime,
+        newTask.startTime,
+        newTask.stopTime
+      );
+      if (overlap) {
+        console.log(`Overlap found with task:`, task);
+      }
+      return overlap;
+    });
+  };
+
+    // Helper function to validate task inputs
+    const validateTask = (task: Task, employee: Employee, date: string): string | null => {
+      if (!task.name.trim()) return "Task name is required.";
+      if (!task.startTime) return "Start time is required.";
+      if (!task.stopTime) return "End time is required.";
+      if (task.startTime >= task.stopTime) return "Start time must be before end time.";
+
+      const taskDate = new Date(date);
+      const dayName = getDayName(taskDate).toLowerCase();
+      const formattedDay = fullDayName(dayName);
+
+      // Check if the task is within the employee's availability
+      if (!isTaskWithinAvailability(employee, task, dayName)) {
+        const proceed = window.confirm(
+          `Warning: This task is outside of ${employee.firstName} ${employee.lastName}'s availability on ${formattedDay + 's'}. Do you want to proceed anyway?`
+        );
+        if (!proceed) return null;
+      }
+
+
+      // Check for time overlap
+      if (hasTimeOverlap(employee.id, date, task)) {
+        const proceed = window.confirm(
+          `Warning: This task overlaps with another task scheduled for ${employee.firstName} ${employee.lastName} on ${formattedDay}. Do you want to proceed anyway?`
+        );
+        if (!proceed) return null;
+      }
+  
+      return null;
+    };
+
+  const handleAddTask = async (employeeId: string, date: string, taskName: string, isCustom: boolean = false) => {
     try {
       const employee = employees.find(emp => emp.id === employeeId);
       if (!employee) {
@@ -484,95 +491,16 @@ export default function SchedulesPage() {
         return;
       }
 
-      let task: Task;
-      if (isCustom) {
-        // Check if employee is available on this day
-        const dayName = getDayName(weekDates.find(d => formatDateForStorage(d) === date) || new Date());
-        const dayAvailability = employee.availability[dayName.toLowerCase()];
-        const isAvailable = dayAvailability && Object.values(dayAvailability).some(value => value !== '');
-        
-        if (!isAvailable) {
-          if (!confirm(`Warning: This employee is not available on ${dayName}. Do you want to add a custom task anyway?`)) {
-            return;
-          }
-        }
+      const task: Task = isCustom
+        ? { ...taskInProgress }
+        : createTask(taskName, "09:00", "17:00"); // Default times for skill-based tasks
 
-        // Create a new task object for the custom task
-        const customTaskId = crypto.randomUUID();
-        const currentDate = weekDates.find(d => formatDateForStorage(d) === date);
-        task = {
-          id: customTaskId,
-          name: customTaskName,
-          startTime: customStartTime,
-          stopTime: customStopTime,
-          days: [getDayName(currentDate || new Date())]
-        };
-      } else {
-        const foundTask = tasks.find(t => t.id === taskId);
-        if (!foundTask) return;
-        task = foundTask;
-      }
-      
-      // Check for duplicate task
-      if (isTaskAlreadyScheduled(employee.id, date, task.id)) {
-        alert('This task is already scheduled for this employee on this day.');
+
+      // validate task
+      const error = validateTask(task, employee, date);
+      if (error) {
+        alert(error);
         return;
-      }
-
-      const newTask: EmployeeTask = {
-        taskId: task.id,
-        startTime: task.startTime,
-        stopTime: task.stopTime,
-        name: task.name
-      };
-
-      // Check for time overlap
-      if (hasTimeOverlap(employee.id, date, newTask)) {
-        alert('This task overlaps with another task scheduled for this employee on this day.');
-        return;
-      }
-
-      // Check if task times are within employee availability
-      const dayName = getDayName(weekDates.find(d => formatDateForStorage(d) === date) || new Date());
-      const dayAvailability = employee.availability[dayName.toLowerCase()];
-      
-      if (dayAvailability) {
-        const [startHour, startMin] = task.startTime.split(':').map(Number);
-        const [stopHour, stopMin] = task.stopTime.split(':').map(Number);
-        
-        // Convert task times to minutes for easier comparison
-        const taskStartMinutes = startHour * 60 + startMin;
-        const taskStopMinutes = stopHour * 60 + stopMin;
-        
-        // Get all available time slots for the day
-        const availableSlots: string[] = Object.entries(dayAvailability)
-          .filter(([_, value]) => value !== '')
-          .map(([time]) => time)
-          .sort();
-        
-        if (availableSlots.length > 0) {
-          const earliestAvailable = availableSlots[0];
-          const latestAvailable = availableSlots[availableSlots.length - 1];
-          
-          // Convert times to minutes for comparison
-          const [taskStartHour, taskStartMin] = task.startTime.split(':').map(Number);
-          const [taskStopHour, taskStopMin] = task.stopTime.split(':').map(Number);
-          const [earliestHour, earliestMin] = earliestAvailable.split(':').map(Number);
-          const [latestHour, latestMin] = latestAvailable.split(':').map(Number);
-          
-          const taskStartMinutes = taskStartHour * 60 + taskStartMin;
-          const taskStopMinutes = taskStopHour * 60 + stopMin;
-          const earliestMinutes = earliestHour * 60 + earliestMin;
-          const latestMinutes = (latestHour + 1) * 60 + latestMin; // Add one hour to the end time
-          
-          if (taskStartMinutes < earliestMinutes || taskStopMinutes > latestMinutes) {
-            const latestTime = `${(latestHour + 1).toString().padStart(2, '0')}:${latestMin.toString().padStart(2, '0')}`;
-            
-            if (!confirm(`Warning: This task (${task.startTime}-${task.stopTime}) falls outside the employee's available hours (${earliestAvailable}-${latestTime}). Do you want to proceed anyway?`)) {
-              return;
-            }
-          }
-        }
       }
 
       // Add the task to the schedule in Firestore
@@ -592,7 +520,7 @@ export default function SchedulesPage() {
       }
       
       // Add the new task and sort by start time
-      updatedSchedules[weekStartDate][employee.id][date].tasks.push(newTask);
+      updatedSchedules[weekStartDate][employee.id][date].tasks.push(task);
       updatedSchedules[weekStartDate][employee.id][date].tasks.sort((a, b) => {
         const [aHour, aMin] = a.startTime.split(':').map(Number);
         const [bHour, bMin] = b.startTime.split(':').map(Number);
@@ -605,14 +533,9 @@ export default function SchedulesPage() {
       
       // Update local state
       setSchedules(updatedSchedules);
-      if (isCustom) {
-        setTasks(prevTasks => [...prevTasks, task]);
-      }
       setSelectedCell(null);
       setIsCustomTask(false);
-      setCustomTaskName("");
-      setCustomStartTime("");
-      setCustomStopTime("");
+      setTaskInProgress({ name: "", startTime: "", stopTime: "" });
     } catch (error) {
       console.error("Error adding task:", error);
     }
@@ -758,18 +681,20 @@ export default function SchedulesPage() {
                             <td key={`${employee.id}-${dateStr}`} className="px-3 py-2">
                               <div className="flex flex-col space-y-1">
                               {employeeTasks.map((task, taskIndex) => {
-                                const taskDetails = tasks.find(t => t.id === task.taskId);
                                 return (
-                                  <div key={`${employee.id}-${dateStr}-${task.taskId}-${taskIndex}`} className="flex items-center justify-between bg-gray-50 p-1 rounded">
+                                  <div 
+                                    key={`${employee.id}-${dateStr}-${task.name}-${taskIndex}`} 
+                                    className="flex items-center justify-between bg-gray-50 p-1 rounded"
+                                    >
                                     <div className="flex flex-col">
                                       <span className="text-xs">
                                         {formatTimeDisplay(task.startTime)}-{formatTimeDisplay(task.stopTime)}
                                       </span>
                                       <span className="text-xs font-medium">
-                                        {formatTaskName(taskDetails?.name || task.name).map((part, i) => (
+                                        {formatTaskName(task.name || task.name).map((part, i) => (
                                           <React.Fragment key={i}>
                                             {i > 0 ? ' /' : ''}{part}
-                                            {i === 0 && taskDetails?.name.includes(' /') && <br />}
+                                            {i === 0 && task.name.includes(' /') && <br />}
                                           </React.Fragment>
                                         ))}
                                       </span>
@@ -787,7 +712,27 @@ export default function SchedulesPage() {
                               })}
                                 {/* Always show the add task button */}
                                 <button
-                                  onClick={() => setSelectedCell({ employeeId: employee.id, date: dateStr })}
+                                  onClick={() => {
+                                    const selectedEmployee = employees.find(emp => emp.id === employee.id);
+                                    if (!selectedEmployee) {
+                                      console.error("Employee not found");
+                                      return; // Exit early if no employee is found
+                                    }
+                                    const dayName = getDayName(weekDates.find(date => formatDateForStorage(date) === dateStr) || new Date()).toLowerCase();
+                                    const dayAvailability = selectedEmployee?.availability[dayName];
+                                  
+                                    // Check if the employee is unavailable
+                                    const isAvailable = dayAvailability && Object.values(dayAvailability).some(value => value !== '');
+                                  
+                                    if (!isAvailable) {
+                                      const proceed = window.confirm(
+                                        `Warning: This employee is unavailable on ${fullDayName(dayName) + "s"}. Do you want to proceed anyway?`
+                                      );
+                                      if (!proceed) return;
+                                    }
+                                  
+                                    setSelectedCell({ employeeId: selectedEmployee.id, date: dateStr });
+                                  }}
                                   className="flex items-center justify-center w-full p-1 text-gray-500 hover:bg-gray-100 border border-dashed border-gray-300 rounded transition-colors duration-200"
                                 >
                                   <Plus className="w-3 h-3" />
@@ -842,6 +787,17 @@ export default function SchedulesPage() {
                   onChange={(e) => {
                     if (e.target.value === "custom") {
                       setIsCustomTask(true);
+                    } else if (e.target.value.startsWith("skill-")) {
+                      // Handle skill selection
+                      const skillIndex = parseInt(e.target.value.split("-")[1], 10);
+                      const selectedEmployee = employees.find(emp => emp.id === selectedCell.employeeId);
+                      const selectedSkill = selectedEmployee?.skills[skillIndex];
+                
+                      if (selectedSkill) {
+                        // Treat as if it were a custom task, only pre-filling the name of the custom task form
+                        updateTaskInProgress("name", selectedSkill.name);
+                        setIsCustomTask(true); // Switch to custom task form
+                      }
                     } else if (e.target.value) {
                       handleAddTask(selectedCell.employeeId, selectedCell.date, e.target.value);
                     }
@@ -849,12 +805,10 @@ export default function SchedulesPage() {
                 >
                   <option key="default" value="">Select a task</option>
                   <option key="custom" value="custom">CUSTOM TASK</option>
-                  {getAvailableTasksForDay(
-                    getDayName(weekDates.find(date => formatDateForStorage(date) === selectedCell.date) || new Date()),
-                    employees.find(emp => emp.id === selectedCell.employeeId)!
-                  ).map((task) => (
-                    <option key={`${selectedCell.employeeId}-${selectedCell.date}-${task.id}`} value={task.id}>
-                      {task.name} ({formatTimeDisplay(task.startTime)}-{formatTimeDisplay(task.stopTime)})
+                  {/* Add employees skills as an option */}
+                  {employees.find(emp => emp.id === selectedCell.employeeId)?.skills.map((skill, index) => (
+                    <option key={`skill-${index}`} value={`skill-${index}`}>
+                      {skill.name} (Skill Rating: {skill.rating})
                     </option>
                   ))}
                 </select>
@@ -871,8 +825,8 @@ export default function SchedulesPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Task Name</label>
                   <input
                     type="text"
-                    value={customTaskName}
-                    onChange={(e) => setCustomTaskName(e.target.value)}
+                    value={taskInProgress.name}
+                    onChange={(e) => updateTaskInProgress("name", e.target.value)}
                     className="w-full p-2 border rounded"
                     placeholder="Enter task name"
                   />
@@ -880,62 +834,33 @@ export default function SchedulesPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                    <select
-                      value={customStartTime}
-                      onChange={(e) => setCustomStartTime(e.target.value)}
+                    <input
+                      type="time"
+                      value={taskInProgress.startTime}
+                      onChange={(e) => updateTaskInProgress("startTime", e.target.value)}
                       className="w-full p-2 border rounded"
-                    >
-                      <option value="">Select start time</option>
-                      {timeOptions.map((time) => (
-                        <option key={time} value={time}>{formatTimeDisplay(time)}</option>
-                      ))}
-                    </select>
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                    <select
-                      value={customStopTime}
-                      onChange={(e) => setCustomStopTime(e.target.value)}
+                    <input
+                      type="time"
+                      value={taskInProgress.stopTime}
+                      onChange={(e) => updateTaskInProgress("stopTime", e.target.value)}
                       className="w-full p-2 border rounded"
-                    >
-                      <option value="">Select end time</option>
-                      {timeOptions.map((time) => (
-                        <option key={time} value={time}>{formatTimeDisplay(time)}</option>
-                      ))}
-                    </select>
+                    />
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => {
-                      if (!customTaskName.trim()) {
-                        alert("Task name is required.");
-                        return;
-                      }
-                      if (!customStartTime) {
-                        alert("Start time is required.");
-                        return;
-                      }
-                      if (!customStopTime) {
-                        alert("End time is required.");
-                        return;
-                      }
-                      if (customStartTime >= customStopTime) {
-                        alert("Start time must be before end time.");
-                        return;
-                      }
-                      handleAddTask(selectedCell.employeeId, selectedCell.date, "", true);
-                    }}
+                    onClick={() => handleAddTask(selectedCell.employeeId, selectedCell.date, taskInProgress.name, true)}
                     className="flex-1 p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                   >
-                    Add Custom Task
+                    Add Task
                   </button>
                   <button
                     onClick={() => {
                       setIsCustomTask(false);
-                      setCustomTaskName("");
-                      setCustomStartTime("");
-                      setCustomStopTime("");
                     }}
                     className="flex-1 p-2 bg-gray-200 rounded hover:bg-gray-300"
                   >

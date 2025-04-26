@@ -27,13 +27,13 @@ type Employee = {
 };
 
 const defaultAvailability: Availability = {
+  sun: {},
   mon: {},
   tue: {},
   wed: {},
   thu: {},
   fri: {},
   sat: {},
-  sun: {},
 };
 
 // Initialize hours for each day
@@ -158,7 +158,7 @@ export default function EmployeesPage() {
     const updatedEmployees = [...employees];
     updatedEmployees[employeeIndex].skills[skillIndex] = {
       ...updatedEmployees[employeeIndex].skills[skillIndex],
-      [field]: value,
+      [field]: field === "name" && typeof value === "string" ? value.trim().toUpperCase() : value,
     };
     setEmployees(updatedEmployees);
   };
@@ -679,7 +679,7 @@ export default function EmployeesPage() {
                           <th className="bg-gray-100 p-1 text-center font-medium text-sm sticky left-0 border border-gray-300">Time</th>
                           {Object.keys(defaultAvailability).map((day) => (
                             <th key={day} className="bg-gray-100 p-1 text-center font-medium text-sm border border-gray-300 capitalize">
-                              {day.slice(0, 3)}
+                              {day.slice(0, 3)} {/* Display the first three letters of the day */}
                             </th>
                           ))}
                         </tr>
