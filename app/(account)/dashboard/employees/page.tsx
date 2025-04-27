@@ -152,6 +152,44 @@ export default function EmployeesPage() {
     setEmployees(updatedEmployees);
   };
 
+  const [tasks, setTasks] = useState<string[]>([]); // Store tasks from Firestore
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const docSnap = await getDoc(userRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const fetchedTasks = data.tasks || [];
+          setTasks(fetchedTasks.sort((a: string, b: string) => a.localeCompare(b))); // Sort tasks alphabetically
+        }
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+      }
+    };
+
+    fetchTasks();
+  }, []);
+
+  const handleAddNewTask = async (newTask: string) => {
+    const upperCaseTask = newTask.toUpperCase(); // Convert to uppercase
+
+    if (tasks.includes(upperCaseTask)) {
+      alert("This task already exists. Please enter a unique task name.");
+      return;
+    }
+
+    try {
+      const updatedTasks = [...tasks, upperCaseTask];
+      setTasks(updatedTasks);
+      await updateDoc(userRef, { tasks: updatedTasks });
+      alert("New task added successfully!");
+    } catch (error) {
+      console.error("Error adding new task:", error);
+      alert("Failed to add new task. Please try again.");
+    }
+  };
+
   // Update a skill for an employee
   const handleSkillChange = (
     employeeIndex: number,
@@ -160,10 +198,23 @@ export default function EmployeesPage() {
     value: string | number
   ) => {
     const updatedEmployees = [...employees];
-    updatedEmployees[employeeIndex].skills[skillIndex] = {
-      ...updatedEmployees[employeeIndex].skills[skillIndex],
-      [field]: field === "name" && typeof value === "string" ? value.toUpperCase() : value,
-    };
+
+    if (field === "name" && value === "CREATE NEW TASK") {
+      const newTaskName = prompt("Enter the name of the new task:");
+      if (newTaskName) {
+        handleAddNewTask(newTaskName);
+        updatedEmployees[employeeIndex].skills[skillIndex] = {
+          ...updatedEmployees[employeeIndex].skills[skillIndex],
+          [field]: newTaskName,
+        };
+      }
+    } else {
+      updatedEmployees[employeeIndex].skills[skillIndex] = {
+        ...updatedEmployees[employeeIndex].skills[skillIndex],
+        [field]: value,
+      };
+    }
+
     setEmployees(updatedEmployees);
   };
 
@@ -617,14 +668,21 @@ export default function EmployeesPage() {
                       </button>
                       <label className="flex-1 max-w-[300px]">
                         <span className="block text-sm font-medium text-gray-700">Name</span>
-                        <input
-                          type="text"
+                        <select
                           value={skill.name || ""}
                           onChange={(e) =>
                             handleSkillChange(employeeIndex, skillIndex, "name", e.target.value)
                           }
                           className="w-full p-2 border rounded border-black text-black"
-                        />
+                        >
+                          <option key="default" value="">Select a task</option>
+                          <option value="CREATE NEW TASK" style={{ fontStyle: "italic" }}>CREATE NEW TASK</option>
+                          {tasks.map((task, index) => (
+                            <option key={index} value={task}>
+                              {task}
+                            </option>
+                          ))}
+                        </select>
                       </label>
                       <label className="flex-1 max-w-[100px]">
                         <span className="block text-sm font-medium text-gray-700">Rating</span>

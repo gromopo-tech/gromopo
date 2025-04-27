@@ -824,7 +824,7 @@ export default function SchedulesPage() {
                   }}
                 >
                   <option key="default" value="">Select a task</option>
-                  <option key="custom" value="custom">CUSTOM TASK</option>
+                  <option key="custom" value="custom">CREATE NEW TASK</option>
                   {/* Add employees skills as an option */}
                   {employees.find(emp => emp.id === selectedCell.employeeId)?.skills.map((skill, index) => (
                     <option key={`skill-${index}`} value={`skill-${index}`}>
