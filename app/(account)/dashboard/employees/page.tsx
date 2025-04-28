@@ -66,25 +66,22 @@ export default function EmployeesPage() {
     },
   ]);
   const [isLoading, setIsLoading] = useState(true);
-  const [collapsedSections, setCollapsedSections] = useState<{[key: string]: boolean}>({});
-
-  const toggleSection = (employeeIndex: number, section: 'skills' | 'availability') => {
-    setCollapsedSections(prev => {
-      const newState = { ...prev };
-      newState[`${employeeIndex}-${section}`] = !prev[`${employeeIndex}-${section}`];
-      return newState;
-    });
-  };
-
-  useEffect(() => {
-    // Ensure initial state is set for all sections to avoid double-click issue
-    const initialCollapsed: { [key: string]: boolean } = {};
+  const [collapsedSections, setCollapsedSections] = useState<{[key: string]: boolean}>(() => {
+    // Initialize all sections as collapsed by default
+    const initialCollapsed: {[key: string]: boolean} = {};
     employees.forEach((_, index) => {
       initialCollapsed[`${index}-skills`] = true;
       initialCollapsed[`${index}-availability`] = true;
     });
-    setCollapsedSections(initialCollapsed);
-  }, [employees]);
+    return initialCollapsed;
+  });
+
+  const toggleSection = (employeeIndex: number, section: 'skills' | 'availability') => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [`${employeeIndex}-${section}`]: !prev[`${employeeIndex}-${section}`]
+    }));
+  };
 
   const isSectionCollapsed = (employeeIndex: number, section: 'skills' | 'availability') => {
     return collapsedSections[`${employeeIndex}-${section}`] ?? true; // Default to true if not set
@@ -197,9 +194,16 @@ export default function EmployeesPage() {
     }
 
     try {
-      const updatedTasks = [...tasks, upperCaseTask].sort((a, b) => a.localeCompare(b));
-      setTasks(updatedTasks);
-      await updateDoc(userRef, { tasks: updatedTasks });
+      const docSnap = await getDoc(userRef);
+      if (!docSnap.exists()) {
+        // If the document doesn't exist, create it
+        await setDoc(userRef, { tasks: [upperCaseTask] });
+      } else {
+        // If the document exists, update it
+        const updatedTasks = [...tasks, upperCaseTask].sort((a, b) => a.localeCompare(b));
+        setTasks(updatedTasks);
+        await updateDoc(userRef, { tasks: updatedTasks });
+      }
     } catch (error) {
       console.error("Error adding new task:", error);
       alert("Failed to add new task. Please try again.");
@@ -264,6 +268,31 @@ export default function EmployeesPage() {
     const updatedEmployees = [...employees];
     updatedEmployees.splice(employeeIndex, 1);
     setEmployees(updatedEmployees);
+  };
+
+  const saveEmployeeToFirestore = async (employee: Employee) => {
+    try {
+      const docSnap = await getDoc(userRef);
+      if (!docSnap.exists()) {
+        // If the document doesn't exist, create it
+        await setDoc(userRef, { employees: [employee] });
+      } else {
+        // If the document exists, update it
+        const currentData = docSnap.data();
+        const updatedEmployees = currentData.employees || [];
+        const existingIndex = updatedEmployees.findIndex((e: Employee) => e.id === employee.id);
+
+        if (existingIndex !== -1) {
+          updatedEmployees[existingIndex] = employee;
+        } else {
+          updatedEmployees.push(employee);
+        }
+
+        await updateDoc(userRef, { employees: updatedEmployees });
+      }
+    } catch (error) {
+      console.error("Error saving employee to Firestore:", error);
+    }
   };
 
   const handleSaveEmployee = async (employeeIndex: number) => {
@@ -350,16 +379,7 @@ export default function EmployeesPage() {
     }
 
     try {
-      // Get current document
-      const currentDoc = await getDoc(userRef);
-      const currentData = currentDoc.exists() ? currentDoc.data() : {};
-      const currentEmployees = currentData.employees || [];
-
-      // Update only the specific employee
-      const updatedEmployees = [...currentEmployees];
-      updatedEmployees[employeeIndex] = employee;
-
-      await updateDoc(userRef, { employees: updatedEmployees });
+      await saveEmployeeToFirestore(employee);
       alert(`Employee ${employee.lastName}, ${employee.firstName} saved successfully!`);
     } catch (error) {
       console.error("Error saving employee:", error);
