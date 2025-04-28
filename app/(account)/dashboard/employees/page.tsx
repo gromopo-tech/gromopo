@@ -66,22 +66,25 @@ export default function EmployeesPage() {
     },
   ]);
   const [isLoading, setIsLoading] = useState(true);
-  const [collapsedSections, setCollapsedSections] = useState<{[key: string]: boolean}>(() => {
-    // Initialize all sections as collapsed by default
-    const initialCollapsed: {[key: string]: boolean} = {};
+  const [collapsedSections, setCollapsedSections] = useState<{[key: string]: boolean}>({});
+
+  const toggleSection = (employeeIndex: number, section: 'skills' | 'availability') => {
+    setCollapsedSections(prev => {
+      const newState = { ...prev };
+      newState[`${employeeIndex}-${section}`] = !prev[`${employeeIndex}-${section}`];
+      return newState;
+    });
+  };
+
+  useEffect(() => {
+    // Ensure initial state is set for all sections to avoid double-click issue
+    const initialCollapsed: { [key: string]: boolean } = {};
     employees.forEach((_, index) => {
       initialCollapsed[`${index}-skills`] = true;
       initialCollapsed[`${index}-availability`] = true;
     });
-    return initialCollapsed;
-  });
-
-  const toggleSection = (employeeIndex: number, section: 'skills' | 'availability') => {
-    setCollapsedSections(prev => ({
-      ...prev,
-      [`${employeeIndex}-${section}`]: !prev[`${employeeIndex}-${section}`]
-    }));
-  };
+    setCollapsedSections(initialCollapsed);
+  }, [employees]);
 
   const isSectionCollapsed = (employeeIndex: number, section: 'skills' | 'availability') => {
     return collapsedSections[`${employeeIndex}-${section}`] ?? true; // Default to true if not set
@@ -194,10 +197,9 @@ export default function EmployeesPage() {
     }
 
     try {
-      const updatedTasks = [...tasks, upperCaseTask];
+      const updatedTasks = [...tasks, upperCaseTask].sort((a, b) => a.localeCompare(b));
       setTasks(updatedTasks);
       await updateDoc(userRef, { tasks: updatedTasks });
-      alert("New task added successfully!");
     } catch (error) {
       console.error("Error adding new task:", error);
       alert("Failed to add new task. Please try again.");
@@ -216,10 +218,17 @@ export default function EmployeesPage() {
     if (field === "name" && value === "CREATE NEW TASK") {
       const newTaskName = prompt("Enter the name of the new task:");
       if (newTaskName) {
-        handleAddNewTask(newTaskName);
+        const upperCaseTask = newTaskName.toUpperCase();
+
+        if (!tasks.includes(upperCaseTask)) {
+          const updatedTasks = [...tasks, upperCaseTask].sort((a, b) => a.localeCompare(b));
+          setTasks(updatedTasks);
+          handleAddNewTask(upperCaseTask);
+        }
+
         updatedEmployees[employeeIndex].skills[skillIndex] = {
           ...updatedEmployees[employeeIndex].skills[skillIndex],
-          [field]: newTaskName,
+          [field]: upperCaseTask,
         };
       }
     } else {
@@ -229,8 +238,16 @@ export default function EmployeesPage() {
       };
     }
 
-    setEmployees(updatedEmployees); // Do not sort skills here
+    setEmployees(updatedEmployees);
   };
+
+  useEffect(() => {
+    // Ensure dropdown menu updates dynamically when tasks state changes
+    const dropdowns = document.querySelectorAll("select");
+    dropdowns.forEach((dropdown) => {
+      dropdown.dispatchEvent(new Event("change"));
+    });
+  }, [tasks]);
 
   const handleDeleteSkill = (employeeIndex: number, skillIndex: number) => {
     const updatedEmployees = [...employees];
