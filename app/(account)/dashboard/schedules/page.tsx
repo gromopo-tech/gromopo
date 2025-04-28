@@ -273,10 +273,10 @@ export default function SchedulesPage() {
           const nameSpan = taskElement.querySelector("span:nth-child(2)");
 
           if (timeSpan && nameSpan) {
-            // Check if the task name contains ' /' and add a line break
+            // Check if the task name contains '/ ' and add a line break
             const taskName = nameSpan.textContent || "";
-            const formattedTaskName = taskName.includes(" /")
-              ? taskName.replace(" /", " <br />/")
+            const formattedTaskName = taskName.includes("/ ")
+              ? taskName.replace("/ ", "/<br />")
               : taskName;
 
             // Update the task structure for printing
@@ -713,8 +713,8 @@ export default function SchedulesPage() {
                                       <span className="text-xs font-medium">
                                         {formatTaskName(task.name || task.name).map((part, i) => (
                                           <React.Fragment key={i}>
-                                            {i > 0 ? ' /' : ''}{part}
-                                            {i === 0 && task.name.includes(' /') && <br />}
+                                            {i > 0 ? '/ ' : ''}{part}
+                                            {i === 0 && task.name.includes('/ ') && <br />}
                                           </React.Fragment>
                                         ))}
                                       </span>
