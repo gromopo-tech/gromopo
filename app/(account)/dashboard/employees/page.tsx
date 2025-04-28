@@ -215,7 +215,7 @@ export default function EmployeesPage() {
       };
     }
 
-    setEmployees(updatedEmployees);
+    setEmployees(updatedEmployees); // Do not sort skills here
   };
 
   const handleDeleteSkill = (employeeIndex: number, skillIndex: number) => {
@@ -237,6 +237,9 @@ export default function EmployeesPage() {
 
   const handleSaveEmployee = async (employeeIndex: number) => {
     const employee = employees[employeeIndex];
+
+    // Sort skills alphabetically before saving
+    employee.skills.sort((a, b) => a.name.localeCompare(b.name));
 
     // Validate employee fields
     if (!employee.firstName.trim()) {
@@ -334,13 +337,21 @@ export default function EmployeesPage() {
   };
 
   const handleSubmit = async () => {
-    for (let employeeIndex = 0; employeeIndex < employees.length; employeeIndex++) {
-      const employee = employees[employeeIndex];
+    const updatedEmployees = employees.map((employee) => {
+      // Sort skills alphabetically before saving all employees
+      return {
+        ...employee,
+        skills: [...employee.skills].sort((a, b) => a.name.localeCompare(b.name)),
+      };
+    });
+
+    for (let employeeIndex = 0; employeeIndex < updatedEmployees.length; employeeIndex++) {
+      const employee = updatedEmployees[employeeIndex];
 
       {/* Validate employee fields */}
 
       // At least one employee must be active
-      const activeEmployees = employees.filter(emp => emp.active);
+      const activeEmployees = updatedEmployees.filter(emp => emp.active);
       if (activeEmployees.length === 0) {
         alert("At least one employee must be active.");
         return;
@@ -354,7 +365,7 @@ export default function EmployeesPage() {
         return;
       }
       // check if employee already exists
-      const existingEmployee = employees.find(
+      const existingEmployee = updatedEmployees.find(
         (emp, index) =>
           emp.firstName === employee.firstName &&
           emp.lastName === employee.lastName &&
@@ -436,12 +447,12 @@ export default function EmployeesPage() {
     }
 
     try {
-          await updateDoc(userRef, { employees });
+          await updateDoc(userRef, { employees: updatedEmployees });
           alert("Employees saved successfully!");
         } catch (error) {
           // If the document doesn't exist, create it
           if ((error as { code?: string }).code === "not-found") {
-            await setDoc(userRef, { employees });
+            await setDoc(userRef, { employees: updatedEmployees });
             alert("Employees saved successfully!");
           } else {
           console.error("Error saving employees:", error);
