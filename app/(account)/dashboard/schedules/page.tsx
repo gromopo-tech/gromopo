@@ -472,36 +472,14 @@ export default function SchedulesPage() {
     });
   };
 
-    // Helper function to validate task inputs
-    const validateTask = (task: Task, employee: Employee, date: string): string | null => {
-      if (!task.name.trim()) return "Task name is required.";
-      if (!task.startTime) return "Start time is required.";
-      if (!task.stopTime) return "End time is required.";
-      if (task.startTime >= task.stopTime) return "Start time must be before end time.";
-
-      const taskDate = new Date(date);
-      const dayName = getDayName(taskDate).toLowerCase();
-      const formattedDay = fullDayName(dayName);
-
-      // Check if the task is within the employee's availability
-      if (!isTaskWithinAvailability(employee, task, dayName)) {
-        const proceed = window.confirm(
-          `Warning: This task is outside of ${employee.firstName} ${employee.lastName}'s availability on ${formattedDay + 's'}. Do you want to proceed anyway?`
-        );
-        if (!proceed) return null;
-      }
-
-
-      // Check for time overlap
-      if (hasTimeOverlap(employee.id, date, task)) {
-        const proceed = window.confirm(
-          `Warning: This task overlaps with another task scheduled for ${employee.firstName} ${employee.lastName} on ${formattedDay}. Do you want to proceed anyway?`
-        );
-        if (!proceed) return null;
-      }
-  
-      return null;
-    };
+  // Helper function to validate task inputs
+  const validateTask = (task: Task): string | null => {
+    if (!task.name.trim()) return "Task name is required.";
+    if (!task.startTime) return "Start time is required.";
+    if (!task.stopTime) return "End time is required.";
+    if (task.startTime >= task.stopTime) return "Start time must be before end time.";
+    return null;
+  };
 
   const handleAddTask = async (employeeId: string, date: string, taskName: string, isCustom: boolean = false) => {
     try {
@@ -517,10 +495,30 @@ export default function SchedulesPage() {
 
 
       // validate task
-      const error = validateTask(task, employee, date);
+      const error = validateTask(task);
       if (error) {
         alert(error);
         return;
+      }
+
+      const taskDate = new Date(date);
+      const dayName = getDayName(taskDate).toLowerCase();
+      const formattedDay = fullDayName(dayName);
+
+      // Check if the task is within the employee's availability
+      if (!isTaskWithinAvailability(employee, task, dayName)) {
+        const proceed = window.confirm(
+          `Warning: This task is outside of ${employee.firstName} ${employee.lastName}'s availability on ${formattedDay + 's'}. Do you want to proceed anyway?`
+        );
+        if (!proceed) return null;
+      }
+
+      // Check for time overlap
+      if (hasTimeOverlap(employee.id, date, task)) {
+        const proceed = window.confirm(
+          `Warning: This task overlaps with another task scheduled for ${employee.firstName} ${employee.lastName} on ${formattedDay}. Do you want to proceed anyway?`
+        );
+        if (!proceed) return null;
       }
 
       // Add the task to the schedule in Firestore
