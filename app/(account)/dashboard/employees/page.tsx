@@ -133,6 +133,20 @@ export default function EmployeesPage() {
     }
   };
 
+  const handleSlotMouseUp = () => {
+    setDragging(false);
+  };
+
+  useEffect(() => {
+    // Add event listener to handle mouse up globally
+    document.addEventListener("mouseup", handleSlotMouseUp);
+
+    return () => {
+      // Cleanup event listener on component unmount
+      document.removeEventListener("mouseup", handleSlotMouseUp);
+    };
+  }, []);
+
   // Handle availability changes
   const handleAvailabilityChange = (
     employeeIndex: number,
