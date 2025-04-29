@@ -7,7 +7,6 @@ import { collection, getDocs, doc, getDoc, updateDoc} from "firebase/firestore";
 import { formatTimeDisplay } from "@/lib/timeUtils";
 import { useRouter, useSearchParams } from "next/navigation";
 import React from "react";
-import { connect } from "http2";
 
 interface EmployeeSkill {
   name: string;
