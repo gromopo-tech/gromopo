@@ -273,17 +273,15 @@ export default function SchedulesPage() {
           const nameSpan = taskElement.querySelector("span:nth-child(2)");
 
           if (timeSpan && nameSpan) {
-            // Check if the task name contains '/ ' and add a line break
             const taskName = nameSpan.textContent || "";
-            const formattedTaskName = taskName.includes("/ ")
-              ? taskName.replace("/ ", "/<br />")
-              : taskName;
+            const skillRating = taskElement.className.match(/text-(red|blue)-500/);
+            const colorStyle = skillRating ? (skillRating[1] === "red" ? "color: red;" : "color: blue;") : "color: black;";
 
             // Update the task structure for printing
             taskElement.innerHTML = `
-              <div class="task">
+              <div class="task" style="${colorStyle}">
                 <span class="task-time" style="font-weight: bold;">${timeSpan.textContent}</span><br />
-                <span class="task-name" style="font-style: italic;">${formattedTaskName}</span>
+                <span class="task-name" style="font-style: italic;">${taskName}</span>
               </div>
             `;
           }
@@ -611,6 +609,18 @@ export default function SchedulesPage() {
     return Math.round(totalHours * 100) / 100; // Round to 2 decimal places
   };
 
+  // Add a helper function to determine the color based on skill rating
+  const getSkillColor = (rating: number): string => {
+    switch (rating) {
+      case 1:
+        return "text-red-500";
+      case 4:
+        return "text-blue-500";
+      default:
+        return "text-gray-900";
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -699,11 +709,14 @@ export default function SchedulesPage() {
                             <td key={`${employee.id}-${dateStr}`} className="px-3 py-2">
                               <div className="flex flex-col space-y-1">
                               {employeeTasks.map((task, taskIndex) => {
+                                const skill = employee.skills.find(skill => skill.name.toLowerCase() === task.name.toLowerCase());
+                                const skillColor = skill ? getSkillColor(skill.rating) : "text-gray-900";
+
                                 return (
                                   <div 
                                     key={`${employee.id}-${dateStr}-${task.name}-${taskIndex}`} 
-                                    className="flex items-center justify-between bg-gray-50 p-1 rounded"
-                                    >
+                                    className={`flex items-center justify-between bg-gray-50 p-1 rounded ${skillColor}`}
+                                  >
                                     <div className="flex flex-col">
                                       <span className="text-xs">
                                         {formatTimeDisplay(task.startTime)}-{formatTimeDisplay(task.stopTime)}
