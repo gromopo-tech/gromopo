@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus} from "lucide-react";
 import { auth, db } from "@/lib/firebase/config";
-import { collection, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, updateDoc} from "firebase/firestore";
 import { formatTimeDisplay } from "@/lib/timeUtils";
+import { useRouter, useSearchParams } from "next/navigation";
 import React from "react";
+import { connect } from "http2";
 
 interface EmployeeSkill {
   name: string;
@@ -37,6 +39,8 @@ type WeekSchedule = Record<string, EmployeeSchedule>; // Maps employeeId to thei
 type Schedules = Record<string, WeekSchedule>; // Maps week start date to week schedule
 
 export default function SchedulesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const user = auth.currentUser!;
   const userRef = doc(db, "users", user.uid);
   const [startDay, setStartDay] = useState<string>("sun"); // Default to Sunday
@@ -46,11 +50,35 @@ export default function SchedulesPage() {
   const [schedules, setSchedules] = useState<Schedules>({});
   const [selectedCell, setSelectedCell] = useState<{employeeId: string, date: string} | null>(null);
   const [isCustomTask, setIsCustomTask] = useState(false);
+  const [daysOff, setDaysOff] = useState<{ employeeName: string; date: string; timeOffType?: string }[]>([]);
+  const [isCalendarConnected, setIsCalendarConnected] = useState(false);
   const [taskInProgress, setTaskInProgress] = useState<Task>({
     name: "",
     startTime: "",
     stopTime: "",
   });
+
+  const fetchDaysOff = async () => {
+    try {
+      const response = await fetch("/api/calendar");
+      const data = await response.json();
+  
+      if (data.authUrl) {
+        window.location.href = data.authUrl; // Redirect to Google authentication
+      } else {
+        const fetchedDaysOff = data.events.map((event: any) => ({
+          employeeName: event.summary,
+          date: event.start.date || event.start.dateTime,
+        }));
+        // Process days off and update the schedule
+        console.log(fetchedDaysOff);
+        setDaysOff(fetchedDaysOff);
+        setIsCalendarConnected(true);
+      }
+    } catch (error) {
+      console.error("Error fetching days off:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -69,7 +97,7 @@ export default function SchedulesPage() {
   }, []);
   
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchFirebaseData = async () => {
       try {
         const userDoc = await getDoc(userRef);
         
@@ -122,8 +150,40 @@ export default function SchedulesPage() {
       }
     };
   
-    fetchData();
+    fetchFirebaseData();
   }, [currentWeek]);
+
+  // Process fetchedDaysOff from the query parameter
+  useEffect(() => {
+    const fetchedDaysOff = searchParams.get("fetchedDaysOff");
+
+    if (fetchedDaysOff) {
+      try {
+        const events = JSON.parse(fetchedDaysOff);
+        const processedDaysOff: { timeOffType: string; employeeName: string; date: string }[] = [];
+
+        events.forEach((event: any) => {
+          const [timeOffType, employeeName] = event.summary.split(": ").map((part: string) => part.trim());
+          const startDate = new Date(event.start.date);
+          const endDate = new Date(event.end.date);
+
+          // Generate all dates in the range [startDate, endDate)
+          for (let date = new Date(startDate); date < endDate; date.setDate(date.getDate() + 1)) {
+            processedDaysOff.push({
+              timeOffType,
+              employeeName,
+              date: date.toISOString().split("T")[0], // Format as YYYY-MM-DD
+            });
+          }
+        });
+
+        setDaysOff(processedDaysOff);
+        setIsCalendarConnected(true);
+      } catch (error) {
+        console.error("Error processing fetchedDaysOff:", error);
+      }
+    }
+  }, [searchParams]);
 
   const getWeekStartDate = (date: Date, startDay: string) => {
     const start = new Date(date);
@@ -634,6 +694,14 @@ export default function SchedulesPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold text-gray-800">Employee Schedule</h2>
         <div className="flex items-center space-x-4">
+          {!isCalendarConnected && (
+            <button
+              onClick={fetchDaysOff}
+              className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 text-sm"
+            >
+              Connect Calendar
+            </button>
+          )}
           <button
             onClick={() => navigateWeek("prev")}
             className="p-2 rounded-full hover:bg-gray-100 text-black"
@@ -702,45 +770,58 @@ export default function SchedulesPage() {
                         </td>
                         {weekDates.map((date) => {
                           const dateStr = formatDateForStorage(date);
+                          const isDayOff = daysOff.some(
+                            (off) => 
+                              off.date === dateStr && 
+                              off.employeeName === `${employee.lastName}, ${employee.firstName}`
+                          );
                           const daySchedule = employeeSchedule?.[dateStr];
                           const employeeTasks = daySchedule?.tasks || [];
 
                           return (
-                            <td key={`${employee.id}-${dateStr}`} className="px-3 py-2">
+                            <td 
+                              key={`${employee.id}-${dateStr}`} 
+                              className={`px-3 py-2 ${isDayOff ? "bg-red-100" : ""}`}
+                            >
                               <div className="flex flex-col space-y-1">
-                              {employeeTasks.map((task, taskIndex) => {
-                                const skill = employee.skills.find(skill => skill.name.toLowerCase() === task.name.toLowerCase());
-                                const skillColor = skill ? getSkillColor(skill.rating) : "text-gray-900";
-
-                                return (
-                                  <div 
-                                    key={`${employee.id}-${dateStr}-${task.name}-${taskIndex}`} 
-                                    className={`flex items-center justify-between bg-gray-50 p-1 rounded ${skillColor}`}
-                                  >
-                                    <div className="flex flex-col">
-                                      <span className="text-xs">
-                                        {formatTimeDisplay(task.startTime)}-{formatTimeDisplay(task.stopTime)}
-                                      </span>
-                                      <span className="text-xs font-medium">
-                                        {formatTaskName(task.name || task.name).map((part, i) => (
-                                          <React.Fragment key={i}>
-                                            {i > 0 ? '/ ' : ''}{part}
-                                            {i === 0 && task.name.includes('/ ') && <br />}
-                                          </React.Fragment>
-                                        ))}
-                                      </span>
-                                    </div>
-                                    <button
-                                      onClick={() => handleRemoveTask(employee.id, dateStr, taskIndex)}
-                                      className="text-red-500 hover:text-red-700"
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                      </svg>
-                                    </button>
+                                {isDayOff && (
+                                  <div className="text-xs font-bold text-red-500 text-center">
+                                    {daysOff.find(off => off.date === dateStr && off.employeeName === `${employee.lastName}, ${employee.firstName}`)?.timeOffType?.toUpperCase() || "Day Off"}
                                   </div>
-                                );
-                              })}
+                                )}
+                                {employeeTasks.map((task, taskIndex) => {
+                                  const skill = employee.skills.find(skill => skill.name.toLowerCase() === task.name.toLowerCase());
+                                  const skillColor = skill ? getSkillColor(skill.rating) : "text-gray-900";
+
+                                  return (
+                                    <div 
+                                      key={`${employee.id}-${dateStr}-${task.name}-${taskIndex}`} 
+                                      className={`flex items-center justify-between bg-gray-50 p-1 rounded ${skillColor}`}
+                                    >
+                                      <div className="flex flex-col">
+                                        <span className="text-xs">
+                                          {formatTimeDisplay(task.startTime)}-{formatTimeDisplay(task.stopTime)}
+                                        </span>
+                                        <span className="text-xs font-medium">
+                                          {formatTaskName(task.name || task.name).map((part, i) => (
+                                            <React.Fragment key={i}>
+                                              {i > 0 ? '/ ' : ''}{part}
+                                              {i === 0 && task.name.includes('/ ') && <br />}
+                                            </React.Fragment>
+                                          ))}
+                                        </span>
+                                      </div>
+                                      <button
+                                        onClick={() => handleRemoveTask(employee.id, dateStr, taskIndex)}
+                                        className="text-red-500 hover:text-red-700"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  );
+                                })}
                                 {/* Always show the add task button */}
                                 <button
                                   onClick={() => {
