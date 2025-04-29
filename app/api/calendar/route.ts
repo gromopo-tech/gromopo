@@ -24,8 +24,8 @@ export async function GET(request: Request) {
   setCredentials(tokens);
 
   const calendar = await getOrCreateCalendar(CALENDAR_NAME);
-  const timeMin = new Date().toISOString();
-  const timeMax = new Date(new Date().setDate(new Date().getDate() + 7)).toISOString();
+  const timeMin = new Date(new Date().setDate(new Date().getDate() - 30)).toISOString();
+  const timeMax = new Date(new Date().setDate(new Date().getDate() + 30)).toISOString();
   const events = await getEvents(calendar.id!, timeMin, timeMax);
 
   // Redirect back to the SchedulesPage with the events as a query parameter
