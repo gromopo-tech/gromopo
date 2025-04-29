@@ -6,6 +6,7 @@ const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
 const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI!;
 const CALENDAR_NAME = "Employee Days Off";
 
+console.log("Redirect URI: ", REDIRECT_URI);
 initializeOAuthClient(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
 export async function GET(request: Request) {
