@@ -11,11 +11,11 @@ runConfig:
 env:
   # Configure environment variables.
   # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
-  - variable: GOOGLE_REDIRECT_URI
-    value: https://www.gromopo.com/api/calendar
-    availability:
-      - BUILD
-      - RUNTIME
+  #- variable: ex
+  #  value: hello, world!
+  #  availability:
+  #    - BUILD
+  #    - RUNTIME
 
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
@@ -23,3 +23,5 @@ env:
     secret: google_calendar_oauth_client_id
   - variable: GOOGLE_CLIENT_SECRET
     secret: google_calendar_oauth_client_secret
+  - variable: GOOGLE_REDIRECT_URI
+    secret: google_calendar_oauth_redirect_uri
