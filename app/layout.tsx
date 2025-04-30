@@ -6,6 +6,7 @@ import localFont from "next/font/local";
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
+import MarketingFooter from "@/components/marketing/ui/footer"
 import MarketingHeader from "@/components/marketing/ui/header";
 import DashboardHeader from "@/components/dashboard/ui/header";
 
@@ -66,6 +67,7 @@ export default function RootLayout({
         <main className="flex min-h-screen flex-col overflow-hidden supports-[overflow:clip]:overflow-clip">
           {children}
         </main>
+        <MarketingFooter />
       </body>
     </html>
   );
