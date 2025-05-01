@@ -4,7 +4,7 @@ import { initializeOAuthClient, getAuthUrl, setCredentials, getEvents, oAuth2Cli
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
 const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI!;
-
+console.log(`Redirect URI: ${REDIRECT_URI}`)
 initializeOAuthClient(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
 export async function GET(request: Request) {
