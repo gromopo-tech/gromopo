@@ -61,6 +61,7 @@ export default function SchedulesPage() {
     try {
       const response = await fetch("/api/calendar");
       const data = await response.json();
+      console.log("Raw response:", data);
   
       if (data.authUrl) {
         window.location.href = data.authUrl; // Redirect to Google authentication
