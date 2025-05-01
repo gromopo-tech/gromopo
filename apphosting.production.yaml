@@ -12,7 +12,7 @@ env:
   # Configure environment variables.
   # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
   - variable: GOOGLE_REDIRECT_URI
-    value: https://latest---gromopo-dgaezramuq-uc.a.run.app/api/calendar
+    value: https://latest---gromopo-dgaezramuq-uc.a.run.app/dashboard/schedules
   #  availability:
   #    - BUILD
   #    - RUNTIME
