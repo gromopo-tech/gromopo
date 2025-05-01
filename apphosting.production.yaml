@@ -20,8 +20,8 @@ env:
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
   - variable: GOOGLE_CLIENT_ID
-    secret: google_calendar_oauth_client_id/versions/latest
+    secret: google_calendar_oauth_client_id
   - variable: GOOGLE_CLIENT_SECRET
-    secret: google_calendar_oauth_client_secret/versions/latest
+    secret: google_calendar_oauth_client_secret
   - variable: GOOGLE_REDIRECT_URI
-    secret: google_calendar_oauth_redirect_uri/versions/latest
+    secret: google_calendar_oauth_redirect_uri@2
