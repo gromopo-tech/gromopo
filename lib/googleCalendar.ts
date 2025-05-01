@@ -26,10 +26,15 @@ export const setCredentials = (tokens: any) => {
 };
 
 // Fetch events for a specific calendar and date range
-export const getEvents = async (calendarId: string, timeMin: string, timeMax: string) => {
-  if (!oAuth2Client) throw new Error("OAuth2 client not initialized");
+export const getEvents = async (tokens: any, calendarId: string, timeMin: string, timeMax: string) => {
+  const tempClient = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID!,
+    process.env.GOOGLE_CLIENT_SECRET!,
+    process.env.GOOGLE_REDIRECT_URI!
+  );
+  tempClient.setCredentials(tokens);
 
-  const calendar = google.calendar({ version: "v3", auth: oAuth2Client });
+  const calendar = google.calendar({ version: "v3", auth: tempClient });
   const { data } = await calendar.events.list({
     calendarId,
     timeMin,
