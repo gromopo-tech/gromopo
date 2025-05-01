@@ -59,24 +59,23 @@ export default function SchedulesPage() {
 
   const fetchDaysOff = async () => {
     try {
+      // Clear any existing params first
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('fetchedDaysOff');
+      window.history.replaceState({}, '', cleanUrl.toString());
+
       const response = await fetch("/api/calendar");
       const data = await response.json();
-      console.log("Raw response:", data);
   
       if (data.authUrl) {
-        window.location.href = data.authUrl; // Redirect to Google authentication
+        // Redirect to Google authentication
+        window.location.href = data.authUrl;
       } else {
-        const fetchedDaysOff = data.events.map((event: any) => ({
-          employeeName: event.summary,
-          date: event.start.date || event.start.dateTime,
-        }));
-        // Process days off and update the schedule
-        console.log(fetchedDaysOff);
-        setDaysOff(fetchedDaysOff);
-        setIsCalendarConnected(true);
+        console.error("Unexpected response:", data);
       }
     } catch (error) {
       console.error("Error fetching days off:", error);
+      alert("Failed to connect to calendar");
     }
   };
 
@@ -156,32 +155,26 @@ export default function SchedulesPage() {
   // Process fetchedDaysOff from the query parameter
   useEffect(() => {
     const fetchedDaysOff = searchParams.get("fetchedDaysOff");
-
-    if (fetchedDaysOff) {
-      try {
-        const events = JSON.parse(fetchedDaysOff);
-        const processedDaysOff: { timeOffType: string; employeeName: string; date: string }[] = [];
-
-        events.forEach((event: any) => {
-          const [timeOffType, employeeName] = event.summary.split(": ").map((part: string) => part.trim());
-          const startDate = new Date(event.start.date);
-          const endDate = new Date(event.end.date);
-
-          // Generate all dates in the range [startDate, endDate)
-          for (let date = new Date(startDate); date < endDate; date.setDate(date.getDate() + 1)) {
-            processedDaysOff.push({
-              timeOffType,
-              employeeName,
-              date: date.toISOString().split("T")[0], // Format as YYYY-MM-DD
-            });
-          }
-        });
-
-        setDaysOff(processedDaysOff);
-        setIsCalendarConnected(true);
-      } catch (error) {
-        console.error("Error processing fetchedDaysOff:", error);
-      }
+    if (!fetchedDaysOff) return;
+  
+    try {
+      const events = JSON.parse(fetchedDaysOff);
+      const processedDaysOff = events.map((event: any) => ({
+        timeOffType: event.timeOffType,
+        employeeName: event.employeeName,
+        date: event.date
+      }));
+  
+      setDaysOff(processedDaysOff);
+      setIsCalendarConnected(true);
+      
+      // Clean up URL after processing
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('fetchedDaysOff');
+      window.history.replaceState({}, '', newUrl.toString());
+  
+    } catch (error) {
+      console.error("Error processing days off:", error);
     }
   }, [searchParams]);
 
@@ -775,6 +768,11 @@ export default function SchedulesPage() {
                               off.date === dateStr && 
                               off.employeeName === `${employee.lastName}, ${employee.firstName}`
                           );
+                          const dayOffType = daysOff.find(
+                            off => off.date === dateStr && 
+                            off.employeeName === `${employee.lastName}, ${employee.firstName}`
+                          )?.timeOffType;
+                          
                           const daySchedule = employeeSchedule?.[dateStr];
                           const employeeTasks = daySchedule?.tasks || [];
 
@@ -786,7 +784,7 @@ export default function SchedulesPage() {
                               <div className="flex flex-col space-y-1">
                                 {isDayOff && (
                                   <div className="text-xs font-bold text-red-500 text-center">
-                                    {daysOff.find(off => off.date === dateStr && off.employeeName === `${employee.lastName}, ${employee.firstName}`)?.timeOffType?.toUpperCase() || "Day Off"}
+                                    {dayOffType?.toUpperCase() || "Day Off"}
                                   </div>
                                 )}
                                 {employeeTasks.map((task, taskIndex) => {
