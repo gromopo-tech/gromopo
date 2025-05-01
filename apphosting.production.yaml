@@ -11,8 +11,8 @@ runConfig:
 env:
   # Configure environment variables.
   # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
-  #- variable: ex
-  #  value: hello, world!
+  - variable: GOOGLE_REDIRECT_URI
+    value: https://t-2999809940---gromopo-dgaezramuq-uc.a.run.app/api/calendar
   #  availability:
   #    - BUILD
   #    - RUNTIME
@@ -23,5 +23,3 @@ env:
     secret: google_calendar_oauth_client_id
   - variable: GOOGLE_CLIENT_SECRET
     secret: google_calendar_oauth_client_secret
-  - variable: GOOGLE_REDIRECT_URI
-    secret: google_calendar_oauth_redirect_uri@2
