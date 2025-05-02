@@ -105,7 +105,7 @@ export default function SchedulesPage() {
           
           // Fetch employees
           if (data.employees && Array.isArray(data.employees)) {
-            setEmployees(data.employees.map((emp: any) => ({
+            const fetchedEmployees = data.employees.map((emp: any) => ({
               id: emp.id,
               firstName: emp.firstName || '',
               lastName: emp.lastName || '',
@@ -114,8 +114,14 @@ export default function SchedulesPage() {
               availability: emp.availability || {},
               active: emp.active !== false
             }))
-            .filter((emp, index, self) => self.findIndex(e => e.id === emp.id) === index)
-          );
+
+            const sortedEmployees = fetchedEmployees.sort((a: Employee, b: Employee) => {
+              const lastNameComparison = a.lastName.localeCompare(b.lastName);
+              if (lastNameComparison !== 0) return lastNameComparison;
+              return a.firstName.localeCompare(b.firstName);
+            });
+            
+            setEmployees(sortedEmployees);
           } else {
             const employeesRef = collection(db, `users/${user.uid}/employees`);
             const querySnapshot = await getDocs(employeesRef);
