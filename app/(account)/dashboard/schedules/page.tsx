@@ -766,11 +766,11 @@ export default function SchedulesPage() {
                           const isDayOff = daysOff.some(
                             (off) => 
                               off.date === dateStr && 
-                              off.employeeName === `${employee.lastName}, ${employee.firstName}`
+                              off.employeeName === `${employee.lastName.toUpperCase()}, ${employee.firstName.toUpperCase()}`
                           );
                           const dayOffType = daysOff.find(
                             off => off.date === dateStr && 
-                            off.employeeName === `${employee.lastName}, ${employee.firstName}`
+                            off.employeeName === `${employee.lastName.toUpperCase()}, ${employee.firstName.toUpperCase()}`
                           )?.timeOffType;
                           
                           const daySchedule = employeeSchedule?.[dateStr];
