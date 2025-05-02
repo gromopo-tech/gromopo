@@ -115,7 +115,9 @@ export default function SchedulesPage() {
               active: emp.active !== false
             }))
 
-            const sortedEmployees = fetchedEmployees.sort((a: Employee, b: Employee) => {
+            const sortedEmployees = fetchedEmployees
+              .filter((emp, index, self) => self.findIndex(e => e.id === emp.id) === index)
+              .sort((a: Employee, b: Employee) => {
               const lastNameComparison = a.lastName.localeCompare(b.lastName);
               if (lastNameComparison !== 0) return lastNameComparison;
               return a.firstName.localeCompare(b.firstName);
