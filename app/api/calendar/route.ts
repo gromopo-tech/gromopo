@@ -53,11 +53,25 @@ export async function GET(request: Request) {
     console.log(`Found ${events.length} events`);
 
     // process events time off events
-    const formattedEvents = events.map(event => ({
-      timeOffType: event.summary?.split(':')[0]?.trim() || 'Day Off',
-      employeeName: event.summary?.split(':')[1]?.trim() || event.summary || 'Unknown Employee',
-      date: event.start?.date || event.start?.dateTime?.split('T')[0],
-    }));
+    const formattedEvents = events.flatMap((event) => {
+      const [timeOffType, employeeName] = event.summary?.split(": ").map((part) => part.trim().toUpperCase()) || [];
+      const startDate = event.start?.date || event.start?.dateTime?.split('T')[0];
+      const endDate = event.end?.date || event.end?.dateTime?.split('T')[0];
+
+      const days = [];
+      if (!startDate || !endDate) {
+        console.error("Invalid event dates:", { startDate, endDate });
+        return [];
+      }
+      for (let date = new Date(startDate); date < new Date(endDate); date.setDate(date.getDate() + 1)) {
+        days.push({
+          timeOffType,
+          employeeName,
+          date: date.toISOString().split("T")[0], // Format as YYYY-MM-DD
+        });
+      }
+      return days;
+    });
 
     const redirectUrl = new URL(`${baseUrl}/dashboard/schedules`);
     redirectUrl.searchParams.set('fetchedDaysOff', JSON.stringify(formattedEvents));
