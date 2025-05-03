@@ -107,7 +107,7 @@ export default function HeroHome() {
               className="animate-[gradient_6s_linear_infinite] bg-[linear-gradient(to_right,var(--color-green-800),var(--color-sky-800),var(--color-green-950),var(--color-sky-950),var(--color-green-800))] bg-[length:200%_auto] bg-clip-text pb-5 font-nacelle text-4xl font-semibold text-transparent md:text-5xl"
               data-aos="fade-up"
             >
-              Growing food and beverage businesses
+              Growing mom and pop shops
             </h1>
             <div className="mx-auto max-w-3xl">
               <p
@@ -115,8 +115,7 @@ export default function HeroHome() {
                 data-aos="fade-up"
                 data-aos-delay={200}
               >
-                Introducing an easy-to-use platform to streamline orders, and increase customer satisfaction 
-                -- tailored specifically for mom and pop shops.
+                Something big is coming...
                 <br></br>
                 Join us today to get exclusive early access!
               </p>
