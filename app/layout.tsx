@@ -3,6 +3,7 @@
 import "./css/style.css";
 import { Inter } from "next/font/google";
 import localFont from "next/font/local";
+import { redirect } from 'next/navigation';
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
@@ -53,6 +54,9 @@ export default function RootLayout({
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsAuthenticated(!!user); // Set authentication state
+      if (user) {
+        redirect("/dashboard")
+      }
     });
 
     return () => unsubscribe(); // Cleanup the listener on unmount

@@ -66,7 +66,13 @@ export default function SigninForm() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6">
-      <h1 className="pb-12 animate-[gradient_6s_linear_infinite] bg-[linear-gradient(to_right,var(--color-green-800),var(--color-green-800),var(--color-green-950),var(--color-green-950),var(--color-green-800))] bg-[length:800%_auto] bg-clip-text font-nacelle text-3xl font-semibold text-transparent md:text-4xl">
+      <div className="MsoNormal" style={{ lineHeight: "1.1" }}>
+        <br />
+      </div>
+      <div style={{ lineHeight: "1.5" }}>
+        <br />
+      </div>
+      <h1 className="pb-12 text-center animate-[gradient_6s_linear_infinite] bg-[linear-gradient(to_right,var(--color-green-800),var(--color-green-800),var(--color-green-950),var(--color-green-950),var(--color-green-800))] bg-[length:800%_auto] bg-clip-text font-nacelle text-3xl font-semibold text-transparent md:text-4xl">
         Signin
       </h1>
       {success ? (
