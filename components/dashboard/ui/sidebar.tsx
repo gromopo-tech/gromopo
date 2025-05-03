@@ -14,8 +14,7 @@ export default function Sidebar() {
         >
           <span className="text-lg font-semibold">🏠</span> Dashboard
         </Link>
-        <ul className="space-y-2 items-center text-left">
-          <li className="items-center text-left">
+        <ul className="items-center text-left">
             <Link
               href="/dashboard/employees"
               className="block hover:text-orange-400"
@@ -28,17 +27,12 @@ export default function Sidebar() {
             >
               Schedules
             </Link>
-          </li>
-
-          {/* Other Sections */}
-          <li>
             <Link
               href="/dashboard/settings"
               className="block hover:text-orange-400"
             >
               Settings
             </Link>
-          </li>
         </ul>
       </nav>
     </aside>

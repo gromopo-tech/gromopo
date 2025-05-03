@@ -49,14 +49,12 @@ export default function Header() {
               {userName ? `Hello ${userName}` : "Hello!"}
         </ul>
           <ul className="flex flex-1 items-center justify-end gap-3">
-            <li>
-              <button
-                onClick={handleSignOut}
-                className="btn-sm bg-linear-to-t from-orange-400 to-orange-500 bg-[length:100%_100%] bg-[bottom] py-[5px] text-orange-200 shadow-[inset_0px_1px_0px_0px_--theme(--color-white/.16)] hover:bg-[length:100%_150%]"
-              >
-                Sign Out
-              </button>
-            </li>
+            <button
+              onClick={handleSignOut}
+              className="btn-sm bg-linear-to-t from-orange-400 to-orange-500 bg-[length:100%_100%] bg-[bottom] py-[5px] text-orange-200 shadow-[inset_0px_1px_0px_0px_--theme(--color-white/.16)] hover:bg-[length:100%_150%]"
+            >
+              Sign Out
+            </button>
           </ul>
         </div>
       </div>
