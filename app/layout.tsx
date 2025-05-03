@@ -3,13 +3,13 @@
 import "./css/style.css";
 import { Inter } from "next/font/google";
 import localFont from "next/font/local";
-import { redirect } from 'next/navigation';
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
-import MarketingFooter from "@/components/marketing/ui/footer"
 import MarketingHeader from "@/components/marketing/ui/header";
 import DashboardHeader from "@/components/dashboard/ui/header";
+import MarketingFooter from "@/components/marketing/ui/footer";
+import DashboardFooter from "@/components/dashboard/ui/footer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -54,9 +54,6 @@ export default function RootLayout({
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsAuthenticated(!!user); // Set authentication state
-      if (user) {
-        redirect("/dashboard")
-      }
     });
 
     return () => unsubscribe(); // Cleanup the listener on unmount
@@ -71,7 +68,7 @@ export default function RootLayout({
         <main className="flex min-h-screen flex-col overflow-hidden supports-[overflow:clip]:overflow-clip">
           {children}
         </main>
-        <MarketingFooter />
+        {isAuthenticated ? <DashboardFooter /> : <MarketingFooter />}
       </body>
     </html>
   );
