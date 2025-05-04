@@ -1,43 +1,104 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Logo from "@/components/dashboard/ui/logo";
 import { auth } from "@/lib/firebase/config";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Header() {
   const router = useRouter();
   const [userName, setUserName] = useState<string | null>(null);
+  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // Set the user's display name or email
         setUserName(user.displayName || user.email || "User");
       } else {
-        setUserName(null); // Clear the name if the user is not logged in
+        setUserName(null);
       }
     });
 
-    return () => unsubscribe(); // Cleanup the listener on unmount
+    return () => unsubscribe();
   }, []);
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth); // Sign out the user
-      router.push("/"); // Redirect to the home page after signing out
+      await signOut(auth);
+      router.push("/");
     } catch (error) {
       console.error("Error signing out:", error);
       alert("Failed to sign out. Please try again.");
     }
   };
 
+  const toggleDropdown = () => {
+    setIsDropdownVisible(!isDropdownVisible);
+  };
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      setIsDropdownVisible(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleLinkClick = () => {
+    setIsDropdownVisible(false);
+  };
 
   return (
     <header className="z-30 mt-2 w-full md:mt-5">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="relative flex h-14 items-center justify-between gap-3 rounded-2xl bg-green-900/90 px-3 before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-transparent before:[background:linear-gradient(to_right,var(--color-green-800),var(--color-green-700),var(--color-green-800))_border-box] before:[mask-composite:exclude_!important] before:[mask:linear-gradient(white_0_0)_padding-box,_linear-gradient(white_0_0)] after:absolute after:inset-0 after:-z-10 after:backdrop-blur-xs">
+        <div className="relative flex h-14 items-center justify-between gap-3 rounded-2xl bg-green-900/90 px-3">
+          {/* Hamburger Icon */}
+          <button 
+            onClick={toggleDropdown} 
+            className="text-white hover:text-yellow-600 text-2xl">
+            ☰
+          </button>
+
+          {/* Dropdown Menu */}
+          {isDropdownVisible && (
+            <div ref={dropdownRef} className="absolute left-0 mt-14 bg-white shadow-md rounded-md">
+              <ul className="p-4">
+                <li>
+                  <Link 
+                    href="/dashboard/employees" 
+                    className="block p-2 hover:bg-gray-200" 
+                    onClick={handleLinkClick}>
+                    Employees
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    href="/dashboard/schedules" 
+                    className="block p-2 hover:bg-gray-200"
+                    onClick={handleLinkClick}>
+                    Schedules
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    href="/dashboard/settings" 
+                    className="block p-2 hover:bg-gray-200"
+                    onClick={handleLinkClick}>
+                    Settings
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          )}
+
           {/* Company logo and name */}
           <div className="gap-3 flex flex-1 items-center">
             <Logo />
@@ -45,13 +106,13 @@ export default function Header() {
               GroMoPo
             </ul>
           </div>
-          <ul className="hidden md:flex flex-1 items-center justify-center gap-3">
-              {userName ? `Hello ${userName}` : "Hello!"}
-        </ul>
-          <ul className="flex flex-1 items-center justify-end gap-3">
+          <ul className="md:flex flex-1 justify-center">
+            {userName ? `Hello ${userName}` : "Hello!"}
+          </ul>
+          <ul className="flex flex-1 justify-end gap-3">
             <button
               onClick={handleSignOut}
-              className="btn-sm bg-linear-to-t from-orange-400 to-orange-500 bg-[length:100%_100%] bg-[bottom] py-[5px] text-orange-200 shadow-[inset_0px_1px_0px_0px_--theme(--color-white/.16)] hover:bg-[length:100%_150%]"
+              className="btn-sm bg-linear-to-t from-orange-400 to-orange-500 bg-[length:100%_100%] bg-[bottom] py-[5px] text-orange-200 shadow-[inset_0px_1px_0px_0px_--theme(--color-white/.16)] hover:bg-[length:10%_190%]"
             >
               Sign Out
             </button>
