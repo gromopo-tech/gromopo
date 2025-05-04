@@ -88,7 +88,7 @@ const HeroImages = () => {
           width={400}
           height={300}
           alt={image.alt}
-          className="rounded-lg"
+          className="rounded-lg w-auto h-full"
         />
       ))}
     </div>
