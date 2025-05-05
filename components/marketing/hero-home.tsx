@@ -57,7 +57,8 @@ const HeroImages = () => {
                 width={400}
                 height={300}
                 alt={image.alt}
-                className="rounded-lg w-full"
+                className="rounded-lg w-full h-[300px]"
+                priority={index === 0}
               />
             </div>
           ))}
@@ -80,7 +81,7 @@ const HeroImages = () => {
 
   // Desktop view - side by side images
   return (
-    <div className="hero-images flex justify-center gap-4 mt-8">
+    <div className="hero-images flex justify-center gap-4 mt-8 max-w-6xl mx-auto">
       {images.map((image, index) => (
         <Image
           key={index}
@@ -88,7 +89,8 @@ const HeroImages = () => {
           width={400}
           height={300}
           alt={image.alt}
-          className="rounded-lg w-auto h-full"
+          className="rounded-lg object-cover w-[300px] h-[225px] md:w-[400px] md:h-[300px]"
+          priority={index === 0}
         />
       ))}
     </div>
