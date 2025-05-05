@@ -106,7 +106,7 @@ export default function Header() {
               GroMoPo
             </ul>
           </div>
-          <ul className="md:flex flex-1 justify-center">
+          <ul className="md:flex flex-1 justify-center text-amber-300">
             {userName ? `Hello ${userName}` : "Hello!"}
           </ul>
           <ul className="flex flex-1 justify-end gap-3">
