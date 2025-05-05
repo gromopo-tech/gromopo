@@ -778,7 +778,7 @@ export default function SchedulesPage() {
   }
 
   return (
-    <div className="flex flex-col h-full space-y-6">
+    <div className="flex flex-col h-screen space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold text-gray-800">Employee Schedule</h2>
         <div className="flex items-center space-x-4">
@@ -819,167 +819,169 @@ export default function SchedulesPage() {
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-x-auto">
-        <div id="schedule-table" className="bg-white rounded-lg shadow">
-          <table className="w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employee
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Hours
-                </th>
-                {weekDates.map((date) => (
-                  <th key={date.toISOString()} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {employees.length > 0 ? (
-                employees
-                  .filter(employee => employee.active)
-                  .map((employee, index) => {
-                    const uniqueKey = `${employee.id}-${index}`;
-                    const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek, startDay));
-                    const employeeSchedule = schedules[weekStartDate]?.[employee.id];
-                    return (
-                      <tr key={uniqueKey}>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 employee-column">
-                          <div className="flex flex-col">
-                            <span>{employee.lastName}</span>
-                            <span className="text-gray-500">{employee.firstName}</span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                          {getTotalHoursForEmployee(employee.id).toFixed(2)}
-                        </td>
-                        {weekDates.map((date) => {
-                          const dateStr = formatDateForStorage(date);
-                          const isDayOff = daysOff.some(
-                            (off) => 
-                              off.date === dateStr && 
-                              off.employeeName === `${employee.lastName.toUpperCase()}, ${employee.firstName.toUpperCase()}`
-                          );
-                          const dayOffType = daysOff.find(
-                            off => off.date === dateStr && 
-                            off.employeeName === `${employee.lastName.toUpperCase()}, ${employee.firstName.toUpperCase()}`
-                          )?.timeOffType;
-                          
-                          const daySchedule = employeeSchedule?.[dateStr];
-                          const employeeTasks = daySchedule?.tasks || [];
-
-                          return (
-                            <td 
-                              key={`${employee.id}-${dateStr}`} 
-                              className={`px-3 py-2 ${isDayOff ? "bg-red-100" : ""}`}
-                            >
-                              <div className="flex flex-col space-y-1">
-                                {isDayOff && (
-                                  <div className="text-xs font-bold text-red-500 text-center">
-                                    {dayOffType?.toUpperCase() || "Day Off"}
-                                  </div>
-                                )}
-                                {employeeTasks.map((task, taskIndex) => {
-                                  const skill = employee.skills.find(skill => skill.name.toLowerCase() === task.name.toLowerCase());
-                                  const skillColor = skill ? getSkillColor(skill.rating) : "text-gray-900";
-
-                                  return (
-                                    <div 
-                                      key={`${employee.id}-${dateStr}-${task.name}-${taskIndex}`} 
-                                      className={`flex items-center justify-between bg-gray-50 p-1 rounded ${skillColor} cursor-pointer hover:bg-gray-100`}
-                                      onClick={() => handleTaskClick(employee.id, dateStr, taskIndex, task)}
-                                    >
-                                      <div className="flex flex-col">
-                                        <span className="text-xs">
-                                          {formatTimeDisplay(task.startTime)}-{formatTimeDisplay(task.stopTime)}
-                                        </span>
-                                        <span className="text-xs font-medium">
-                                          {formatTaskName(task.name || task.name).map((part, i) => (
-                                            <React.Fragment key={i}>
-                                              {i > 0 ? '/ ' : ''}{part}
-                                              {i === 0 && task.name.includes('/ ') && <br />}
-                                            </React.Fragment>
-                                          ))}
-                                        </span>
-                                      </div>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleRemoveTask(employee.id, dateStr, taskIndex);
-                                        }}
-                                        className="text-red-500 hover:text-red-700"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                  );
-                                })}
-                                {/* Always show the add task button */}
-                                <button
-                                  onClick={() => {
-                                    const selectedEmployee = employees.find(emp => emp.id === employee.id);
-                                    if (!selectedEmployee) {
-                                      console.error("Employee not found");
-                                      return; // Exit early if no employee is found
-                                    }
-                                    const dayName = getDayName(weekDates.find(date => formatDateForStorage(date) === dateStr) || new Date()).toLowerCase();
-                                    const dayAvailability = selectedEmployee?.availability[dayName];
-                                  
-                                    // Check if the employee is unavailable
-                                    const isAvailable = dayAvailability && Object.values(dayAvailability).some(value => value !== '');
-                                  
-                                    if (!isAvailable) {
-                                      const proceed = window.confirm(
-                                        `Warning: This employee is unavailable on ${fullDayName(dayName) + "s"}. Do you want to proceed anyway?`
-                                      );
-                                      if (!proceed) return;
-                                    }
-                                  
-                                    setSelectedCell({ employeeId: selectedEmployee.id, date: dateStr });
-                                  }}
-                                  className="flex items-center justify-center w-full p-1 text-gray-500 hover:bg-gray-100 border border-dashed border-gray-300 rounded transition-colors duration-200"
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })
-              ) : (
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full overflow-auto">
+          <div id="schedule-table" className="bg-white rounded-lg shadow relative">
+            <table className="w-full divide-y divide-gray-200">
+              <thead className="bg-gray-200 sticky top-0 z-10">
                 <tr>
-                  <td colSpan={9} className="px-3 py-2 text-center text-sm text-gray-500">
-                    No employees found. Add employees to get started.
-                  </td>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-200">
+                    Employee
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-200">
+                    Hours
+                  </th>
+                  {weekDates.map((date) => (
+                    <th key={date.toISOString()} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider  bg-gray-200">
+                      {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </th>
+                  ))}
                 </tr>
-              )}
-            </tbody>
-            <tfoot className="bg-gray-50">
-              <tr>
-                <td className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total <br /> Hours
-                </td>
-                <td className="px-3 py-2 text-left text-xs font-medium text-gray-500">
-                {employees
-                  .filter(emp => emp.active)
-                  .reduce((sum, emp) => {
-                    const hours = getTotalHoursForEmployee(emp.id);
-                    return sum + hours;
-                  }, 0).toFixed(2)}
-                </td>
-                {weekDates.map((date) => (
-                  <td key={date.toISOString()} className="px-3 py-2"></td>
-                ))}
-              </tr>
-            </tfoot>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {employees.length > 0 ? (
+                  employees
+                    .filter(employee => employee.active)
+                    .map((employee, index) => {
+                      const uniqueKey = `${employee.id}-${index}`;
+                      const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek, startDay));
+                      const employeeSchedule = schedules[weekStartDate]?.[employee.id];
+                      return (
+                        <tr key={uniqueKey}>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 employee-column">
+                            <div className="flex flex-col">
+                              <span>{employee.lastName}</span>
+                              <span className="text-gray-500">{employee.firstName}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                            {getTotalHoursForEmployee(employee.id).toFixed(2)}
+                          </td>
+                          {weekDates.map((date) => {
+                            const dateStr = formatDateForStorage(date);
+                            const isDayOff = daysOff.some(
+                              (off) => 
+                                off.date === dateStr && 
+                                off.employeeName === `${employee.lastName.toUpperCase()}, ${employee.firstName.toUpperCase()}`
+                            );
+                            const dayOffType = daysOff.find(
+                              off => off.date === dateStr && 
+                              off.employeeName === `${employee.lastName.toUpperCase()}, ${employee.firstName.toUpperCase()}`
+                            )?.timeOffType;
+
+                            const daySchedule = employeeSchedule?.[dateStr];
+                            const employeeTasks = daySchedule?.tasks || [];
+
+                            return (
+                              <td 
+                                key={`${employee.id}-${dateStr}`} 
+                                className={`px-3 py-2 ${isDayOff ? "bg-red-100" : ""}`}
+                              >
+                                <div className="flex flex-col space-y-1">
+                                  {isDayOff && (
+                                    <div className="text-xs font-bold text-red-500 text-center">
+                                      {dayOffType?.toUpperCase() || "Day Off"}
+                                    </div>
+                                  )}
+                                  {employeeTasks.map((task, taskIndex) => {
+                                    const skill = employee.skills.find(skill => skill.name.toLowerCase() === task.name.toLowerCase());
+                                    const skillColor = skill ? getSkillColor(skill.rating) : "text-gray-900";
+
+                                    return (
+                                      <div 
+                                        key={`${employee.id}-${dateStr}-${task.name}-${taskIndex}`} 
+                                        className={`flex items-center justify-between bg-gray-50 p-1 rounded ${skillColor} cursor-pointer hover:bg-gray-100`}
+                                        onClick={() => handleTaskClick(employee.id, dateStr, taskIndex, task)}
+                                      >
+                                        <div className="flex flex-col">
+                                          <span className="text-xs">
+                                            {formatTimeDisplay(task.startTime)}-{formatTimeDisplay(task.stopTime)}
+                                          </span>
+                                          <span className="text-xs font-medium">
+                                            {formatTaskName(task.name || task.name).map((part, i) => (
+                                              <React.Fragment key={i}>
+                                                {i > 0 ? '/ ' : ''}{part}
+                                                {i === 0 && task.name.includes('/ ') && <br />}
+                                              </React.Fragment>
+                                            ))}
+                                          </span>
+                                        </div>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRemoveTask(employee.id, dateStr, taskIndex);
+                                          }}
+                                          className="text-red-500 hover:text-red-700"
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                  {/* Always show the add task button */}
+                                  <button
+                                    onClick={() => {
+                                      const selectedEmployee = employees.find(emp => emp.id === employee.id);
+                                      if (!selectedEmployee) {
+                                        console.error("Employee not found");
+                                        return; // Exit early if no employee is found
+                                      }
+                                      const dayName = getDayName(weekDates.find(date => formatDateForStorage(date) === dateStr) || new Date()).toLowerCase();
+                                      const dayAvailability = selectedEmployee?.availability[dayName];
+                                    
+                                      // Check if the employee is unavailable
+                                      const isAvailable = dayAvailability && Object.values(dayAvailability).some(value => value !== '');
+                                    
+                                      if (!isAvailable) {
+                                        const proceed = window.confirm(
+                                          `Warning: This employee is unavailable on ${fullDayName(dayName) + "s"}. Do you want to proceed anyway?`
+                                        );
+                                        if (!proceed) return;
+                                      }
+                                    
+                                      setSelectedCell({ employeeId: selectedEmployee.id, date: dateStr });
+                                    }}
+                                    className="flex items-center justify-center w-full p-1 text-gray-500 hover:bg-gray-100 border border-dashed border-gray-300 rounded transition-colors duration-200"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })
+                ) : (
+                  <tr>
+                    <td colSpan={9} className="px-3 py-2 text-center text-sm text-gray-500">
+                      No employees found. Add employees to get started.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot className="bg-gray-50">
+                <tr>
+                  <td className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total <br /> Hours
+                  </td>
+                  <td className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                  {employees
+                    .filter(emp => emp.active)
+                    .reduce((sum, emp) => {
+                      const hours = getTotalHoursForEmployee(emp.id);
+                      return sum + hours;
+                    }, 0).toFixed(2)}
+                  </td>
+                  {weekDates.map((date) => (
+                    <td key={date.toISOString()} className="px-3 py-2"></td>
+                  ))}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
       </div>
 
