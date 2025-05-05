@@ -48,7 +48,6 @@ export default function SchedulesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [schedules, setSchedules] = useState<Schedules>({});
   const [selectedCell, setSelectedCell] = useState<{employeeId: string, date: string} | null>(null);
-  const [isCustomTask, setIsCustomTask] = useState(false);
   const [daysOff, setDaysOff] = useState<{ employeeName: string; date: string; timeOffType?: string }[]>([]);
   const [isCalendarConnected, setIsCalendarConnected] = useState(false);
   const [taskInProgress, setTaskInProgress] = useState<Task>({
@@ -642,7 +641,6 @@ export default function SchedulesPage() {
       // Update local state
       setSchedules(updatedSchedules);
       setSelectedCell(null);
-      setIsCustomTask(false);
       setTaskInProgress({ name: "", startTime: "", stopTime: "" });
     } catch (error) {
       console.error("Error adding task:", error);
@@ -985,106 +983,92 @@ export default function SchedulesPage() {
         </div>
       </div>
 
-      {/* Task Selection Modal */}
+      {/* Combined Task Selection Modal */}
       {selectedCell && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
             <h3 className="text-lg font-semibold mb-4">Add Task</h3>
-            {!isCustomTask ? (
-              <>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Select or Enter Task</label>
                 <select
                   key={`task-select-${selectedCell.employeeId}-${selectedCell.date}`}
                   className="w-full p-2 border rounded mb-4"
+                  value={taskInProgress.name || ""}
                   onChange={(e) => {
-                    if (e.target.value === "custom") {
-                      setIsCustomTask(true);
-                    } else if (e.target.value.startsWith("skill-")) {
+                    if (e.target.value.startsWith("skill-")) {
                       // Handle skill selection
                       const skillIndex = parseInt(e.target.value.split("-")[1], 10);
                       const selectedEmployee = employees.find(emp => emp.id === selectedCell.employeeId);
                       const selectedSkill = selectedEmployee?.skills[skillIndex];
-                
+                      
                       if (selectedSkill) {
-                        // Treat as if it were a custom task, only pre-filling the name of the custom task form
                         updateTaskInProgress("name", selectedSkill.name);
-                        setIsCustomTask(true); // Switch to custom task form
                       }
-                    } else if (e.target.value) {
-                      handleAddTask(selectedCell.employeeId, selectedCell.date, e.target.value);
+                    } else {
+                      updateTaskInProgress("name", e.target.value);
                     }
                   }}
                 >
-                  <option key="default" value="">Select a task</option>
-                  <option key="custom" value="custom">CREATE NEW TASK</option>
-                  {/* Add employees skills as an option */}
+                  <option value="">Select a task</option>
                   {employees.find(emp => emp.id === selectedCell.employeeId)?.skills.map((skill, index) => (
                     <option key={`skill-${index}`} value={`skill-${index}`}>
                       {skill.name} (Skill Rating: {skill.rating})
                     </option>
                   ))}
                 </select>
+                
+                <input
+                  type="text"
+                  value={taskInProgress.name}
+                  onChange={(e) => updateTaskInProgress("name", e.target.value)}
+                  className="w-full p-2 border rounded"
+                  placeholder="Or type a custom task name"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                  <input
+                    type="time"
+                    value={taskInProgress.startTime}
+                    onChange={(e) => updateTaskInProgress("startTime", e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                  <input
+                    type="time"
+                    value={taskInProgress.stopTime}
+                    onChange={(e) => updateTaskInProgress("stopTime", e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
                 <button
-                  onClick={() => setSelectedCell(null)}
-                  className="w-full p-2 bg-gray-200 rounded hover:bg-gray-300"
+                  onClick={() => handleAddTask(selectedCell.employeeId, selectedCell.date, taskInProgress.name, true)}
+                  className="flex-1 p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Add Task
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedCell(null);
+                    setTaskInProgress({ name: "", startTime: "", stopTime: "" });
+                  }}
+                  className="flex-1 p-2 bg-gray-200 rounded hover:bg-gray-300"
                 >
                   Cancel
                 </button>
-              </>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Task Name</label>
-                  <input
-                    type="text"
-                    value={taskInProgress.name}
-                    onChange={(e) => updateTaskInProgress("name", e.target.value)}
-                    className="w-full p-2 border rounded"
-                    placeholder="Enter task name"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                    <input
-                      type="time"
-                      value={taskInProgress.startTime}
-                      onChange={(e) => updateTaskInProgress("startTime", e.target.value)}
-                      className="w-full p-2 border rounded"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                    <input
-                      type="time"
-                      value={taskInProgress.stopTime}
-                      onChange={(e) => updateTaskInProgress("stopTime", e.target.value)}
-                      className="w-full p-2 border rounded"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleAddTask(selectedCell.employeeId, selectedCell.date, taskInProgress.name, true)}
-                    className="flex-1 p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Add Task
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsCustomTask(false);
-                    }}
-                    className="flex-1 p-2 bg-gray-200 rounded hover:bg-gray-300"
-                  >
-                    Back
-                  </button>
-                </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Edit Task Modal */}
+      {/* Edit Task Modal, TODO: Consider refactoring duplicate window logic from Add Task Modal into one reusable window */}
       {taskBeingEdited && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
@@ -1092,12 +1076,38 @@ export default function SchedulesPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Task Name</label>
+                <select
+                  key={`task-select-${taskBeingEdited.employeeId}-${taskBeingEdited.date}`}
+                  className="w-full p-2 border rounded mb-4"
+                  value={taskInProgress.name || ""}
+                  onChange={(e) => {
+                    if (e.target.value.startsWith("skill-")) {
+                      const skillIndex = parseInt(e.target.value.split("-")[1], 10);
+                      const selectedEmployee = employees.find(emp => emp.id === taskBeingEdited.employeeId);
+                      const selectedSkill = selectedEmployee?.skills[skillIndex];
+                      
+                      if (selectedSkill) {
+                        updateTaskInProgress("name", selectedSkill.name);
+                      }
+                    } else {
+                      updateTaskInProgress("name", e.target.value);
+                    }
+                  }}
+                >
+                  <option value="">Select a task</option>
+                  {employees.find(emp => emp.id === taskBeingEdited.employeeId)?.skills.map((skill, index) => (
+                    <option key={`skill-${index}`} value={`skill-${index}`}>
+                      {skill.name} (Skill Rating: {skill.rating})
+                    </option>
+                  ))}
+                </select>
+                
                 <input
                   type="text"
                   value={taskInProgress.name}
                   onChange={(e) => updateTaskInProgress("name", e.target.value)}
                   className="w-full p-2 border rounded"
-                  placeholder="Enter task name"
+                  placeholder="Or type a custom task name"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
