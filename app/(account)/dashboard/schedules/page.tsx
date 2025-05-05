@@ -56,6 +56,11 @@ export default function SchedulesPage() {
     startTime: "",
     stopTime: "",
   });
+  const [taskBeingEdited, setTaskBeingEdited] = useState<{
+    employeeId: string;
+    date: string;
+    taskIndex: number;
+  } | null>(null);
 
   const fetchDaysOff = async () => {
     try {
@@ -467,17 +472,37 @@ export default function SchedulesPage() {
   };
   
   const isTaskWithinAvailability = (employee: Employee, task: Task, day: string): boolean => {
-    const startHour = parseInt(task.startTime.split(":")[0], 10);
-    const stopHour = parseInt(task.stopTime.split(":")[0], 10);
+    console.log('Checking availability for:', {
+      employee: employee.firstName,
+      day,
+      task,
+      availability: employee.availability[day]
+    });
+  
+    const [startHour, startMinute] = task.startTime.split(":").map(Number);
+    const [stopHour, stopMinute] = task.stopTime.split(":").map(Number);
   
     const availability = employee.availability[day];
-    for (let hour = startHour; hour < stopHour; hour++) {
-      const timeSlot = `${hour.toString().padStart(2, "0")}:00`;
+    if (!availability) {
+      console.log('No availability found for day:', day);
+      return false;
+    }
+
+    for (let currentHour = startHour; currentHour <= stopHour; currentHour++) {
+      const timeSlot = `${currentHour.toString().padStart(2, "0")}:00`;
+      
+      // If we're checking the last hour and the task ends exactly on the hour
+      if (currentHour === stopHour && stopMinute === 0) {
+        break; // Don't check the next hour if the task ends exactly on the hour
+      }
+  
       if (!availability[timeSlot] || availability[timeSlot] === "") {
-        return false; // Time slot is unavailable
+        console.log(`Time slot ${timeSlot} is not available`);
+        return false;
       }
     }
-  
+
+    console.log('All time slots are available');
     return true; // All time slots are available
   };
 
@@ -497,7 +522,7 @@ export default function SchedulesPage() {
     return overlap;
   };
 
-  const hasTimeOverlap = (employeeId: string, date: string, newTask: Task) => {
+  const hasTimeOverlap = (employeeId: string, date: string, newTask: Task, taskIndexToIgnore?: number) => {
     const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek, startDay));
     const employeeSchedule = schedules[weekStartDate]?.[employeeId];
     if (!employeeSchedule) {
@@ -516,8 +541,12 @@ export default function SchedulesPage() {
     console.log(`Existing tasks:`, daySchedule.tasks);
     console.log(`New task:`, newTask);
 
-    // Iterate over all tasks for the given dayName
-    return daySchedule.tasks.some(task => {
+    // Iterate over all tasks for the given dayName, excluding the task being edited
+    return daySchedule.tasks.some((task, index) => {
+      if (taskIndexToIgnore !== undefined && index === taskIndexToIgnore) {
+        return false;
+      }
+
       const overlap = isTimeOverlap(
         task.startTime,
         task.stopTime,
@@ -540,23 +569,10 @@ export default function SchedulesPage() {
     return null;
   };
 
-  const handleAddTask = async (employeeId: string, date: string, taskName: string, isCustom: boolean = false) => {
-    try {
-      const employee = employees.find(emp => emp.id === employeeId);
+  const validateAvailability = (employeeId: string, date: string, task: Task, taskIndexToIgnore?: number) => {
+    const employee = employees.find(emp => emp.id === employeeId);
       if (!employee) {
         console.error('Employee not found with ID:', employeeId);
-        return;
-      }
-
-      const task: Task = isCustom
-        ? { ...taskInProgress }
-        : createTask(taskName, "09:00", "17:00"); // Default times for skill-based tasks
-
-
-      // validate task
-      const error = validateTask(task);
-      if (error) {
-        alert(error);
         return;
       }
 
@@ -566,18 +582,33 @@ export default function SchedulesPage() {
 
       // Check if the task is within the employee's availability
       if (!isTaskWithinAvailability(employee, task, dayName)) {
-        const proceed = window.confirm(
-          `Warning: This task is outside of ${employee.firstName} ${employee.lastName}'s availability on ${formattedDay + 's'}. Do you want to proceed anyway?`
-        );
-        if (!proceed) return null;
+        return `Warning: This task is outside of ${employee.firstName} ${employee.lastName}'s availability on ${formattedDay + 's'}. Do you want to proceed anyway?`;
       }
 
       // Check for time overlap
-      if (hasTimeOverlap(employee.id, date, task)) {
-        const proceed = window.confirm(
-          `Warning: This task overlaps with another task scheduled for ${employee.firstName} ${employee.lastName} on ${formattedDay}. Do you want to proceed anyway?`
-        );
-        if (!proceed) return null;
+      if (hasTimeOverlap(employeeId, date, task, taskIndexToIgnore)) {
+        return `Warning: This task overlaps with another task scheduled for ${employee.firstName} ${employee.lastName} on ${formattedDay}. Do you want to proceed anyway?`;
+      }
+
+      return null;
+  }
+
+  const handleAddTask = async (employeeId: string, date: string, taskName: string, isCustom: boolean = false) => {
+    try {
+      const task: Task = isCustom
+        ? { ...taskInProgress }
+        : createTask(taskName, "00:00", "00:00"); // Default times for skill-based tasks
+
+      const error = validateTask(task);
+      if (error) {
+        alert(error);
+        return;
+      }
+
+      const warning = validateAvailability(employeeId, date, task)
+      if (warning) {
+        const proceed = window.confirm(warning);
+        if (!proceed) return;
       }
 
       // Add the task to the schedule in Firestore
@@ -588,17 +619,17 @@ export default function SchedulesPage() {
         updatedSchedules[weekStartDate] = {};
       }
       
-      if (!updatedSchedules[weekStartDate][employee.id]) {
-        updatedSchedules[weekStartDate][employee.id] = {};
+      if (!updatedSchedules[weekStartDate][employeeId]) {
+        updatedSchedules[weekStartDate][employeeId] = {};
       }
       
-      if (!updatedSchedules[weekStartDate][employee.id][date]) {
-        updatedSchedules[weekStartDate][employee.id][date] = { tasks: [] };
+      if (!updatedSchedules[weekStartDate][employeeId][date]) {
+        updatedSchedules[weekStartDate][employeeId][date] = { tasks: [] };
       }
       
       // Add the new task and sort by start time
-      updatedSchedules[weekStartDate][employee.id][date].tasks.push(task);
-      updatedSchedules[weekStartDate][employee.id][date].tasks.sort((a, b) => {
+      updatedSchedules[weekStartDate][employeeId][date].tasks.push(task);
+      updatedSchedules[weekStartDate][employeeId][date].tasks.sort((a, b) => {
         const [aHour, aMin] = a.startTime.split(':').map(Number);
         const [bHour, bMin] = b.startTime.split(':').map(Number);
         return (aHour * 60 + aMin) - (bHour * 60 + bMin);
@@ -616,6 +647,64 @@ export default function SchedulesPage() {
     } catch (error) {
       console.error("Error adding task:", error);
     }
+  };
+
+  // Add this new function with your other handlers
+  const handleEditTask = async () => {
+    if (!taskBeingEdited) return;
+
+    try {
+      const { employeeId, date, taskIndex } = taskBeingEdited;
+
+      const error = validateTask(taskInProgress);
+      if (error) {
+        alert(error);
+        return;
+      }
+      const warning = validateAvailability(employeeId, date, taskInProgress, taskIndex)
+      if (warning) {
+        const proceed = window.confirm(warning);
+        if (!proceed) return;
+      }
+
+      const weekStartDate = formatWeekStartDate(getWeekStartDate(currentWeek, startDay));
+      const updatedSchedules = { ...schedules };
+
+      if (
+        updatedSchedules[weekStartDate]?.[employeeId]?.[date]?.tasks &&
+        updatedSchedules[weekStartDate][employeeId][date].tasks[taskIndex]
+      ) {
+        // Update the task
+        updatedSchedules[weekStartDate][employeeId][date].tasks[taskIndex] = {
+          ...taskInProgress,
+          name: taskInProgress.name.toUpperCase(),
+        };
+
+        // Sort tasks by start time
+        updatedSchedules[weekStartDate][employeeId][date].tasks.sort((a, b) => {
+          const [aHour, aMin] = a.startTime.split(':').map(Number);
+          const [bHour, bMin] = b.startTime.split(':').map(Number);
+          return (aHour * 60 + aMin) - (bHour * 60 + bMin);
+        });
+
+        await updateDoc(userRef, {
+          schedules: updatedSchedules
+        });
+
+        setSchedules(updatedSchedules);
+        setTaskBeingEdited(null);
+        setTaskInProgress({ name: "", startTime: "", stopTime: "" });
+      }
+    } catch (error) {
+      console.error("Error updating task:", error);
+      alert("Failed to update task");
+    }
+  };
+
+  // Add this function to handle clicking on a task
+  const handleTaskClick = (employeeId: string, date: string, taskIndex: number, task: Task) => {
+    setTaskBeingEdited({ employeeId, date, taskIndex });
+    setTaskInProgress({ ...task });
   };
 
   const handleRemoveTask = async (employeeId: string, date: string, taskIndex: number) => {
@@ -802,7 +891,8 @@ export default function SchedulesPage() {
                                   return (
                                     <div 
                                       key={`${employee.id}-${dateStr}-${task.name}-${taskIndex}`} 
-                                      className={`flex items-center justify-between bg-gray-50 p-1 rounded ${skillColor}`}
+                                      className={`flex items-center justify-between bg-gray-50 p-1 rounded ${skillColor} cursor-pointer hover:bg-gray-100`}
+                                      onClick={() => handleTaskClick(employee.id, dateStr, taskIndex, task)}
                                     >
                                       <div className="flex flex-col">
                                         <span className="text-xs">
@@ -818,7 +908,10 @@ export default function SchedulesPage() {
                                         </span>
                                       </div>
                                       <button
-                                        onClick={() => handleRemoveTask(employee.id, dateStr, taskIndex)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleRemoveTask(employee.id, dateStr, taskIndex);
+                                        }}
                                         className="text-red-500 hover:text-red-700"
                                       >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -987,6 +1080,64 @@ export default function SchedulesPage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Task Modal */}
+      {taskBeingEdited && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4">Edit Task</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Task Name</label>
+                <input
+                  type="text"
+                  value={taskInProgress.name}
+                  onChange={(e) => updateTaskInProgress("name", e.target.value)}
+                  className="w-full p-2 border rounded"
+                  placeholder="Enter task name"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                  <input
+                    type="time"
+                    value={taskInProgress.startTime}
+                    onChange={(e) => updateTaskInProgress("startTime", e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                  <input
+                    type="time"
+                    value={taskInProgress.stopTime}
+                    onChange={(e) => updateTaskInProgress("stopTime", e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleEditTask}
+                  className="flex-1 p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Save Task
+                </button>
+                <button
+                  onClick={() => {
+                    setTaskBeingEdited(null);
+                    setTaskInProgress({ name: "", startTime: "", stopTime: "" });
+                  }}
+                  className="flex-1 p-2 bg-gray-200 rounded hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
