@@ -51,19 +51,6 @@ export default function SigninForm() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      console.log("Google Sign-In successful:", user);
-      router.push("/dashboard");
-    } catch (error) {
-      console.error("Google Sign-In Error:", error);
-      alert("Failed to sign in with Google. Please try again.");
-    }
-  };
-
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6">
       <div className="MsoNormal" style={{ lineHeight: "1.1" }}>
@@ -130,14 +117,6 @@ export default function SigninForm() {
               {isSubmitting ? "Sending..." : "Signin"}
             </button>
           </form>
-          <div className="mt-4">
-            <button
-              onClick={handleGoogleSignIn}
-              className="btn w-full bg-blue-500 text-white hover:bg-blue-600"
-            >
-              Sign in with Google
-            </button>
-          </div>
         </>
       )}
     </div>

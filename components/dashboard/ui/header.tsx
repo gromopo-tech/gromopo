@@ -73,26 +73,18 @@ export default function Header() {
               <ul className="p-4">
                 <li>
                   <Link 
-                    href="/dashboard/employees" 
+                    href="/order" 
                     className="block p-2 hover:bg-gray-200" 
                     onClick={handleLinkClick}>
-                    Employees
+                    Place an order
                   </Link>
                 </li>
                 <li>
                   <Link 
-                    href="/dashboard/schedules" 
+                    href="/prepare" 
                     className="block p-2 hover:bg-gray-200"
                     onClick={handleLinkClick}>
-                    Schedules
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    href="/dashboard/settings" 
-                    className="block p-2 hover:bg-gray-200"
-                    onClick={handleLinkClick}>
-                    Settings
+                    Make a sandwich
                   </Link>
                 </li>
               </ul>
