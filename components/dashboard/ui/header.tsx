@@ -71,20 +71,28 @@ export default function Header() {
           {isDropdownVisible && (
             <div ref={dropdownRef} className="absolute left-0 mt-14 bg-white shadow-md rounded-md">
               <ul className="p-4">
-                <li>
+              <li>
                   <Link 
-                    href="/order" 
+                    href="/dashboard/employees" 
                     className="block p-2 hover:bg-gray-200" 
                     onClick={handleLinkClick}>
-                    Place an order
+                    Manage employees
                   </Link>
                 </li>
                 <li>
                   <Link 
-                    href="/prepare" 
+                    href="/take" 
+                    className="block p-2 hover:bg-gray-200" 
+                    onClick={handleLinkClick}>
+                    Take an order
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    href="/make"
                     className="block p-2 hover:bg-gray-200"
                     onClick={handleLinkClick}>
-                    Make a sandwich
+                    Make an order
                   </Link>
                 </li>
               </ul>

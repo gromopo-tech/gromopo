@@ -2,14 +2,27 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Allow creation of a business doc only if user is creating one with their own UID
+    match /businesses/{businessId} {
+      allow create: if request.auth != null && request.auth.uid == businessId;
+      
+      // Allow reads only to users associated with the business
+      allow read: if isUserInBusiness(businessId);
 
-    // Allow authenticated users to read and write their own data
+      // Optional: allow updates only by the business owner
+      allow update: if request.auth != null && isOwner(businessId);
+
+      // Disallow deletes unless you implement business deletion logic
+      allow delete: if false;
+    }
+
+    // Only allow authenticated owners/admins to read and write users data of their own business request.auth.uid == userId
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null && isAdmin(request.auth.uid);
       
       // Allow access to all subcollections under the user's document
       match /{document=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if request.auth != null && isAdmin(request.auth.uid);
       }
     }
     
@@ -20,6 +33,17 @@ service cloud.firestore {
     match /partners/{partner} {
       allow create: if request.auth == null; // No auth needed
       allow read: if false; // Block public reads
+    }
+    
+    function isUserInBusiness(businessId) {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.businessId == businessId;
+    }
+    function isOwner(businessId) {
+      return get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerUid == request.auth.uid;
+    }
+    function isAdmin(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.role == "admin";
     }
   }
 }
