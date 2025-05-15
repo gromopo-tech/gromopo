@@ -2,48 +2,98 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow creation of a business doc only if user is creating one with their own UID
+    match /subscribers/{subscriber} {
+      allow create: if request.auth == null; // No auth needed
+      allow read: if false; // Block public reads
+    }
+
+    match /partners/{partner} {
+      allow create: if request.auth == null; // No auth needed
+      allow read: if false; // Block public reads
+    }
+    
     match /businesses/{businessId} {
-      allow create: if request.auth != null && request.auth.uid == businessId;
+      // Later, only allow creation of a business doc only if user is creating one with their own UID
+      // allow create: if request.auth != null && ...;
       
       // Allow reads only to users associated with the business
-      allow read: if isUserInBusiness(businessId);
-
-      // Optional: allow updates only by the business owner
-      allow update: if request.auth != null && isOwner(businessId);
+      allow read, write, update: if isUserInBusiness(businessId);
 
       // Disallow deletes unless you implement business deletion logic
       allow delete: if false;
     }
 
-    // Only allow authenticated owners/admins to read and write users data of their own business request.auth.uid == userId
     match /users/{userId} {
-      allow read, write: if request.auth != null && isAdmin(request.auth.uid);
-      
+      // Allow authenticated users to read users data of their own businesses
+      allow get: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && isSameBusiness(userId) && isAdminOrOwner();
+      allow update: if request.auth != null && isSameBusiness(userId) && canModifyRole(userId) && isNotSelf(userId) && isAdminOrOwner();
+      allow delete: if request.auth != null && isSameBusiness(userId) && isNotSelf(userId) && canModifyRole(userId);
+      allow create: if request.auth != null && isSameBusinessForCreate() && canCreateWithRole() && isNotSelf(userId);
+
       // Allow access to all subcollections under the user's document
       match /{document=**} {
-        allow read, write: if request.auth != null && isAdmin(request.auth.uid);
+        allow get: if request.auth != null && request.auth.uid == userId;
+        allow read: if request.auth != null && isSameBusiness(userId) && isAdminOrOwner();
+        allow update: if request.auth != null && isSameBusiness(userId) && canModifyRole(userId) && isNotSelf(userId) && isAdminOrOwner();
+        allow delete: if request.auth != null && isSameBusiness(userId) && isNotSelf(userId) && canModifyRole(userId);
+        allow create: if request.auth != null && isSameBusinessForCreate() && canCreateWithRole() && isNotSelf(userId);
       }
     }
-    
-    match /subscribers/{subscriber} {
-      allow create: if request.auth == null; // No auth needed
-      allow read: if false; // Block public reads
+
+    function canModifyRole(targetUserId) {
+      let requester = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      let target = get(/databases/$(database)/documents/users/$(targetUserId)).data;
+
+      return target.role == 'owner'
+        ? false
+        : target.role == 'admin'
+          ? requester.role == 'owner'
+          : requester.role in ['admin', 'owner'];
     }
-    match /partners/{partner} {
-      allow create: if request.auth == null; // No auth needed
-      allow read: if false; // Block public reads
+
+    function isNotSelf(targetUserId) {
+      return request.auth.uid != targetUserId;
+    }
+
+    function canCreateWithRole() {
+      let requester = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      let incoming = request.resource.data;
+
+      // Allow owners to create admins and admins to create maker/taker users
+      return (
+        (requester.role == 'owner' && incoming.role in ['admin', 'maker', 'taker']) ||
+        (requester.role == 'admin' && incoming.role in ['maker', 'taker'])
+      );
     }
     
     function isUserInBusiness(businessId) {
       return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.businessId == businessId;
     }
-    function isOwner(businessId) {
-      return get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerUid == request.auth.uid;
+
+    function isAdminOrOwner() {
+      let requester = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return requester.role in ['admin', 'owner'];
     }
-    function isAdmin(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.role == "admin";
+
+    function isSameBusiness(targetUserId) {
+      let requester = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      let target = get(/databases/$(database)/documents/users/$(targetUserId)).data;
+      return request.auth != null &&
+             requester.businessId != null &&
+             target.businessId != null &&
+             requester.businessId == target.businessId;
+    }
+
+    function isSameBusinessForCreate() {
+      let requester = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      let incoming = request.resource.data;
+
+      return request.auth != null &&
+             requester.businessId != null &&
+             incoming.businessId != null &&
+             requester.businessId == incoming.businessId;
     }
   }
 }

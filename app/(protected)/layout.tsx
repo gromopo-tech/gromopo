@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
-import { AuthWrapper } from '@/components/authWrapper'
 
 export default function DashboardLayout({
   children,
@@ -41,9 +40,7 @@ export default function DashboardLayout({
       {/* Main Content */}
       <div className="flex-grow overflow-hidden bg-e9e7d5">
         <div className="h-full overflow-auto p-6">
-          <AuthWrapper>
           {children}
-          </AuthWrapper>
         </div>
       </div>
     </div>

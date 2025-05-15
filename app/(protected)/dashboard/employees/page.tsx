@@ -1,20 +1,20 @@
 import Link from 'next/link'
 import EmployeesList from './employeesList'
+import type { Employee } from '@/types/employee'
 import { adminDb } from '@/lib/firebase/adminConfig'
+import { Timestamp } from 'firebase/firestore'
 
-type Employee = {
-  id: string
-  email: string
-  username?: string
-  role: 'admin' | 'taker' | 'maker'
-}
 
 export default async function EmployeesPage() {
   const snapshot = await adminDb.collection('users').get()
 
   const employees: Employee[] = snapshot.docs.map((doc) => {
     const data = doc.data() as Omit<Employee, 'id'>
-    return { id: doc.id, ...data }
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : null, // Ensure createdAt is always a plain value
+    }
   })
   
 

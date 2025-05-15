@@ -16,7 +16,7 @@ export default function Header() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setUserName(user.displayName || user.email || "User");
+        setUserName(user.displayName || user.email );
       } else {
         setUserName(null);
       }
@@ -69,14 +69,33 @@ export default function Header() {
 
           {/* Dropdown Menu */}
           {isDropdownVisible && (
-            <div ref={dropdownRef} className="absolute left-0 mt-14 bg-white shadow-md rounded-md">
+            <div
+            ref={dropdownRef}
+            className="absolute top-full left-0 mt-2 bg-white shadow-md rounded-md z-40"
+          >          
               <ul className="p-4">
-              <li>
+                <li>
                   <Link 
                     href="/dashboard/employees" 
                     className="block p-2 hover:bg-gray-200" 
                     onClick={handleLinkClick}>
-                    Manage employees
+                    Employees
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    href="/dashboard/menus" 
+                    className="block p-2 hover:bg-gray-200" 
+                    onClick={handleLinkClick}>
+                    Menus
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    href="/dashboard"
+                    className="block p-2 hover:bg-gray-200" 
+                    onClick={handleLinkClick}>
+                    Orders
                   </Link>
                 </li>
                 <li>

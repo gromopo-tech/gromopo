@@ -1,7 +1,6 @@
 "use client";
 
 import "./css/style.css";
-import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase/config";
@@ -10,12 +9,7 @@ import MarketingHeader from "@/components/marketing/ui/header";
 import DashboardHeader from "@/components/dashboard/ui/header";
 import MarketingFooter from "@/components/marketing/ui/footer";
 import DashboardFooter from "@/components/dashboard/ui/footer";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
+import { Toaster } from "react-hot-toast";
 
 const nacelle = localFont({
   src: [
@@ -62,8 +56,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${nacelle.variable} bg-e9e7d5 font-inter text-base text-black-200 antialiased`}
+        className={`${nacelle.variable} bg-e9e7d5 font-inter text-base text-black-200 antialiased`}
       >
+        <Toaster position="top-right" />
         {isAuthenticated ? <DashboardHeader /> : <MarketingHeader />}
         <main className="flex min-h-screen flex-col overflow-hidden supports-[overflow:clip]:overflow-clip">
           {children}

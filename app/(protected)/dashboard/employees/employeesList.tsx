@@ -2,16 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { Trash2, Pencil } from 'lucide-react'
-import { doc, deleteDoc, updateDoc } from 'firebase/firestore'
+import { doc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
+import type { Employee } from '@/types/employee'
 
-type Employee = {
-  id: string
-  email: string
-  username?: string
-  role: 'admin' | 'taker' | 'maker'
-}
 
 export default function EmployeesList({ employees }: { employees: Employee[] }) {
   const [filter, setFilter] = useState<'all' | 'admin' | 'taker' | 'maker'>('all')
@@ -31,13 +26,28 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
       return () => unsubscribe();
     }, []);
 
-  const handleDelete = async (id: string) => {
-    const confirm = window.confirm('Are you sure you want to delete this employee?')
-    if (!confirm) return
-
-    await deleteDoc(doc(db, 'users', id))
-    setEmployeeList((prev) => prev.filter((emp) => emp.id !== id))
-  }
+    const handleDelete = async (id: string) => {
+      const confirm = window.confirm('Are you sure you want to delete this employee?')
+      if (!confirm) return
+    
+      try {
+        const res = await fetch('/api/delete-employee', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: id }),
+        })
+    
+        if (!res.ok) {
+          throw new Error('Failed to delete user')
+        }
+    
+        setEmployeeList((prev) => prev.filter((emp) => emp.id !== id))
+      } catch (err) {
+        console.error('Delete failed:', err)
+        alert('Error deleting employee. Please try again.')
+      }
+    }
+    
 
   const handleRoleChange = async (id: string, newRole: Employee['role']) => {
     await updateDoc(doc(db, 'users', id), { role: newRole })
@@ -67,7 +77,8 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
       <table className="w-full border text-left">
         <thead className="bg-gray-100">
           <tr>
-            <th className="p-2">Username</th>
+            <th className="p-2">Last Name</th>
+            <th className="p-2">First Name</th>
             <th className="p-2">Email</th>
             <th className="p-2">Role</th>
             <th className="p-2">Actions</th>
@@ -78,7 +89,8 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
             const isSelf = e.id === currentUserId
             return (
               <tr key={e.id} className="border-t">
-                <td className="p-2">{e.username || '-'}</td>
+                <td className="p-2">{e.lastName || '-'}</td>
+                <td className="p-2">{e.firstName || '-'}</td>
                 <td className="p-2">{e.email}</td>
                 <td className="p-2 capitalize">
                   {editingId === e.id && !isSelf ? (
