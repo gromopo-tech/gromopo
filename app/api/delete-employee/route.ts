@@ -1,19 +1,68 @@
-// app/api/delete-employee/route.ts
 import { NextResponse } from 'next/server'
+import { getRequesterDataFromToken } from '@/lib/getUserData'
 import { adminAuth, adminDb } from '@/lib/firebase/adminConfig'
 
 export async function POST(req: Request) {
   try {
-    const { uid } = await req.json()
+    const { uid: targetUid } = await req.json()
 
-    if (!uid) {
+    if (!targetUid) {
       return NextResponse.json({ error: 'Missing uid' }, { status: 400 })
     }
+    // Fetch the target user's document
+    const targetDoc = await adminDb.collection('users').doc(targetUid).get();
+    if (!targetDoc.exists) {
+      return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
+    }
 
-    await adminAuth.deleteUser(uid)
-    await adminDb.doc(`users/${uid}`).delete()
+    const targetData = targetDoc.data();
+    if (!targetData) {
+      return NextResponse.json({ error: 'Target user data not found' }, { status: 404 });
+    }
 
-    return NextResponse.json({ success: true })
+    const { user, userData } = await getRequesterDataFromToken(req)
+    const isOwner = userData?.role === 'owner'
+    const isAdmin = userData?.role === 'admin'
+    const targetIsLimited = ['maker', 'taker'].includes(targetData.role)
+  
+    if (
+      !(isOwner || (isAdmin && targetIsLimited))
+    ) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+
+    const authHeader = req.headers.get('Authorization');
+    console.log('Authorization header:', authHeader);
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Missing Authorization header' }, { status: 401 });
+    }
+
+    const idToken = authHeader.split('Bearer ')[1];
+    if (!idToken) {
+      return NextResponse.json({ error: 'Invalid Authorization header format' }, { status: 401 });
+    }
+
+    
+
+    // Check if the requester is in the same business as the target user
+    if (userData.businessId !== targetData.businessId) {
+      return NextResponse.json({ error: 'Unauthorized: Different business' }, { status: 403 });
+    }
+
+    // Check if the requester is not deleting themselves
+    if (user.uid === targetUid) {
+      return NextResponse.json({ error: 'Unauthorized: Cannot delete yourself' }, { status: 403 });
+    }
+
+    // Check if the requester has the appropriate role
+    if (!['admin', 'owner'].includes(userData.role)) {
+      return NextResponse.json({ error: 'Unauthorized: Insufficient role' }, { status: 403 });
+    }
+
+    await adminAuth.deleteUser(targetUid);
+    await adminDb.doc(`users/${targetUid}`).delete();
+
+    return NextResponse.json({ success: true });
   } catch (err) {
     console.error('Error deleting user:', err)
     return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 })

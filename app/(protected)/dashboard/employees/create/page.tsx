@@ -2,12 +2,16 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/useAuth' // custom hook to get Firebase user
+import { useAuth } from '@/lib/useAuth'
 import { toast } from 'react-hot-toast'
 
 export default function CreateEmployeePage() {
   const router = useRouter()
-  const { user, userData } = useAuth() // Must include role info from Firestore
+  const { user, userData } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [success, setSuccess] = useState<string | null>(null);
+  const [resetLink, setResetLink] = useState('null')
   const [form, setForm] = useState({
     lastName: '',
     firstName: '',
@@ -15,20 +19,14 @@ export default function CreateEmployeePage() {
     role: 'maker',
   })
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [success, setSuccess] = useState<string | null>(null);
-  const [resetLink, setResetLink] = useState('null')
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log(`Role: ${userData?.role}`)
     if (!userData || (userData?.role !== 'owner' && userData?.role !== 'admin')) {
-      toast.error('Access denied.')
+      toast.error('Unauthorized.')
       return
     }
 
@@ -71,10 +69,6 @@ export default function CreateEmployeePage() {
     }
   }
 
-  if (userData?.role !== 'owner' && userData?.role !== 'admin') {
-    return <p className="text-red-600">Access denied.</p>
-  }
-
   return (
     <div className="max-w-md mx-auto p-4">
       <h1 className="text-xl font-semibold mb-4">Create New Employee</h1>
@@ -115,7 +109,7 @@ export default function CreateEmployeePage() {
           <option value="" disabled>Select role</option>
           <option value="taker">Taker</option>
           <option value="maker">Maker</option>
-          {userData?.role === 'owner' && <option value="admin">Admin</option>}
+          <option value="admin">Admin</option>
         </select>
         <button
           type="submit"

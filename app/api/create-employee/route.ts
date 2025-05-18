@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import { getRequesterRoleFromToken } from '@/lib/getUserRole'
+import { getRequesterDataFromToken } from '@/lib/getUserData'
 import { adminAuth, adminDb } from '@/lib/firebase/adminConfig'
 import { randomBytes } from 'crypto'
 
 export async function POST(req: Request) {
   const { lastName, firstName, email, role, businessId } = await req.json()
+  const tempPassword = randomBytes(12).toString('base64')
 
   if (!email || !role || !firstName || !lastName || !businessId) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -13,12 +14,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
   }
 
-  const { role: requesterRole } = await getRequesterRoleFromToken(req)
-  const tempPassword = randomBytes(12).toString('base64')
-
-  const isOwner = requesterRole === 'owner'
-  const isAdmin = requesterRole === 'admin'
-
+  const { user, userData } = await getRequesterDataFromToken(req)
+  const isOwner = userData?.role === 'owner'
+  const isAdmin = userData?.role === 'admin'
   const targetIsLimited = ['maker', 'taker'].includes(role)
 
   if (

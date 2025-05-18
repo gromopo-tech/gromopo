@@ -5,19 +5,23 @@ import { Trash2, Pencil } from 'lucide-react'
 import { doc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
+import { useAuth } from '@/lib/useAuth'
+import { toast } from 'react-hot-toast'
 import type { Employee } from '@/types/employee'
-
 
 export default function EmployeesList({ employees }: { employees: Employee[] }) {
   const [filter, setFilter] = useState<'all' | 'admin' | 'taker' | 'maker'>('all')
   const [employeeList, setEmployeeList] = useState(employees)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const { user, userData } = useAuth()
   
+  console.log("User data: ", userData?.role)
     useEffect(() => {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         if (user) {
           setCurrentUserId(user.uid);
+
         } else {
           setCurrentUserId(null);
         }
@@ -27,29 +31,52 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
     }, []);
 
     const handleDelete = async (id: string) => {
+      if (!userData || (userData?.role !== 'owner' && userData?.role !== 'admin')) {
+        toast.error('Unauthorized.')
+        return
+      }
       const confirm = window.confirm('Are you sure you want to delete this employee?')
       if (!confirm) return
     
       try {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+          toast.error('User not authenticated')
+          return
+        }
+
+        const idToken = await currentUser.getIdToken(true); // Force refresh the token to ensure validity
+
         const res = await fetch('/api/delete-employee', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
           body: JSON.stringify({ uid: id }),
-        })
-    
+        });
+
         if (!res.ok) {
-          throw new Error('Failed to delete user')
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to delete user');
         }
-    
-        setEmployeeList((prev) => prev.filter((emp) => emp.id !== id))
+
+        setEmployeeList((prev) => prev.filter((emp) => emp.id !== id));
       } catch (err) {
-        console.error('Delete failed:', err)
-        alert('Error deleting employee. Please try again.')
+        if (err instanceof Error) {
+          toast.error(err.message || 'Error deleting employee. Please try again.');
+        } else {
+          toast.error('Error deleting employee. Please try again.');
+        }
       }
     }
     
 
   const handleRoleChange = async (id: string, newRole: Employee['role']) => {
+    if (!userData || (userData?.role !== 'owner' && userData?.role !== 'admin')) {
+      toast.error('Unauthorized.')
+      return
+    }
     await updateDoc(doc(db, 'users', id), { role: newRole })
     setEmployeeList((prev) =>
       prev.map((emp) => (emp.id === id ? { ...emp, role: newRole } : emp))
@@ -93,7 +120,7 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
                 <td className="p-2">{e.firstName || '-'}</td>
                 <td className="p-2">{e.email}</td>
                 <td className="p-2 capitalize">
-                  {editingId === e.id && !isSelf ? (
+                  {editingId === e.id ? (
                     <select
                       value={e.role}
                       onChange={(ev) => handleRoleChange(e.id, ev.target.value as Employee['role'])}
@@ -110,27 +137,22 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
                   )}
                 </td>
                 <td className="p-2 flex gap-2">
-                  {!isSelf && (
-                    <>
-                      <button
-                        onClick={() => setEditingId(e.id)}
-                        className="text-blue-600 hover:text-blue-800"
-                        title="Edit role"
-                      >
-                        <Pencil size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(e.id)}
-                        className="text-red-600 hover:text-red-800"
-                        title="Delete employee"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </>
-                  )}
-                  {isSelf && (
-                      <span className="text-gray-400 italic text-sm">You</span>
-                    )}
+                  <>
+                    <button
+                      onClick={() => setEditingId(e.id)}
+                      className="text-blue-600 hover:text-blue-800"
+                      title="Edit role"
+                    >
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(e.id)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Delete employee"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </>
                 </td>
               </tr>
             )
