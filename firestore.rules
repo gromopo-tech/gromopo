@@ -30,26 +30,24 @@ service cloud.firestore {
       allow update: if request.auth != null && isSameBusiness(userId) && canModifyRole(userId) && isNotSelf(userId) && isAdminOrOwner();
       allow delete: if request.auth != null && isSameBusiness(userId) && isNotSelf(userId) && canModifyRole(userId);
       allow create: if request.auth != null && isSameBusinessForCreate() && canCreateWithRole() && isNotSelf(userId);
-
-      // Allow access to all subcollections under the user's document
-      match /{document=**} {
-        allow get: if request.auth != null && request.auth.uid == userId;
-        allow read: if request.auth != null && isSameBusiness(userId) && isAdminOrOwner();
-        allow update: if request.auth != null && isSameBusiness(userId) && canModifyRole(userId) && isNotSelf(userId) && isAdminOrOwner();
-        allow delete: if request.auth != null && isSameBusiness(userId) && isNotSelf(userId) && canModifyRole(userId);
-        allow create: if request.auth != null && isSameBusinessForCreate() && canCreateWithRole() && isNotSelf(userId);
-      }
     }
 
     function canModifyRole(targetUserId) {
       let requester = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
       let target = get(/databases/$(database)/documents/users/$(targetUserId)).data;
 
-      return target.role == 'owner'
-        ? false
-        : target.role == 'admin'
-          ? requester.role == 'owner'
-          : requester.role in ['admin', 'owner'];
+      // Admins can only change roles between 'maker' and 'taker'
+      return (requester.role == 'admin' &&
+              target.role in ['maker', 'taker'] &&
+              request.resource.data.role in ['maker', 'taker']) ||
+             // Prevent admins from assigning 'admin' role
+             (requester.role == 'admin' && request.resource.data.role == 'admin' ? false :
+             // Owners cannot have their roles modified
+             (target.role == 'owner' ? false :
+             // Only owners can modify admin roles
+             (target.role == 'admin' ? requester.role == 'owner' :
+             // Admins and owners can modify other roles
+             requester.role in ['admin', 'owner'])));
     }
 
     function isNotSelf(targetUserId) {

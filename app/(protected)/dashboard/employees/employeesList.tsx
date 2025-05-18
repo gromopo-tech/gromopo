@@ -110,7 +110,8 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
                       onChange={(ev) => handleRoleChange(e.id, ev.target.value as Employee['role'])}
                       className="border rounded px-2 py-1"
                     >
-                      {['admin', 'taker', 'maker'].map((r) => (
+                      {userData?.role === 'owner' && <option value="admin">admin</option>}
+                      {['taker', 'maker'].map((r) => (
                         <option key={r} value={r}>
                           {r}
                         </option>
