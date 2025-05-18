@@ -6,9 +6,9 @@ import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
 import MarketingHeader from "@/components/marketing/ui/header";
-import DashboardHeader from "@/components/dashboard/ui/header";
+import ProtectedHeader from "@/components/protected/ui/header";
 import MarketingFooter from "@/components/marketing/ui/footer";
-import DashboardFooter from "@/components/dashboard/ui/footer";
+import ProtectedFooter from "@/components/protected/ui/footer";
 import { Toaster } from "react-hot-toast";
 
 const nacelle = localFont({
@@ -59,11 +59,11 @@ export default function RootLayout({
         className={`${nacelle.variable} bg-e9e7d5 font-inter text-base text-black-200 antialiased`}
       >
         <Toaster position="top-right" />
-        {isAuthenticated ? <DashboardHeader /> : <MarketingHeader />}
+        {isAuthenticated ? <ProtectedHeader /> : <MarketingHeader />}
         <main className="flex min-h-screen flex-col overflow-hidden supports-[overflow:clip]:overflow-clip">
           {children}
         </main>
-        {isAuthenticated ? <DashboardFooter /> : <MarketingFooter />}
+        {isAuthenticated ? <ProtectedFooter /> : <MarketingFooter />}
       </body>
     </html>
   );

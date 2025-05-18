@@ -1,4 +1,4 @@
-import Logo from "@/components/marketing/ui/logo";
+import Logo from "@/components/protected/ui/logo";
 
 export default function Footer() {
   return (

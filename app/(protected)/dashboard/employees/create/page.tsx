@@ -9,7 +9,6 @@ export default function CreateEmployeePage() {
   const router = useRouter()
   const { user, userData } = getUserData()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
   const [success, setSuccess] = useState<string | null>(null);
   const [resetLink, setResetLink] = useState('null')
   const [form, setForm] = useState({
@@ -31,7 +30,6 @@ export default function CreateEmployeePage() {
     }
 
     setLoading(true)
-    setError(null)
     setSuccess(null)
 
     try {

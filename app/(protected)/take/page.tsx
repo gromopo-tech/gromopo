@@ -3,8 +3,8 @@ export default function OrderPage() {
       <div className="flex flex-col w-full h-full p-6 space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
           <div className="p-4 bg-white rounded shadow-md">
-          <h2 className="text-lg font-semibold text-gray-600">Order</h2>
-          <p className="text-gray-600">Place your order here.</p>
+          <h2 className="text-lg font-semibold text-gray-600">Take</h2>
+          <p className="text-gray-600">Take your orders here.</p>
           </div>
       </div>
       </div>

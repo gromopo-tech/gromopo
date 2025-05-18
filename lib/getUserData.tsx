@@ -7,7 +7,7 @@ import { doc, getDoc, DocumentData } from 'firebase/firestore'
 export function getUserData() {
   const [user, setUser] = useState<User | null>(null)
   const [userData, setUserData] = useState<DocumentData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loadingUserData, setLoading] = useState(true)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -30,5 +30,5 @@ export function getUserData() {
     return unsubscribe
   }, [])
 
-  return { user, userData, loading }
+  return { user, userData, loadingUserData }
 }

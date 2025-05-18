@@ -1,39 +1,25 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import Logo from "@/components/dashboard/ui/logo";
+import Logo from "@/components/protected/ui/logo";
 import { auth } from "@/lib/firebase/config";
+import { getUserData } from '@/lib/getUserData';
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function Header() {
   const router = useRouter();
-  const [userName, setUserName] = useState<string | null>(null);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { userData, loadingUserData } = getUserData();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUserName(user.displayName || user.email );
-      } else {
-        setUserName(null);
-      }
-    });
-
-    return () => unsubscribe();
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
-
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      router.push("/");
-    } catch (error) {
-      console.error("Error signing out:", error);
-      alert("Failed to sign out. Please try again.");
-    }
-  };
 
   const toggleDropdown = () => {
     setIsDropdownVisible(!isDropdownVisible);
@@ -44,13 +30,6 @@ export default function Header() {
       setIsDropdownVisible(false);
     }
   };
-
-  useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   const handleLinkClick = () => {
     setIsDropdownVisible(false);
@@ -70,42 +49,44 @@ export default function Header() {
           {/* Dropdown Menu */}
           {isDropdownVisible && (
             <div
-            ref={dropdownRef}
-            className="absolute top-full left-0 mt-2 bg-white shadow-md rounded-md z-40"
-          >          
+              ref={dropdownRef}
+              className="absolute top-full left-0 mt-2 bg-white shadow-md rounded-md z-40"
+            >
               <ul className="p-4">
-                <li>
-                  <Link 
-                    href="/dashboard/employees" 
-                    className="block p-2 hover:bg-gray-200" 
-                    onClick={handleLinkClick}>
-                    Employees
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    href="/dashboard/menus" 
-                    className="block p-2 hover:bg-gray-200" 
-                    onClick={handleLinkClick}>
-                    Menus
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    href="/dashboard"
-                    className="block p-2 hover:bg-gray-200" 
-                    onClick={handleLinkClick}>
-                    Orders
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    href="/take" 
-                    className="block p-2 hover:bg-gray-200" 
-                    onClick={handleLinkClick}>
-                    Take an order
-                  </Link>
-                </li>
+                {(userData?.role === 'owner' || userData?.role === 'admin') && (
+                  <li>
+                    <Link 
+                      href="/dashboard/employees" 
+                      className="block p-2 hover:bg-gray-200" 
+                      onClick={handleLinkClick}>
+                      Employees
+                    </Link>
+                  </li>
+                )}
+                {(userData?.role === 'owner' || userData?.role === 'admin' || userData?.role === 'taker') && (
+                  <><li>
+                    <Link
+                      href="/dashboard/menus"
+                      className="block p-2 hover:bg-gray-200"
+                      onClick={handleLinkClick}>
+                      Menus
+                    </Link>
+                  </li><li>
+                      <Link
+                        href="/dashboard"
+                        className="block p-2 hover:bg-gray-200"
+                        onClick={handleLinkClick}>
+                        Orders
+                      </Link>
+                    </li><li>
+                      <Link
+                        href="/take"
+                        className="block p-2 hover:bg-gray-200"
+                        onClick={handleLinkClick}>
+                        Take an order
+                      </Link>
+                    </li></>
+                )}
                 <li>
                   <Link 
                     href="/make"
@@ -126,11 +107,19 @@ export default function Header() {
             </ul>
           </div>
           <ul className="md:flex flex-1 justify-center text-amber-300">
-            {userName ? `Hello ${userName}` : "Hello!"}
+            {userData ? `Hello ${userData.firstName} ${userData.lastName}` : "Hello!"}
           </ul>
           <ul className="flex flex-1 justify-end gap-3">
             <button
-              onClick={handleSignOut}
+              onClick={async () => {
+                try {
+                  await signOut(auth);
+                  router.push("/");
+                } catch (error) {
+                  console.error("Error signing out:", error);
+                  alert("Failed to sign out. Please try again.");
+                }
+              }}
               className="btn-sm bg-linear-to-t from-orange-400 to-orange-500 bg-[length:100%_100%] bg-[bottom] py-[5px] text-orange-200 shadow-[inset_0px_1px_0px_0px_--theme(--color-white/.16)] hover:bg-[length:10%_190%]"
             >
               Sign Out

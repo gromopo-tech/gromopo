@@ -13,22 +13,7 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
   const [filter, setFilter] = useState<'all' | 'admin' | 'taker' | 'maker'>('all')
   const [employeeList, setEmployeeList] = useState(employees)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const { user, userData } = getUserData()
-  
-  console.log("User data: ", userData?.role)
-    useEffect(() => {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user) {
-          setCurrentUserId(user.uid);
-
-        } else {
-          setCurrentUserId(null);
-        }
-      });
-  
-      return () => unsubscribe();
-    }, []);
+  const { userData } = getUserData()
 
     const handleDelete = async (id: string) => {
       if (!userData || (userData?.role !== 'owner' && userData?.role !== 'admin')) {
@@ -113,7 +98,6 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
         </thead>
         <tbody>
           {filtered.map((e) => {
-            const isSelf = e.id === currentUserId
             return (
               <tr key={e.id} className="border-t">
                 <td className="p-2">{e.lastName || '-'}</td>
