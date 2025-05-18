@@ -105,9 +105,9 @@ export default function CreateEmployeePage() {
           className="w-full border p-2 rounded"
         >
           <option value="" disabled>Select role</option>
-          <option value="taker">Taker</option>
+          {userData?.role === 'owner' && <option value="admin">Admin</option>}
           <option value="maker">Maker</option>
-          <option value="admin">Admin</option>
+          <option value="taker">Taker</option>
         </select>
         <button
           type="submit"

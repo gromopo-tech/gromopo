@@ -121,22 +121,26 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
                   )}
                 </td>
                 <td className="p-2 flex gap-2">
-                  <>
-                    <button
-                      onClick={() => setEditingId(e.id)}
-                      className="text-blue-600 hover:text-blue-800"
-                      title="Edit role"
-                    >
-                      <Pencil size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(e.id)}
-                      className="text-red-600 hover:text-red-800"
-                      title="Delete employee"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </>
+                  {userData?.role === 'admin' && (e.role === 'owner' as Employee['role'] || e.role === 'admin' as Employee['role']) ? (
+                    <span className="text-gray-500">disabled</span>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setEditingId(e.id)}
+                        className="text-blue-600 hover:text-blue-800"
+                        title="Edit role"
+                      >
+                        <Pencil size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(e.id)}
+                        className="text-red-600 hover:text-red-800"
+                        title="Delete employee"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             )
