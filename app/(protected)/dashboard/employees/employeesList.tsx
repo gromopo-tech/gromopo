@@ -5,7 +5,7 @@ import { Trash2, Pencil } from 'lucide-react'
 import { doc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
-import { useAuth } from '@/lib/getUserData'
+import { getUserData } from '@/lib/getUserData'
 import { toast } from 'react-hot-toast'
 import type { Employee } from '@/types/employee'
 
@@ -14,7 +14,7 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
   const [employeeList, setEmployeeList] = useState(employees)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const { user, userData } = useAuth()
+  const { user, userData } = getUserData()
   
   console.log("User data: ", userData?.role)
     useEffect(() => {
