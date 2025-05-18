@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/useAuth'
+import { getUserData } from '@/lib/getUserData'
 import { toast } from 'react-hot-toast'
 
 export default function CreateEmployeePage() {
   const router = useRouter()
-  const { user, userData } = useAuth()
+  const { user, userData } = getUserData()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState<string | null>(null);

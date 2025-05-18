@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getRequesterDataFromToken } from '@/lib/getUserData'
+import { getRequesterDataFromToken } from '@/lib/adminGetUserData'
 import { adminAuth, adminDb } from '@/lib/firebase/adminConfig'
 
 export async function POST(req: Request) {

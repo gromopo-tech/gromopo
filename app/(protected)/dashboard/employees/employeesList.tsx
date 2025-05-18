@@ -5,7 +5,7 @@ import { Trash2, Pencil } from 'lucide-react'
 import { doc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
-import { useAuth } from '@/lib/useAuth'
+import { useAuth } from '@/lib/getUserData'
 import { toast } from 'react-hot-toast'
 import type { Employee } from '@/types/employee'
 

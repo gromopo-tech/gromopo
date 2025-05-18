@@ -3,7 +3,7 @@ import { onAuthStateChanged, User } from 'firebase/auth'
 import { auth, db } from './firebase/config'
 import { doc, getDoc, DocumentData } from 'firebase/firestore'
 
-export function useAuth() {
+export function getUserData() {
   const [user, setUser] = useState<User | null>(null)
   const [userData, setUserData] = useState<DocumentData | null>(null)
 
