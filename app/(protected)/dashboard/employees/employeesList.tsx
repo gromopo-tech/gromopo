@@ -122,7 +122,7 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
                   )}
                 </td>
                 <td className="p-2 flex gap-2">
-                  {userData?.role === 'admin' && (e.role === 'owner' as Employee['role'] || e.role === 'admin' as Employee['role']) ? (
+                  {e.role === 'owner' as Employee['role'] || (userData?.role === 'admin' && (e.role === 'owner' as Employee['role'] || e.role === 'admin' as Employee['role'])) ? (
                     <span className="text-gray-500">disabled</span>
                   ) : (
                     <>

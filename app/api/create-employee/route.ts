@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
   }
 
-  const { user, userData } = await getRequesterDataFromToken(req)
+  const { userData } = await getRequesterDataFromToken(req)
   const isOwner = userData?.role === 'owner'
   const isAdmin = userData?.role === 'admin'
   const targetIsLimited = ['maker', 'taker'].includes(role)

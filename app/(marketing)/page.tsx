@@ -6,13 +6,16 @@ export const metadata = {
 import Hero from "@/components/marketing/hero-home";
 import Workflows from "@/components/marketing/workflows";
 import Cta from "@/components/marketing/cta";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return (
+  redirect('/signin')
+  {/*return (
     <>
       <Hero />
       <Workflows />
       <Cta />
     </>
-  );
+    
+  );*/}
 }

@@ -10,6 +10,7 @@ import ProtectedHeader from "@/components/protected/ui/header";
 import MarketingFooter from "@/components/marketing/ui/footer";
 import ProtectedFooter from "@/components/protected/ui/footer";
 import { Toaster } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 const nacelle = localFont({
   src: [
@@ -44,10 +45,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsAuthenticated(!!user); // Set authentication state
+      if (!user) {
+        router.push('/signin');
+      }
     });
 
     return () => unsubscribe(); // Cleanup the listener on unmount

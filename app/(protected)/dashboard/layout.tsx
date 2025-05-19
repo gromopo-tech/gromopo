@@ -1,28 +1,36 @@
-'use client'
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { getRequesterDataFromToken } from '@/lib/adminGetUserData';
 
-import { getUserData } from '@/lib/getUserData'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
-
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { user, userData, loadingUserData } = getUserData()
-  const router = useRouter()
-  
-  useEffect(() => {
-    if (!loadingUserData) {
-      if (!user || !userData || !['owner', 'admin', 'taker'].includes(userData.role)) {
-        router.replace('/make')
-      }
-    }
-  }, [loadingUserData, user, userData, router])
+  const token = (await cookies()).get('__session')?.value;
 
-  if (loadingUserData || !user || !userData) {
-    return <div className="p-4">Loading...</div>
+  if (!token) {
+    redirect('/signin');
   }
 
-  return <>{children}</>
+  let redirect_path = null;
+  try {
+    const req = new Request('http://placeholder', { headers: { Authorization: `Bearer ${token}` } });
+    const { userData } = await getRequesterDataFromToken(req);
+    const role = userData?.role;
+
+    if (['maker'].includes(role)) {
+      redirect_path = '/make';
+    }
+
+  } catch (err) {
+    console.error('Auth failed:', err);
+    redirect('/signin');
+  } finally {
+      if (redirect_path) {
+        redirect(redirect_path);
+  } else {
+        return <>{children}</>;
+      }
+  }
 }
