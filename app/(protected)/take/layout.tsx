@@ -4,7 +4,7 @@ import { getUserData } from '@/lib/getUserData'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
-export default function DashboardLayout({
+export default function TakeLayout({
   children,
 }: {
   children: React.ReactNode
