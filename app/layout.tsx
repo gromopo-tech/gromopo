@@ -49,13 +49,10 @@ export default function RootLayout({
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsAuthenticated(!!user); // Set authentication state
-      if (!user) {
-        router.push('/');
-      }
+      setIsAuthenticated(!!user);
     });
 
-    return () => unsubscribe(); // Cleanup the listener on unmount
+    return () => unsubscribe();
   }, []);
 
   return (
