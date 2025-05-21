@@ -1,36 +1,48 @@
+"use client";
+import { useEffect, useState } from 'react';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { getRequesterDataFromToken } from '@/lib/adminGetUserData';
+import { auth } from '@/lib/firebase/config';
+import { onAuthStateChanged } from 'firebase/auth';
 
-export default async function EmployeesLayout({
+export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const token = (await cookies()).get('__session')?.value;
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  if (!token) {
-    redirect('/signin');
-  }
-
-  let redirect_path = null;
-  try {
-    const req = new Request('http://placeholder', { headers: { Authorization: `Bearer ${token}` } });
-    const { userData } = await getRequesterDataFromToken(req);
-    const role = userData?.role;
-    
-    if (!['owner', 'admin', 'taker', 'maker'].includes(role)) {
-      redirect_path = '/signin';
-    }
-
-  } catch (err) {
-    console.error('Auth failed:', err);
-    redirect('/signin');
-  } finally {
-      if (redirect_path) {
-        redirect(redirect_path);
-  } else {
-        return <>{children}</>;
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsAuthenticated(true);
+      } else {
+        redirect('/');
       }
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe(); // Cleanup the listener on unmount
+  }, []);
+
+  if (isLoading) {
+    // Show a loading state while checking auth
+    return <div className="flex items-center justify-center min-h-screen text-black">Loading...</div>;
   }
+
+  if (!isAuthenticated) {
+    // Redirect logic is already handled in onAuthStateChanged
+    return null;
+  }
+
+  return (
+    <div className="flex min-h-screen bg-e9e7d5">
+      {/* Main Content */}
+      <div className="flex-grow overflow-hidden bg-e9e7d5">
+        <div className="h-full overflow-auto p-6">
+          {children}
+        </div>
+      </div>
+    </div>
+  )
 }
