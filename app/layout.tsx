@@ -1,21 +1,16 @@
 "use client";
 
 import "./css/style.css";
-import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
 import MarketingHeader from "@/components/marketing/ui/header";
-import DashboardHeader from "@/components/dashboard/ui/header";
+import ProtectedHeader from "@/components/protected/ui/header";
 import MarketingFooter from "@/components/marketing/ui/footer";
-import DashboardFooter from "@/components/dashboard/ui/footer";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
+import ProtectedFooter from "@/components/protected/ui/footer";
+import { Toaster } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 const nacelle = localFont({
   src: [
@@ -50,25 +45,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsAuthenticated(!!user); // Set authentication state
+      setIsAuthenticated(!!user);
     });
 
-    return () => unsubscribe(); // Cleanup the listener on unmount
+    return () => unsubscribe();
   }, []);
 
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${nacelle.variable} bg-e9e7d5 font-inter text-base text-black-200 antialiased`}
+        className={`${nacelle.variable} bg-e9e7d5 font-inter text-base text-black-200 antialiased`}
       >
-        {isAuthenticated ? <DashboardHeader /> : <MarketingHeader />}
+        <Toaster position="top-right" />
+        {isAuthenticated ? <ProtectedHeader /> : <MarketingHeader />}
         <main className="flex min-h-screen flex-col overflow-hidden supports-[overflow:clip]:overflow-clip">
           {children}
         </main>
-        {isAuthenticated ? <DashboardFooter /> : <MarketingFooter />}
+        {isAuthenticated ? <ProtectedFooter /> : <MarketingFooter />}
       </body>
     </html>
   );

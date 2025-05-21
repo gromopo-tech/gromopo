@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { auth } from "@/lib/firebase/config";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 // Schema for form validation
 const schema = z.object({
@@ -36,6 +36,16 @@ export default function SigninForm() {
         data.email,
         data.password
       );
+
+      // Call the API to set the session cookie
+      const idToken = await userCredential.user.getIdToken();
+      await fetch("/api/set-session-cookie", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token: idToken }),
+      });
 
       setSuccess(true);
       router.push("/dashboard");
