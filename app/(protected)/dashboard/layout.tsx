@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { getRequesterDataFromToken } from '@/lib/adminGetUserData';
 
-export default async function EmployeesLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
@@ -18,9 +18,9 @@ export default async function EmployeesLayout({
     const req = new Request('http://placeholder', { headers: { Authorization: `Bearer ${token}` } });
     const { userData } = await getRequesterDataFromToken(req);
     const role = userData?.role;
-    
-    if (!['owner', 'admin', 'taker', 'maker'].includes(role)) {
-      redirect_path = '/signin';
+
+    if (['maker'].includes(role)) {
+      redirect_path = '/make';
     }
 
   } catch (err) {
