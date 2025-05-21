@@ -4,15 +4,14 @@ export const metadata = {
 };
 
 import Hero from "@/components/marketing/hero-home";
-import Workflows from "@/components/marketing/workflows";
+//import Workflows from "@/components/marketing/workflows";
 import Cta from "@/components/marketing/cta";
 
-export default function Home() {
-  return (
+export default function Home() {return (
     <>
       <Hero />
-      <Workflows />
       <Cta />
     </>
-  );
+    
+  )
 }

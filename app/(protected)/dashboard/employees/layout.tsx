@@ -19,8 +19,10 @@ export default async function EmployeesLayout({
     const { userData } = await getRequesterDataFromToken(req);
     const role = userData?.role;
     
-    if (!['owner', 'admin', 'taker', 'maker'].includes(role)) {
-      redirect_path = '/signin';
+    if (['taker'].includes(role)) {
+      redirect_path = '/take';
+    } else if (['maker'].includes(role)) {
+      redirect_path = '/make';
     }
 
   } catch (err) {
