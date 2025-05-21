@@ -51,7 +51,7 @@ export default function RootLayout({
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsAuthenticated(!!user); // Set authentication state
       if (!user) {
-        router.push('/signin');
+        router.push('/');
       }
     });
 
