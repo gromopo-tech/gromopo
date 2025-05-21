@@ -17,7 +17,7 @@ export default function Footer() {
               GroMoPo
             </span>
           </div>
-          {/* 2nd block 
+          {/* 2nd block */}
           <div className="flex items-center space-x-4">
             <a
               className="text-green-800/65 transition hover:text-green-500"
@@ -32,7 +32,6 @@ export default function Footer() {
               Privacy policy
             </a>
           </div>
-          */}
         </div>
       </div>
     </footer>
