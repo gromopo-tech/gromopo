@@ -7,7 +7,6 @@ import { z } from "zod";
 import { auth } from "@/lib/firebase/config";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
-// Schema for form validation
 const schema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -37,8 +36,7 @@ export default function SigninForm() {
         data.password
       );
 
-      // Call the API to set the session cookie
-      const idToken = await userCredential.user.getIdToken();
+      const idToken = await userCredential.user.getIdToken(true);
       await fetch("/api/set-session-cookie", {
         method: "POST",
         headers: {
@@ -48,7 +46,7 @@ export default function SigninForm() {
       });
 
       setSuccess(true);
-      router.push("/dashboard");
+      window.location.replace("/dashboard");
     } catch (error) {
       console.error(error);
       if (error instanceof Error) {
@@ -59,6 +57,12 @@ export default function SigninForm() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleLogout = async () => {
+    await auth.signOut();
+    await fetch("/api/clear-session-cookie", { method: "POST" });
+    window.location.replace("/signin");
   };
 
   return (
