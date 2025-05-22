@@ -3,20 +3,35 @@ import EmployeesList from './employeesList'
 import type { Employee } from '@/types/employee'
 import { adminDb } from '@/lib/firebase/adminConfig'
 import { Timestamp } from 'firebase/firestore'
-
+import { cookies } from 'next/headers'
+import { getRequesterDataFromToken } from '@/lib/adminGetUserData'
 
 export default async function EmployeesPage() {
-  const snapshot = await adminDb.collection('users').get()
+  // Get the current user's token from cookies
+  const token = (await cookies()).get('__session')?.value;
+  if (!token) {
+    return <div>Unauthorized</div>;
+  }
+
+  // Get the current user's data (including businessId)
+  const req = new Request('http://localhost', { headers: { Authorization: `Bearer ${token}` } });
+  const { userData } = await getRequesterDataFromToken(req);
+  const businessId = userData?.businessId;
+  if (!businessId) {
+    return <div>No businessId found for user.</div>;
+  }
+
+  // Query only users with the same businessId
+  const snapshot = await adminDb.collection('users').where('businessId', '==', businessId).get();
 
   const employees: Employee[] = snapshot.docs.map((doc) => {
     const data = doc.data() as Omit<Employee, 'id'>
     return {
       id: doc.id,
       ...data,
-      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : null, // Ensure createdAt is always a plain value
+      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : null,
     }
   })
-  
 
   return (
     <div className="p-6">
