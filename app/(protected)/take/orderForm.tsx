@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { doc, setDoc, query, where, getDocs, collection } from 'firebase/firestore'
-import { db } from '@/lib/firebase/config'
+import { db, storage } from '@/lib/firebase/config'
+import { ref as storageRef, uploadBytes } from 'firebase/storage'
 import { getUserData } from '@/lib/getUserData'
+import JsBarcode from 'jsbarcode'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
 export default function OrderForm() {
   const [form, setForm] = useState({
@@ -23,6 +27,7 @@ export default function OrderForm() {
   })
 
   const { userData } = getUserData();
+  const printRef = useRef<HTMLDivElement>(null);
 
   const breads = [
     'MARBLE RYE', 'LIGHT RYE', 'DARK RYE', 'FRENCH', 'SOURDOUGH', 'ONION', 'KAISER', 'PITA', 'MULTIGRAIN', 'CIABATTA', 'CRANBERRY WALNUT',
@@ -47,6 +52,27 @@ export default function OrderForm() {
       return { ...prev, [key]: updated }
     })
   }
+
+  const generateBarcode = (orderId: string) => {
+    const canvas = document.createElement('canvas');
+    JsBarcode(canvas, orderId, { format: 'CODE128', width: 2, height: 40 });
+    return canvas.toDataURL('image/png');
+  };
+
+  const handlePrintOrDownload = async () => {
+    if (!printRef.current) return;
+    const canvas = await html2canvas(printRef.current);
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    pdf.addImage(imgData, 'PNG', 20, 20, 555, 0);
+    pdf.save('order.pdf');
+  };
+
+  const uploadPdfToStorage = async (pdf: jsPDF, orderId: string, businessId: string) => {
+    const pdfBlob = pdf.output('blob');
+    const fileRef = storageRef(storage, `businesses/${businessId}/orders/${orderId}.pdf`);
+    await uploadBytes(fileRef, pdfBlob);
+  };
 
   // Calculate total price
   const total = [
@@ -108,6 +134,14 @@ export default function OrderForm() {
         preparedAt: '',
         paidAt: '',
       })
+      // Generate PDF and upload to storage
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+      if (printRef.current) {
+        const canvas = await html2canvas(printRef.current);
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', 20, 20, 555, 0);
+        await uploadPdfToStorage(pdf, orderId, userData.businessId);
+      }
       alert('Order submitted!')
       setForm({
         sandwich: '', sandwichPrice: '', extras: '', extrasPrice: '', instructions: '', instructionsPrice: '', bread: '', breadPrice: '', condiments: [], condimentsPrice: '', misc: '', miscPrice: '', name: '',
@@ -116,6 +150,34 @@ export default function OrderForm() {
       alert('Failed to submit order: ' + (err instanceof Error ? err.message : 'Unknown error'))
     }
   }
+
+  // Printer-friendly order summary JSX
+  const orderSummary = (
+    <div ref={printRef} className="p-4 bg-white text-black w-full max-w-lg">
+      <h2 className="text-2xl font-bold mb-2">Order Summary</h2>
+      <div className="mb-2">
+        {form.sandwich && (
+          <img src={generateBarcode(form.sandwich)} alt="Barcode" />
+        )}
+      </div>
+      <ul className="mb-2">
+        {form.sandwich && <li><b>Sandwich:</b> {form.sandwich}</li>}
+        {form.sandwichPrice && <li><b>Sandwich Price:</b> {form.sandwichPrice}</li>}
+        {form.extras && <li><b>Extras:</b> {form.extras}</li>}
+        {form.extrasPrice && <li><b>Extras Price:</b> {form.extrasPrice}</li>}
+        {form.instructions && <li><b>Instructions:</b> {form.instructions}</li>}
+        {form.instructionsPrice && <li><b>Instructions Price:</b> {form.instructionsPrice}</li>}
+        {form.bread && <li><b>Bread:</b> {form.bread}</li>}
+        {form.breadPrice && <li><b>Bread Price:</b> {form.breadPrice}</li>}
+        {form.condiments.length > 0 && <li><b>Condiments:</b> {form.condiments.join(', ')}</li>}
+        {form.condimentsPrice && <li><b>Condiments Price:</b> {form.condimentsPrice}</li>}
+        {form.misc && <li><b>Misc:</b> {form.misc}</li>}
+        {form.miscPrice && <li><b>Misc Price:</b> {form.miscPrice}</li>}
+        {form.name && <li><b>Name:</b> {form.name}</li>}
+        <li><b>Total:</b> {total.toFixed(2)}</li>
+      </ul>
+    </div>
+  );
 
   return (
     <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 space-y-4">
@@ -221,6 +283,11 @@ export default function OrderForm() {
       <button type="submit" className="bg-black text-white py-2 px-4 rounded">
         Submit Order
       </button>
+      <button type="button" onClick={handlePrintOrDownload} className="bg-gray-600 text-white py-2 px-4 rounded ml-2">
+        Print/Download
+      </button>
+
+      {orderSummary}
     </form>
   )
 }
