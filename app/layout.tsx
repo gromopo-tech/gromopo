@@ -55,6 +55,24 @@ export default function RootLayout({
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    const refresh = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const idToken = await user.getIdToken(true); // force refresh
+        await fetch('/api/set-session-cookie', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: idToken }),
+        });
+      }
+    };
+    // Refresh every 50 minutes
+    interval = setInterval(refresh, 50 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <html lang="en">
       <body
