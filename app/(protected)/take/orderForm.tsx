@@ -63,7 +63,6 @@ export default function OrderForm() {
     });
   };
 
-  // Generate QR code as PNG for display in the order summary (not SVG)
   const generateOrderQRPNG = async (order: any) => {
     const qrData = JSON.stringify({
       sandwich: order.sandwich,
@@ -83,30 +82,6 @@ export default function OrderForm() {
     });
     try {
       return await QRCode.toDataURL(qrData, { width: 180 });
-    } catch (err) {
-      return '';
-    }
-  };
-
-  const generateOrderQRSVG = async (order: any) => {
-    const qrData = JSON.stringify({
-      sandwich: order.sandwich,
-      sandwichPrice: order.sandwichPrice,
-      extras: order.extras,
-      extrasPrice: order.extrasPrice,
-      instructions: order.instructions,
-      instructionsPrice: order.instructionsPrice,
-      bread: order.bread,
-      breadPrice: order.breadPrice,
-      condiments: order.condiments,
-      condimentsPrice: order.condimentsPrice,
-      misc: order.misc,
-      miscPrice: order.miscPrice,
-      name: order.name,
-      total: total.toFixed(2),
-    });
-    try {
-      return await QRCode.toString(qrData, { type: 'svg' });
     } catch (err) {
       return '';
     }
