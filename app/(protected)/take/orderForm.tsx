@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useRef } from 'react'
-import { doc, setDoc, query, where, getDocs, collection } from 'firebase/firestore'
-import { db, storage } from '@/lib/firebase/config'
-import { ref as storageRef, uploadBytes } from 'firebase/storage'
-import { getUserData } from '@/lib/getUserData'
-import JsBarcode from 'jsbarcode'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+import { useState, useRef, useEffect } from 'react';
+import { doc, setDoc, query, where, getDocs, collection } from 'firebase/firestore';
+import { db, storage } from '@/lib/firebase/config';
+import { ref as storageRef, uploadBytes } from 'firebase/storage';
+import { getUserData } from '@/lib/getUserData';
+import QRCode from 'qrcode';
+import { Document, Page, Text, View, StyleSheet, Image as PDFImage, pdf } from '@react-pdf/renderer';
 
 export default function OrderForm() {
   const [form, setForm] = useState({
@@ -24,57 +23,19 @@ export default function OrderForm() {
     misc: '',
     miscPrice: '',
     name: '',
-  })
+  });
 
   const { userData } = getUserData();
   const printRef = useRef<HTMLDivElement>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
 
   const breads = [
     'MARBLE RYE', 'LIGHT RYE', 'DARK RYE', 'FRENCH', 'SOURDOUGH', 'ONION', 'KAISER', 'PITA', 'MULTIGRAIN', 'CIABATTA', 'CRANBERRY WALNUT',
-  ]
+  ];
 
-  const condiments = ['MAYONNAISE', 'MUSTARD', 'LETTUCE', 'TOMATO', 'CHEESE']
+  const condiments = ['MAYONNAISE', 'MUSTARD', 'LETTUCE', 'TOMATO', 'CHEESE'];
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setForm(prev => ({ ...prev, [name]: value.toUpperCase() }))
-  }
-
-  const handleRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm(prev => ({ ...prev, bread: e.target.value.toUpperCase() }))
-  }
-
-  const toggleCheckbox = (key: 'condiments', value: string) => {
-    setForm(prev => {
-      const updated = prev[key].includes(value)
-        ? prev[key].filter(item => item !== value)
-        : [...prev[key], value]
-      return { ...prev, [key]: updated }
-    })
-  }
-
-  const generateBarcode = (orderId: string) => {
-    const canvas = document.createElement('canvas');
-    JsBarcode(canvas, orderId, { format: 'CODE128', width: 2, height: 40 });
-    return canvas.toDataURL('image/png');
-  };
-
-  const handlePrintOrDownload = async () => {
-    if (!printRef.current) return;
-    const canvas = await html2canvas(printRef.current);
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
-    pdf.addImage(imgData, 'PNG', 20, 20, 555, 0);
-    pdf.save('order.pdf');
-  };
-
-  const uploadPdfToStorage = async (pdf: jsPDF, orderId: string, businessId: string) => {
-    const pdfBlob = pdf.output('blob');
-    const fileRef = storageRef(storage, `businesses/${businessId}/orders/${orderId}.pdf`);
-    await uploadBytes(fileRef, pdfBlob);
-  };
-
-  // Calculate total price
+  // Move total calculation above QR code functions so it is available
   const total = [
     form.sandwichPrice,
     form.extrasPrice,
@@ -82,11 +43,134 @@ export default function OrderForm() {
     form.breadPrice,
     form.condimentsPrice,
     form.miscPrice,
-  ].reduce((sum, val) => sum + (parseFloat(val) || 0), 0)
+  ].reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value.toUpperCase() }));
+  };
+
+  const handleRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm(prev => ({ ...prev, bread: e.target.value.toUpperCase() }));
+  };
+
+  const toggleCheckbox = (key: 'condiments', value: string) => {
+    setForm(prev => {
+      const updated = prev[key].includes(value)
+        ? prev[key].filter(item => item !== value)
+        : [...prev[key], value];
+      return { ...prev, [key]: updated };
+    });
+  };
+
+  // Generate QR code as PNG for display in the order summary (not SVG)
+  const generateOrderQRPNG = async (order: any) => {
+    const qrData = JSON.stringify({
+      sandwich: order.sandwich,
+      sandwichPrice: order.sandwichPrice,
+      extras: order.extras,
+      extrasPrice: order.extrasPrice,
+      instructions: order.instructions,
+      instructionsPrice: order.instructionsPrice,
+      bread: order.bread,
+      breadPrice: order.breadPrice,
+      condiments: order.condiments,
+      condimentsPrice: order.condimentsPrice,
+      misc: order.misc,
+      miscPrice: order.miscPrice,
+      name: order.name,
+      total: total.toFixed(2),
+    });
+    try {
+      return await QRCode.toDataURL(qrData, { width: 180 });
+    } catch (err) {
+      return '';
+    }
+  };
+
+  const generateOrderQRSVG = async (order: any) => {
+    const qrData = JSON.stringify({
+      sandwich: order.sandwich,
+      sandwichPrice: order.sandwichPrice,
+      extras: order.extras,
+      extrasPrice: order.extrasPrice,
+      instructions: order.instructions,
+      instructionsPrice: order.instructionsPrice,
+      bread: order.bread,
+      breadPrice: order.breadPrice,
+      condiments: order.condiments,
+      condimentsPrice: order.condimentsPrice,
+      misc: order.misc,
+      miscPrice: order.miscPrice,
+      name: order.name,
+      total: total.toFixed(2),
+    });
+    try {
+      return await QRCode.toString(qrData, { type: 'svg' });
+    } catch (err) {
+      return '';
+    }
+  };
+
+  const pdfStyles = StyleSheet.create({
+    page: { padding: 24, fontSize: 14, fontFamily: 'Helvetica' },
+    section: { marginBottom: 12 },
+    heading: { fontSize: 22, fontWeight: 'bold', marginBottom: 8 },
+    qr: { marginBottom: 12, alignItems: 'center', display: 'flex', justifyContent: 'center' },
+    list: { margin: 0, padding: 0 },
+    item: { marginBottom: 2 },
+  });
+
+  const OrderSummaryPDF = ({ form, total, qrPngUrl }: any) => (
+    <Document>
+      <Page size="A4" style={pdfStyles.page}>
+        <View style={pdfStyles.section}>
+          <Text style={pdfStyles.heading}>Order Summary</Text>
+        </View>
+        <View style={pdfStyles.qr}>
+          {qrPngUrl && (
+            <PDFImage src={qrPngUrl} style={{ width: 120, height: 120 }} />
+          )}
+        </View>
+        <View style={pdfStyles.section}>
+          <Text>Sandwich: {form.sandwich}</Text>
+          <Text>Sandwich Price: {form.sandwichPrice}</Text>
+          {form.extras && <Text>Extras: {form.extras}</Text>}
+          {form.extrasPrice && <Text>Extras Price: {form.extrasPrice}</Text>}
+          {form.instructions && <Text>Instructions: {form.instructions}</Text>}
+          {form.instructionsPrice && <Text>Instructions Price: {form.instructionsPrice}</Text>}
+          <Text>Bread: {form.bread}</Text>
+          <Text>Bread Price: {form.breadPrice}</Text>
+          {form.condiments.length > 0 && <Text>Condiments: {form.condiments.join(', ')}</Text>}
+          {form.condimentsPrice && <Text>Condiments Price: {form.condimentsPrice}</Text>}
+          {form.misc && <Text>Misc: {form.misc}</Text>}
+          {form.miscPrice && <Text>Misc Price: {form.miscPrice}</Text>}
+          <Text>Name: {form.name}</Text>
+          <Text>Total: ${total.toFixed(2)}</Text>
+        </View>
+      </Page>
+    </Document>
+  );
+
+  const uploadPdfToStorage = async (form: any, total: number, orderId: string, businessId: string) => {
+    const blob = await pdf(<OrderSummaryPDF form={form} total={total} qrPngUrl={qrCodeUrl} />).toBlob();
+    const fileRef = storageRef(storage, `businesses/${businessId}/orders/${orderId}.pdf`);
+    await uploadBytes(fileRef, blob);
+  };
+
+  useEffect(() => {
+    (async () => {
+      if (form.sandwich && form.bread && form.name) {
+        const url = await generateOrderQRPNG(form);
+        setQrCodeUrl(url);
+      } else {
+        setQrCodeUrl('');
+      }
+    })();
+  }, [form]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    // Validation for required fields
+    e.preventDefault();
     if (!form.sandwich) {
       alert('Please fill out Sandwich field.');
       return;
@@ -104,14 +188,12 @@ export default function OrderForm() {
       return;
     }
     try {
-      if (!userData?.businessId) throw new Error('No businessId found for user')
-      // Generate orderId in format XXXXDDMMYYYY
+      if (!userData?.businessId) throw new Error('No businessId found for user');
       const now = new Date();
       const dd = String(now.getDate()).padStart(2, '0');
       const mm = String(now.getMonth() + 1).padStart(2, '0');
       const yyyy = now.getFullYear();
       const dateStr = dd + mm + yyyy;
-      // Query for today's orders to get the next order number
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
       const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
       const q = query(
@@ -122,7 +204,7 @@ export default function OrderForm() {
       const snapshot = await getDocs(q);
       const orderNumber = String(snapshot.size + 1).padStart(4, '0');
       const orderId = `${orderNumber}${dateStr}`;
-      const orderRef = doc(db, `businesses/${userData.businessId}/orders/${orderId}`)
+      const orderRef = doc(db, `businesses/${userData.businessId}/orders/${orderId}`);
       await setDoc(orderRef, {
         ...form,
         total,
@@ -133,31 +215,23 @@ export default function OrderForm() {
         preparingAt: '',
         preparedAt: '',
         paidAt: '',
-      })
-      // Generate PDF and upload to storage
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
-      if (printRef.current) {
-        const canvas = await html2canvas(printRef.current);
-        const imgData = canvas.toDataURL('image/png');
-        pdf.addImage(imgData, 'PNG', 20, 20, 555, 0);
-        await uploadPdfToStorage(pdf, orderId, userData.businessId);
-      }
-      alert('Order submitted!')
+      });
+      await uploadPdfToStorage(form, total, orderId, userData.businessId);
+      alert('Order submitted!');
       setForm({
         sandwich: '', sandwichPrice: '', extras: '', extrasPrice: '', instructions: '', instructionsPrice: '', bread: '', breadPrice: '', condiments: [], condimentsPrice: '', misc: '', miscPrice: '', name: '',
-      })
+      });
     } catch (err) {
-      alert('Failed to submit order: ' + (err instanceof Error ? err.message : 'Unknown error'))
+      alert('Failed to submit order: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
-  }
+  };
 
-  // Printer-friendly order summary JSX
   const orderSummary = (
     <div ref={printRef} className="p-4 bg-white text-black w-full max-w-lg">
       <h2 className="text-2xl font-bold mb-2">Order Summary</h2>
       <div className="mb-2">
-        {form.sandwich && (
-          <img src={generateBarcode(form.sandwich)} alt="Barcode" />
+        {qrCodeUrl && (
+          <img src={qrCodeUrl} alt="Order QR Code" />
         )}
       </div>
       <ul className="mb-2">
@@ -283,11 +357,8 @@ export default function OrderForm() {
       <button type="submit" className="bg-black text-white py-2 px-4 rounded">
         Submit Order
       </button>
-      <button type="button" onClick={handlePrintOrDownload} className="bg-gray-600 text-white py-2 px-4 rounded ml-2">
-        Print/Download
-      </button>
 
       {orderSummary}
     </form>
-  )
+  );
 }
