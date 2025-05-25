@@ -1,9 +1,10 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow users to upload and read order PDFs if they are authenticated and their businessId matches the path
+    // Allow users to access order PDFs only if their custom claim businessId matches the path
     match /businesses/{businessId}/orders/{orderId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null
+        && request.auth.token.businessId == businessId;
     }
   }
 }
