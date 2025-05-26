@@ -26,7 +26,7 @@ export default async function EmployeesLayout({
     }
 
   } catch (err) {
-    console.error('Auth failed:', err);
+    console.error('Auth failed:', err, err instanceof Error ? err.message : err);
     redirect('/signin');
   } finally {
       if (redirect_path) {

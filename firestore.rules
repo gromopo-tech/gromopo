@@ -21,6 +21,15 @@ service cloud.firestore {
 
       // Disallow deletes unless you implement business deletion logic
       allow delete: if false;
+
+      match /orders/{orderId} {
+        allow create: if request.auth != null &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.businessId == businessId &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ["owner", "admin", "taker"];
+        allow read: if request.auth != null &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.businessId == businessId &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ["owner", "admin", "taker"];
+      }
     }
 
     match /users/{userId} {

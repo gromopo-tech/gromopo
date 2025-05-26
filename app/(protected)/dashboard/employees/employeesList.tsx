@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Trash2, Pencil } from 'lucide-react'
 import { doc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
-import { onAuthStateChanged } from 'firebase/auth'
 import { getUserData } from '@/lib/getUserData'
 import { toast } from 'react-hot-toast'
 import type { Employee } from '@/types/employee'

@@ -3,6 +3,7 @@ import { getAuth, connectAuthEmulator } from "firebase/auth";
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getStorage, connectStorageEmulator } from "firebase/storage";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -20,6 +21,7 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 
 let localAuth;
 let localDb;
+let localStorage;
 
 if (process.env.NODE_ENV === "development") {
   // connect SDKs to emulators
@@ -35,16 +37,25 @@ if (process.env.NODE_ENV === "development") {
     Number(process.env.NEXT_PUBLIC_FIREBASE_DB_EMULATOR_PORT) || 8080
   );
 
+  localStorage = getStorage();
+  connectStorageEmulator(
+    localStorage,
+    process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST || "127.0.0.1",
+    Number(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_EMULATOR_PORT) || 9199
+  );
+
   console.log("Connected to emulators");
 } else {
   // Use production config
   localAuth = getAuth(app);
   localDb = getFirestore(app);
+  localStorage = getStorage(app);
   console.log("Connected to production");
 }
 
 export const auth = localAuth;
 export const db = localDb;
+export const storage = localStorage;
 export const analytics = isSupported().then((isSupported) => {
   if (isSupported) {
     return getAnalytics(app);
