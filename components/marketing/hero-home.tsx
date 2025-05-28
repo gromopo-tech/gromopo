@@ -117,7 +117,7 @@ export default function HeroHome() {
                 data-aos="fade-up"
                 data-aos-delay={200}
               >
-                Streamline ordering and easily define loyalty rewards to keep your customers coming back for more.
+                Streamline ordering and reward loyalty to keep your customers coming back for more.
                 <br></br>
                 Join us today to get exclusive early access!
               </p>
