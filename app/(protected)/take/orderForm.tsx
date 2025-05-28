@@ -18,8 +18,8 @@ export default function OrderForm() {
     instructionsPrice: '',
     bread: '',
     breadPrice: '',
-    condiments: [] as string[],
-    condimentsPrice: '',
+    ingredients: [] as string[],
+    ingredientsPrice: '',
     misc: '',
     miscPrice: '',
     name: '',
@@ -28,12 +28,13 @@ export default function OrderForm() {
   const { userData } = getUserData();
   const printRef = useRef<HTMLDivElement>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [shouldPrint, setShouldPrint] = useState(false);
 
   const breads = [
     'MARBLE RYE', 'LIGHT RYE', 'DARK RYE', 'FRENCH', 'SOURDOUGH', 'ONION', 'KAISER', 'PITA', 'MULTIGRAIN', 'CIABATTA', 'CRANBERRY WALNUT',
   ];
 
-  const condiments = ['MAYONNAISE', 'MUSTARD', 'LETTUCE', 'TOMATO', 'CHEESE'];
+  const ingredients = ['MAYONNAISE', 'MUSTARD', 'LETTUCE', 'TOMATO', 'CHEESE'];
 
   // Move total calculation above QR code functions so it is available
   const total = [
@@ -41,7 +42,7 @@ export default function OrderForm() {
     form.extrasPrice,
     form.instructionsPrice,
     form.breadPrice,
-    form.condimentsPrice,
+    form.ingredientsPrice,
     form.miscPrice,
   ].reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
 
@@ -54,7 +55,7 @@ export default function OrderForm() {
     setForm(prev => ({ ...prev, bread: e.target.value.toUpperCase() }));
   };
 
-  const toggleCheckbox = (key: 'condiments', value: string) => {
+  const toggleCheckbox = (key: 'ingredients', value: string) => {
     setForm(prev => {
       const updated = prev[key].includes(value)
         ? prev[key].filter(item => item !== value)
@@ -73,8 +74,8 @@ export default function OrderForm() {
       instructionsPrice: order.instructionsPrice,
       bread: order.bread,
       breadPrice: order.breadPrice,
-      condiments: order.condiments,
-      condimentsPrice: order.condimentsPrice,
+      ingredients: order.ingredients,
+      ingredientsPrice: order.ingredientsPrice,
       misc: order.misc,
       miscPrice: order.miscPrice,
       name: order.name,
@@ -116,8 +117,8 @@ export default function OrderForm() {
           {form.instructionsPrice && <Text>Instructions Price: {form.instructionsPrice}</Text>}
           <Text>Bread: {form.bread}</Text>
           <Text>Bread Price: {form.breadPrice}</Text>
-          {form.condiments.length > 0 && <Text>Condiments: {form.condiments.join(', ')}</Text>}
-          {form.condimentsPrice && <Text>Condiments Price: {form.condimentsPrice}</Text>}
+          {form.ingredients.length > 0 && <Text>ingredients: {form.ingredients.join(', ')}</Text>}
+          {form.ingredientsPrice && <Text>ingredients Price: {form.ingredientsPrice}</Text>}
           {form.misc && <Text>Misc: {form.misc}</Text>}
           {form.miscPrice && <Text>Misc Price: {form.miscPrice}</Text>}
           <Text>Name: {form.name}</Text>
@@ -144,6 +145,93 @@ export default function OrderForm() {
     })();
   }, [form]);
 
+  useEffect(() => {
+    if (shouldPrint && qrCodeUrl && printRef.current) {
+      // Use a small delay to ensure DOM is updated
+      setTimeout(() => {
+        window.print();
+
+        // Proceed with submission after print
+        (async () => {
+          try {
+            if (!userData?.businessId) throw new Error('No businessId found for user');
+
+            const now = new Date();
+            const dd = String(now.getDate()).padStart(2, '0');
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const yyyy = now.getFullYear();
+            const dateStr = dd + mm + yyyy;
+
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
+            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+
+            const q = query(
+              collection(db, `businesses/${userData.businessId}/orders`),
+              where('createdAt', '>=', startOfDay),
+              where('createdAt', '<=', endOfDay)
+            );
+            const snapshot = await getDocs(q);
+            const orderNumber = String(snapshot.size + 1).padStart(4, '0');
+            const orderId = `${orderNumber}${dateStr}`;
+
+            const orderRef = doc(db, `businesses/${userData.businessId}/orders/${orderId}`);
+            await setDoc(orderRef, {
+              ...form,
+              total,
+              orderTaker: `${userData.lastName}, ${userData.firstName}`,
+              orderMaker: '',
+              status: 'Order Created',
+              createdAt: now.toISOString(),
+              preparingAt: '',
+              preparedAt: '',
+              paidAt: '',
+            });
+
+            await uploadPdfToStorage(form, total, orderId, userData.businessId);
+            alert('Order submitted!');
+            setForm({ sandwich: '', sandwichPrice: '', extras: '', extrasPrice: '', instructions: '', instructionsPrice: '', bread: '', breadPrice: '', ingredients: [], ingredientsPrice: '', misc: '', miscPrice: '', name: '' });
+          } catch (err) {
+            alert('Failed to submit order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+          } finally {
+            setShouldPrint(false);
+          }
+        })();
+      }, 300); // allow image and DOM render time
+    }
+  }, [shouldPrint, qrCodeUrl]);
+
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.id = 'order-summary-print-style';
+    style.innerHTML = `
+      @media print {
+        body * { 
+          visibility: hidden; 
+        }
+        .order-summary-print, .order-summary-print * { 
+          visibility: visible !important; 
+        }
+        .order-summary-print { 
+          position: absolute !important; 
+          left: 0; 
+          top: 0; 
+          width: 100%; 
+          height: 100%; 
+          background: white; 
+          z-index: 9999; 
+          margin: 0;
+          padding: 20px;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      const el = document.getElementById('order-summary-print-style');
+      if (el) el.remove();
+    };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.sandwich) {
@@ -162,47 +250,12 @@ export default function OrderForm() {
       alert('Please fill out Name field.');
       return;
     }
-    try {
-      if (!userData?.businessId) throw new Error('No businessId found for user');
-      const now = new Date();
-      const dd = String(now.getDate()).padStart(2, '0');
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const yyyy = now.getFullYear();
-      const dateStr = dd + mm + yyyy;
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
-      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
-      const q = query(
-        collection(db, `businesses/${userData.businessId}/orders`),
-        where('createdAt', '>=', startOfDay),
-        where('createdAt', '<=', endOfDay)
-      );
-      const snapshot = await getDocs(q);
-      const orderNumber = String(snapshot.size + 1).padStart(4, '0');
-      const orderId = `${orderNumber}${dateStr}`;
-      const orderRef = doc(db, `businesses/${userData.businessId}/orders/${orderId}`);
-      await setDoc(orderRef, {
-        ...form,
-        total,
-        orderTaker: `${userData.lastName}, ${userData.firstName}`,
-        orderMaker: '',
-        status: 'Order Created',
-        createdAt: now.toISOString(),
-        preparingAt: '',
-        preparedAt: '',
-        paidAt: '',
-      });
-      await uploadPdfToStorage(form, total, orderId, userData.businessId);
-      alert('Order submitted!');
-      setForm({
-        sandwich: '', sandwichPrice: '', extras: '', extrasPrice: '', instructions: '', instructionsPrice: '', bread: '', breadPrice: '', condiments: [], condimentsPrice: '', misc: '', miscPrice: '', name: '',
-      });
-    } catch (err) {
-      alert('Failed to submit order: ' + (err instanceof Error ? err.message : 'Unknown error'));
-    }
+    
+    setShouldPrint(true);
   };
 
   const orderSummary = (
-    <div ref={printRef} className="p-4 bg-white text-black w-full max-w-lg">
+    <div ref={printRef} className="order-summary-print p-4 bg-white text-black w-full max-w-lg print:w-full print:max-w-none print:p-8">
       <h2 className="text-2xl font-bold mb-2">Order Summary</h2>
       <div className="mb-2">
         {qrCodeUrl && (
@@ -218,8 +271,8 @@ export default function OrderForm() {
         {form.instructionsPrice && <li><b>Instructions Price:</b> {form.instructionsPrice}</li>}
         {form.bread && <li><b>Bread:</b> {form.bread}</li>}
         {form.breadPrice && <li><b>Bread Price:</b> {form.breadPrice}</li>}
-        {form.condiments.length > 0 && <li><b>Condiments:</b> {form.condiments.join(', ')}</li>}
-        {form.condimentsPrice && <li><b>Condiments Price:</b> {form.condimentsPrice}</li>}
+        {form.ingredients.length > 0 && <li><b>With:</b> {form.ingredients.join(', ')}</li>}
+        {form.ingredientsPrice && <li><b>With Price:</b> {form.ingredientsPrice}</li>}
         {form.misc && <li><b>Misc:</b> {form.misc}</li>}
         {form.miscPrice && <li><b>Misc Price:</b> {form.miscPrice}</li>}
         {form.name && <li><b>Name:</b> {form.name}</li>}
@@ -230,7 +283,7 @@ export default function OrderForm() {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 space-y-4">
-      <h1 className="text-3xl font-bold">A NOONER</h1>
+      <h1 className="text-3xl font-bold">Bob's Sandwiches</h1>
 
       <div className="flex gap-2 items-end">
         <div className="flex-1">
@@ -293,12 +346,12 @@ export default function OrderForm() {
         <legend className="font-semibold">With</legend>
         <div className="flex gap-2 items-end">
           <div className="flex-1 flex flex-wrap gap-2" style={{ minWidth: 0 }}>
-            {condiments.map(c => (
+            {ingredients.map(c => (
               <label key={c} className="flex items-center gap-1 whitespace-nowrap">
                 <input
                   type="checkbox"
-                  checked={form.condiments.includes(c)}
-                  onChange={() => toggleCheckbox('condiments', c)}
+                  checked={form.ingredients.includes(c)}
+                  onChange={() => toggleCheckbox('ingredients', c)}
                 />
                 {c}
               </label>
@@ -306,7 +359,7 @@ export default function OrderForm() {
           </div>
           <div>
             <label className="block font-semibold">Price</label>
-            <input type="text" name="condimentsPrice" value={form.condimentsPrice} onChange={handleChange} className="w-20 border p-2" />
+            <input type="text" name="ingredientsPrice" value={form.ingredientsPrice} onChange={handleChange} className="w-20 border p-2" />
           </div>
         </div>
       </fieldset>
@@ -330,7 +383,7 @@ export default function OrderForm() {
       <div className="mt-4 font-bold text-lg">Total: ${total.toFixed(2)}</div>
 
       <button type="submit" className="bg-black text-white py-2 px-4 rounded">
-        Submit Order
+        Print and Submit
       </button>
 
       {orderSummary}
