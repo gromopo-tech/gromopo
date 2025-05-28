@@ -117,8 +117,7 @@ export default function HeroHome() {
                 data-aos="fade-up"
                 data-aos-delay={200}
               >
-                Introducing an easy-to-use platform to track and manage orders, improve training, and increase customer satisfaction 
-                -- tailored specifically for mom and pop shops.
+                Streamline ordering and easily define loyalty rewards to keep your customers coming back for more.
                 <br></br>
                 Join us today to get exclusive early access!
               </p>
