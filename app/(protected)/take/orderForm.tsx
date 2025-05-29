@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { doc, setDoc, query, where, getDocs, collection } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase/config';
-import { ref as storageRef, uploadBytes } from 'firebase/storage';
 import { getUserData } from '@/lib/getUserData';
 import QRCode from 'qrcode';
 import { Document, Page, Text, View, StyleSheet, Image as PDFImage, pdf } from '@react-pdf/renderer';
@@ -28,7 +27,6 @@ export default function OrderForm() {
   const { userData } = getUserData();
   const printRef = useRef<HTMLDivElement>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
-  const [shouldPrint, setShouldPrint] = useState(false);
 
   const breads = [
     'MARBLE RYE', 'LIGHT RYE', 'DARK RYE', 'FRENCH', 'SOURDOUGH', 'ONION', 'KAISER', 'PITA', 'MULTIGRAIN', 'CIABATTA', 'CRANBERRY WALNUT',
@@ -128,12 +126,6 @@ export default function OrderForm() {
     </Document>
   );
 
-  const uploadPdfToStorage = async (form: any, total: number, orderId: string, businessId: string) => {
-    const blob = await pdf(<OrderSummaryPDF form={form} total={total} qrPngUrl={qrCodeUrl} />).toBlob();
-    const fileRef = storageRef(storage, `businesses/${businessId}/orders/${orderId}.pdf`);
-    await uploadBytes(fileRef, blob);
-  };
-
   useEffect(() => {
     (async () => {
       if (form.sandwich && form.bread && form.name) {
@@ -144,93 +136,6 @@ export default function OrderForm() {
       }
     })();
   }, [form]);
-
-  useEffect(() => {
-    if (shouldPrint && qrCodeUrl && printRef.current) {
-      // Use a small delay to ensure DOM is updated
-      setTimeout(() => {
-        window.print();
-
-        // Proceed with submission after print
-        (async () => {
-          try {
-            if (!userData?.businessId) throw new Error('No businessId found for user');
-
-            const now = new Date();
-            const dd = String(now.getDate()).padStart(2, '0');
-            const mm = String(now.getMonth() + 1).padStart(2, '0');
-            const yyyy = now.getFullYear();
-            const dateStr = dd + mm + yyyy;
-
-            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
-            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
-
-            const q = query(
-              collection(db, `businesses/${userData.businessId}/orders`),
-              where('createdAt', '>=', startOfDay),
-              where('createdAt', '<=', endOfDay)
-            );
-            const snapshot = await getDocs(q);
-            const orderNumber = String(snapshot.size + 1).padStart(4, '0');
-            const orderId = `${orderNumber}${dateStr}`;
-
-            const orderRef = doc(db, `businesses/${userData.businessId}/orders/${orderId}`);
-            await setDoc(orderRef, {
-              ...form,
-              total,
-              orderTaker: `${userData.lastName}, ${userData.firstName}`,
-              orderMaker: '',
-              status: 'Order Created',
-              createdAt: now.toISOString(),
-              preparingAt: '',
-              preparedAt: '',
-              paidAt: '',
-            });
-
-            await uploadPdfToStorage(form, total, orderId, userData.businessId);
-            alert('Order submitted!');
-            setForm({ sandwich: '', sandwichPrice: '', extras: '', extrasPrice: '', instructions: '', instructionsPrice: '', bread: '', breadPrice: '', ingredients: [], ingredientsPrice: '', misc: '', miscPrice: '', name: '' });
-          } catch (err) {
-            alert('Failed to submit order: ' + (err instanceof Error ? err.message : 'Unknown error'));
-          } finally {
-            setShouldPrint(false);
-          }
-        })();
-      }, 300); // allow image and DOM render time
-    }
-  }, [shouldPrint, qrCodeUrl]);
-
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.type = 'text/css';
-    style.id = 'order-summary-print-style';
-    style.innerHTML = `
-      @media print {
-        body * { 
-          visibility: hidden; 
-        }
-        .order-summary-print, .order-summary-print * { 
-          visibility: visible !important; 
-        }
-        .order-summary-print { 
-          position: absolute !important; 
-          left: 0; 
-          top: 0; 
-          width: 100%; 
-          height: 100%; 
-          background: white; 
-          z-index: 9999; 
-          margin: 0;
-          padding: 20px;
-        }
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      const el = document.getElementById('order-summary-print-style');
-      if (el) el.remove();
-    };
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -250,12 +155,46 @@ export default function OrderForm() {
       alert('Please fill out Name field.');
       return;
     }
-    
-    setShouldPrint(true);
+    try {
+      if (!userData?.businessId) throw new Error('No businessId found for user');
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      const dateStr = dd + mm + yyyy;
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+      const q = query(
+        collection(db, `businesses/${userData.businessId}/orders`),
+        where('createdAt', '>=', startOfDay),
+        where('createdAt', '<=', endOfDay)
+      );
+      const snapshot = await getDocs(q);
+      const orderNumber = String(snapshot.size + 1).padStart(4, '0');
+      const orderId = `${orderNumber}${dateStr}`;
+      const orderRef = doc(db, `businesses/${userData.businessId}/orders/${orderId}`);
+      await setDoc(orderRef, {
+        ...form,
+        total,
+        orderTaker: `${userData.lastName}, ${userData.firstName}`,
+        orderMaker: '',
+        status: 'Order Created',
+        createdAt: now.toISOString(),
+        preparingAt: '',
+        preparedAt: '',
+        paidAt: '',
+      });
+      alert('Order submitted!');
+      setForm({
+        sandwich: '', sandwichPrice: '', extras: '', extrasPrice: '', instructions: '', instructionsPrice: '', bread: '', breadPrice: '', ingredients: [], ingredientsPrice: '', misc: '', miscPrice: '', name: '',
+      });
+    } catch (err) {
+      alert('Failed to submit order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
   };
 
   const orderSummary = (
-    <div ref={printRef} className="order-summary-print p-4 bg-white text-black w-full max-w-lg print:w-full print:max-w-none print:p-8">
+    <div ref={printRef} className="p-4 bg-white text-black w-full max-w-lg">
       <h2 className="text-2xl font-bold mb-2">Order Summary</h2>
       <div className="mb-2">
         {qrCodeUrl && (
@@ -271,8 +210,8 @@ export default function OrderForm() {
         {form.instructionsPrice && <li><b>Instructions Price:</b> {form.instructionsPrice}</li>}
         {form.bread && <li><b>Bread:</b> {form.bread}</li>}
         {form.breadPrice && <li><b>Bread Price:</b> {form.breadPrice}</li>}
-        {form.ingredients.length > 0 && <li><b>With:</b> {form.ingredients.join(', ')}</li>}
-        {form.ingredientsPrice && <li><b>With Price:</b> {form.ingredientsPrice}</li>}
+        {form.ingredients.length > 0 && <li><b>ingredients:</b> {form.ingredients.join(', ')}</li>}
+        {form.ingredientsPrice && <li><b>ingredients Price:</b> {form.ingredientsPrice}</li>}
         {form.misc && <li><b>Misc:</b> {form.misc}</li>}
         {form.miscPrice && <li><b>Misc Price:</b> {form.miscPrice}</li>}
         {form.name && <li><b>Name:</b> {form.name}</li>}
@@ -283,7 +222,7 @@ export default function OrderForm() {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 space-y-4">
-      <h1 className="text-3xl font-bold">Bob's Sandwiches</h1>
+      <h1 className="text-3xl font-bold">Sandra's Sandwiches</h1>
 
       <div className="flex gap-2 items-end">
         <div className="flex-1">
@@ -383,7 +322,7 @@ export default function OrderForm() {
       <div className="mt-4 font-bold text-lg">Total: ${total.toFixed(2)}</div>
 
       <button type="submit" className="bg-black text-white py-2 px-4 rounded">
-        Print and Submit
+        Submit Order
       </button>
 
       {orderSummary}
