@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { doc, setDoc, query, where, getDocs, collection } from 'firebase/firestore';
-import { db, storage } from '@/lib/firebase/config';
+import { db } from '@/lib/firebase/config';
 import { getUserData } from '@/lib/getUserData';
-import QRCode from 'qrcode';
-import { Document, Page, Text, View, StyleSheet, Image as PDFImage, pdf } from '@react-pdf/renderer';
+import { generateSolanaPayUrl, pollSolanaPayPayment, MERCHANT_WALLET } from './solanaPay';
+import { Keypair } from '@solana/web3.js';
 
 export default function OrderForm() {
   const [form, setForm] = useState({
@@ -26,7 +26,9 @@ export default function OrderForm() {
 
   const { userData } = getUserData();
   const printRef = useRef<HTMLDivElement>(null);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [solanaPayUrl, setSolanaPayUrl] = useState<string>('');
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'confirmed' | 'none'>('none');
+  const [reference, setReference] = useState<string>('');
 
   const breads = [
     'MARBLE RYE', 'LIGHT RYE', 'DARK RYE', 'FRENCH', 'SOURDOUGH', 'ONION', 'KAISER', 'PITA', 'MULTIGRAIN', 'CIABATTA', 'CRANBERRY WALNUT',
@@ -34,7 +36,6 @@ export default function OrderForm() {
 
   const ingredients = ['MAYONNAISE', 'MUSTARD', 'LETTUCE', 'TOMATO', 'CHEESE'];
 
-  // Move total calculation above QR code functions so it is available
   const total = [
     form.sandwichPrice,
     form.extrasPrice,
@@ -62,80 +63,64 @@ export default function OrderForm() {
     });
   };
 
-  const generateOrderQRPNG = async (order: any) => {
-    const qrData = JSON.stringify({
-      sandwich: order.sandwich,
-      sandwichPrice: order.sandwichPrice,
-      extras: order.extras,
-      extrasPrice: order.extrasPrice,
-      instructions: order.instructions,
-      instructionsPrice: order.instructionsPrice,
-      bread: order.bread,
-      breadPrice: order.breadPrice,
-      ingredients: order.ingredients,
-      ingredientsPrice: order.ingredientsPrice,
-      misc: order.misc,
-      miscPrice: order.miscPrice,
-      name: order.name,
-      total: total.toFixed(2),
-    });
-    try {
-      return await QRCode.toDataURL(qrData, { width: 180 });
-    } catch (err) {
-      return '';
-    }
-  };
-
-  const pdfStyles = StyleSheet.create({
-    page: { padding: 24, fontSize: 14, fontFamily: 'Helvetica' },
-    section: { marginBottom: 12 },
-    heading: { fontSize: 22, fontWeight: 'bold', marginBottom: 8 },
-    qr: { marginBottom: 12, alignItems: 'center', display: 'flex', justifyContent: 'center' },
-    list: { margin: 0, padding: 0 },
-    item: { marginBottom: 2 },
-  });
-
-  const OrderSummaryPDF = ({ form, total, qrPngUrl }: any) => (
-    <Document>
-      <Page size="A4" style={pdfStyles.page}>
-        <View style={pdfStyles.section}>
-          <Text style={pdfStyles.heading}>Order Summary</Text>
-        </View>
-        <View style={pdfStyles.qr}>
-          {qrPngUrl && (
-            <PDFImage src={qrPngUrl} style={{ width: 120, height: 120 }} />
-          )}
-        </View>
-        <View style={pdfStyles.section}>
-          <Text>Sandwich: {form.sandwich}</Text>
-          <Text>Sandwich Price: {form.sandwichPrice}</Text>
-          {form.extras && <Text>Extras: {form.extras}</Text>}
-          {form.extrasPrice && <Text>Extras Price: {form.extrasPrice}</Text>}
-          {form.instructions && <Text>Instructions: {form.instructions}</Text>}
-          {form.instructionsPrice && <Text>Instructions Price: {form.instructionsPrice}</Text>}
-          <Text>Bread: {form.bread}</Text>
-          <Text>Bread Price: {form.breadPrice}</Text>
-          {form.ingredients.length > 0 && <Text>ingredients: {form.ingredients.join(', ')}</Text>}
-          {form.ingredientsPrice && <Text>ingredients Price: {form.ingredientsPrice}</Text>}
-          {form.misc && <Text>Misc: {form.misc}</Text>}
-          {form.miscPrice && <Text>Misc Price: {form.miscPrice}</Text>}
-          <Text>Name: {form.name}</Text>
-          <Text>Total: ${total.toFixed(2)}</Text>
-        </View>
-      </Page>
-    </Document>
-  );
-
   useEffect(() => {
-    (async () => {
-      if (form.sandwich && form.bread && form.name) {
-        const url = await generateOrderQRPNG(form);
-        setQrCodeUrl(url);
-      } else {
-        setQrCodeUrl('');
-      }
-    })();
-  }, [form]);
+    if (form.sandwich && form.bread && form.name && total > 0 && MERCHANT_WALLET) {
+      // Use a valid random public key as reference (not a random string)
+      const refKey = Keypair.generate().publicKey.toBase58();
+      setReference(refKey);
+      const url = generateSolanaPayUrl({
+        recipient: MERCHANT_WALLET,
+        amount: total,
+        reference: refKey,
+        label: `Sandra's Sandwiches`,
+        message: `Order for ${form.name}`,
+      });
+      setSolanaPayUrl(url);
+      setPaymentStatus('pending');
+    } else {
+      setSolanaPayUrl('');
+      setReference('');
+      setPaymentStatus('none');
+    }
+  }, [form, total]);
+
+  // Poll for payment confirmation
+  useEffect(() => {
+    let stop = false;
+    if (paymentStatus === 'pending' && reference && MERCHANT_WALLET && total > 0) {
+      (async () => {
+        try {
+          const confirmed = await pollSolanaPayPayment({
+            reference,
+            amount: total,
+            recipient: MERCHANT_WALLET,
+            timeout: 120,
+            interval: 2000,
+          });
+          if (!stop && confirmed) {
+            setPaymentStatus('confirmed');
+          } else if (!stop) {
+            // Add debug message if not confirmed
+            setPaymentStatus('none');
+            alert('Payment not detected. Please ensure your wallet supports Solana Pay reference and try again.');
+          }
+        } catch (err) {
+          if (!stop) {
+            setPaymentStatus('none');
+            alert('Error while checking payment: ' + (err instanceof Error ? err.message : String(err)));
+          }
+        }
+      })();
+    }
+    return () => { stop = true; };
+  }, [paymentStatus, reference, total]);
+
+  // Redirect to confirmation screen on payment
+  useEffect(() => {
+    if (paymentStatus === 'confirmed') {
+      window.location.href = '/take/confirmation';
+    }
+  }, [paymentStatus]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,8 +182,8 @@ export default function OrderForm() {
     <div ref={printRef} className="p-4 bg-white text-black w-full max-w-lg">
       <h2 className="text-2xl font-bold mb-2">Order Summary</h2>
       <div className="mb-2">
-        {qrCodeUrl && (
-          <img src={qrCodeUrl} alt="Order QR Code" />
+        {solanaPayUrl && (
+          <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(solanaPayUrl)}`} alt="Solana Pay QR Code" />
         )}
       </div>
       <ul className="mb-2">
@@ -210,13 +195,19 @@ export default function OrderForm() {
         {form.instructionsPrice && <li><b>Instructions Price:</b> {form.instructionsPrice}</li>}
         {form.bread && <li><b>Bread:</b> {form.bread}</li>}
         {form.breadPrice && <li><b>Bread Price:</b> {form.breadPrice}</li>}
-        {form.ingredients.length > 0 && <li><b>ingredients:</b> {form.ingredients.join(', ')}</li>}
-        {form.ingredientsPrice && <li><b>ingredients Price:</b> {form.ingredientsPrice}</li>}
+        {form.ingredients.length > 0 && <li><b>Ingredients:</b> {form.ingredients.join(', ')}</li>}
+        {form.ingredientsPrice && <li><b>Ingredients Price:</b> {form.ingredientsPrice}</li>}
         {form.misc && <li><b>Misc:</b> {form.misc}</li>}
         {form.miscPrice && <li><b>Misc Price:</b> {form.miscPrice}</li>}
         {form.name && <li><b>Name:</b> {form.name}</li>}
-        <li><b>Total:</b> {total.toFixed(2)}</li>
+        <li><b>Total:</b> {total.toFixed(2)} USDC</li>
       </ul>
+      {paymentStatus === 'pending' && solanaPayUrl && (
+        <div className="text-yellow-600 font-semibold">Waiting for payment confirmation...</div>
+      )}
+      {paymentStatus === 'confirmed' && (
+        <div className="text-green-600 font-semibold">Payment confirmed!</div>
+      )}
     </div>
   );
 
