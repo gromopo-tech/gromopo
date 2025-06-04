@@ -30,6 +30,12 @@ export default function OrderForm() {
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'confirmed' | 'none'>('none');
   const [reference, setReference] = useState<string>('');
 
+  const [arsTotal, setArsTotal] = useState<number>(0);
+  const [usdcTotal, setUsdcTotal] = useState<number>(0);
+  const [conversionLoading, setConversionLoading] = useState<boolean>(false);
+  const [conversionError, setConversionError] = useState<string | null>(null);
+  const [usdToArs, setUsdToArs] = useState<number | null>(null);
+
   const breads = [
     'MARBLE RYE', 'LIGHT RYE', 'DARK RYE', 'FRENCH', 'SOURDOUGH', 'ONION', 'KAISER', 'PITA', 'MULTIGRAIN', 'CIABATTA', 'CRANBERRY WALNUT',
   ];
@@ -64,13 +70,51 @@ export default function OrderForm() {
   };
 
   useEffect(() => {
-    if (form.sandwich && form.bread && form.name && total > 0 && MERCHANT_WALLET) {
-      // Use a valid random public key as reference (not a random string)
+    const sum = [
+      form.sandwichPrice,
+      form.extrasPrice,
+      form.instructionsPrice,
+      form.breadPrice,
+      form.ingredientsPrice,
+      form.miscPrice,
+    ].reduce((acc, val) => acc + (parseFloat(val) || 0), 0);
+    setArsTotal(sum);
+  }, [form]);
+
+  useEffect(() => {
+    if (arsTotal > 0) {
+      setConversionLoading(true);
+      setConversionError(null);
+      fetch('https://api.coingecko.com/api/v3/simple/price?ids=usd-coin,argentine-peso&vs_currencies=usd,ars')
+        .then(res => res.json())
+        .then(data => {
+          const arsPerUsdc = data['usd-coin']?.ars;
+          const usdToArsRate = data['usd-coin']?.ars;
+          if (!arsPerUsdc || arsPerUsdc === 0) throw new Error('Invalid ARS/USDC rate');
+          setUsdToArs(usdToArsRate || null);
+          // Use toFixed(6) and parseFloat to ensure 6 decimals, no rounding error
+          const usdc = parseFloat((arsTotal / arsPerUsdc).toFixed(6));
+          setUsdcTotal(usdc);
+          setConversionLoading(false);
+        })
+        .catch(err => {
+          setConversionError('Failed to fetch ARS/USDC rate');
+          setConversionLoading(false);
+          setUsdToArs(null);
+        });
+    } else {
+      setUsdcTotal(0);
+      setUsdToArs(null);
+    }
+  }, [arsTotal]);
+
+  useEffect(() => {
+    if (form.sandwich && form.bread && form.name && usdcTotal > 0 && MERCHANT_WALLET) {
       const refKey = Keypair.generate().publicKey.toBase58();
       setReference(refKey);
       const url = generateSolanaPayUrl({
         recipient: MERCHANT_WALLET,
-        amount: total,
+        amount: usdcTotal,
         reference: refKey,
         label: `Sandra's Sandwiches`,
         message: `Order for ${form.name}`,
@@ -82,25 +126,24 @@ export default function OrderForm() {
       setReference('');
       setPaymentStatus('none');
     }
-  }, [form, total]);
+  }, [form, usdcTotal]);
 
   // Poll for payment confirmation
   useEffect(() => {
     let stop = false;
-    if (paymentStatus === 'pending' && reference && MERCHANT_WALLET && total > 0) {
+    if (paymentStatus === 'pending' && reference && MERCHANT_WALLET && usdcTotal > 0) {
       (async () => {
         try {
           const confirmed = await pollSolanaPayPayment({
             reference,
-            amount: total,
+            amount: usdcTotal, // Use USDC amount, not ARS
             recipient: MERCHANT_WALLET,
-            timeout: 120,
-            interval: 2000,
+            timeout: 180, // 3 minutes
+            interval: 1000 // 1 second
           });
           if (!stop && confirmed) {
             setPaymentStatus('confirmed');
           } else if (!stop) {
-            // Add debug message if not confirmed
             setPaymentStatus('none');
             alert('Payment not detected. Please ensure your wallet supports Solana Pay reference and try again.');
           }
@@ -113,70 +156,59 @@ export default function OrderForm() {
       })();
     }
     return () => { stop = true; };
-  }, [paymentStatus, reference, total]);
+  }, [paymentStatus, reference, usdcTotal]);
 
-  // Redirect to confirmation screen on payment
+  // Submit order to Firestore when payment is confirmed
   useEffect(() => {
+    const submitOrder = async () => {
+      if (!form.sandwich || !form.sandwichPrice || !form.bread || !form.name) {
+        // Required fields missing, do not submit
+        return;
+      }
+      try {
+        if (!userData?.businessId) throw new Error('No businessId found for user');
+        const now = new Date();
+        const dd = String(now.getDate()).padStart(2, '0');
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const yyyy = now.getFullYear();
+        const dateStr = dd + mm + yyyy;
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+        const q = query(
+          collection(db, `businesses/${userData.businessId}/orders`),
+          where('createdAt', '>=', startOfDay),
+          where('createdAt', '<=', endOfDay)
+        );
+        const snapshot = await getDocs(q);
+        const orderNumber = String(snapshot.size + 1).padStart(4, '0');
+        const orderId = `${orderNumber}${dateStr}`;
+        const orderRef = doc(db, `businesses/${userData.businessId}/orders/${orderId}`);
+        await setDoc(orderRef, {
+          ...form,
+          total,
+          orderTaker: `${userData.lastName}, ${userData.firstName}`,
+          orderMaker: '',
+          status: 'Order Created',
+          createdAt: now.toISOString(),
+          preparingAt: '',
+          preparedAt: '',
+          paidAt: '',
+        });
+        // Reset form after submission
+        setForm({
+          sandwich: '', sandwichPrice: '', extras: '', extrasPrice: '', instructions: '', instructionsPrice: '', bread: '', breadPrice: '', ingredients: [], ingredientsPrice: '', misc: '', miscPrice: '', name: '',
+        });
+      } catch (err) {
+        alert('Failed to submit order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      }
+    };
+
     if (paymentStatus === 'confirmed') {
-      window.location.href = '/take/confirmation';
+      submitOrder().then(() => {
+        window.location.href = '/take/confirmation';
+      });
     }
   }, [paymentStatus]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.sandwich) {
-      alert('Please fill out Sandwich field.');
-      return;
-    }
-    if (!form.sandwichPrice) {
-      alert('Please fill out Sandwich Price field.');
-      return;
-    }
-    if (!form.bread) {
-      alert('Please fill out Bread field.');
-      return;
-    }
-    if (!form.name) {
-      alert('Please fill out Name field.');
-      return;
-    }
-    try {
-      if (!userData?.businessId) throw new Error('No businessId found for user');
-      const now = new Date();
-      const dd = String(now.getDate()).padStart(2, '0');
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const yyyy = now.getFullYear();
-      const dateStr = dd + mm + yyyy;
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
-      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
-      const q = query(
-        collection(db, `businesses/${userData.businessId}/orders`),
-        where('createdAt', '>=', startOfDay),
-        where('createdAt', '<=', endOfDay)
-      );
-      const snapshot = await getDocs(q);
-      const orderNumber = String(snapshot.size + 1).padStart(4, '0');
-      const orderId = `${orderNumber}${dateStr}`;
-      const orderRef = doc(db, `businesses/${userData.businessId}/orders/${orderId}`);
-      await setDoc(orderRef, {
-        ...form,
-        total,
-        orderTaker: `${userData.lastName}, ${userData.firstName}`,
-        orderMaker: '',
-        status: 'Order Created',
-        createdAt: now.toISOString(),
-        preparingAt: '',
-        preparedAt: '',
-        paidAt: '',
-      });
-      alert('Order submitted!');
-      setForm({
-        sandwich: '', sandwichPrice: '', extras: '', extrasPrice: '', instructions: '', instructionsPrice: '', bread: '', breadPrice: '', ingredients: [], ingredientsPrice: '', misc: '', miscPrice: '', name: '',
-      });
-    } catch (err) {
-      alert('Failed to submit order: ' + (err instanceof Error ? err.message : 'Unknown error'));
-    }
-  };
 
   const orderSummary = (
     <div ref={printRef} className="p-4 bg-white text-black w-full max-w-lg">
@@ -200,7 +232,8 @@ export default function OrderForm() {
         {form.misc && <li><b>Misc:</b> {form.misc}</li>}
         {form.miscPrice && <li><b>Misc Price:</b> {form.miscPrice}</li>}
         {form.name && <li><b>Name:</b> {form.name}</li>}
-        <li><b>Total:</b> {total.toFixed(2)} USDC</li>
+        <li><b>Total:</b> {arsTotal.toFixed(2)} ARS</li>
+        <li><b>Total (USDC):</b> {conversionLoading ? 'Loading...' : conversionError ? conversionError : usdcTotal.toFixed(4) + ' USDC'}</li>
       </ul>
       {paymentStatus === 'pending' && solanaPayUrl && (
         <div className="text-yellow-600 font-semibold">Waiting for payment confirmation...</div>
@@ -212,7 +245,7 @@ export default function OrderForm() {
   );
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 space-y-4">
+    <form className="max-w-xl mx-auto p-4 space-y-4">
       <h1 className="text-3xl font-bold">Sandra's Sandwiches</h1>
 
       <div className="flex gap-2 items-end">
@@ -310,11 +343,12 @@ export default function OrderForm() {
         <input type="text" name="name" value={form.name} onChange={handleChange} className="w-full border p-2" style={{ textTransform: 'uppercase' }} />
       </div>
 
-      <div className="mt-4 font-bold text-lg">Total: ${total.toFixed(2)}</div>
-
-      <button type="submit" className="bg-black text-white py-2 px-4 rounded">
-        Submit Order
-      </button>
+      <div className="mt-4 font-bold text-lg">
+        Total: {arsTotal.toFixed(2)} ARS / {conversionLoading ? 'Loading...' : conversionError ? conversionError : usdcTotal.toFixed(4)} USDC
+        {usdToArs && (
+          <span className="text-xs text-gray-500"> (1 USDC ≈ {usdToArs.toLocaleString('en-US', { maximumFractionDigits: 2 })} ARS)</span>
+        )}
+      </div>
 
       {orderSummary}
     </form>

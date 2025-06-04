@@ -81,7 +81,9 @@ export async function pollSolanaPayPayment({
   const start = Date.now();
   while (Date.now() - start < timeout * 1000) {
     try {
+      // Use 'confirmed' for faster detection (supported by Solana web3.js)
       const signatureInfo = await findReference(connection, refKey, { finality: 'confirmed' });
+      // Use BigNumber for USDC with 6 decimals
       await validateTransfer(connection, signatureInfo.signature, {
         recipient: recipientKey,
         amount: new BigNumber(amount),
