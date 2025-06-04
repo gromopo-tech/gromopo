@@ -8,7 +8,6 @@ export default function SignupPage() {
       <main className="flex items-center justify-center p-12 mx-auto max-w-6xl px-4 sm:px-6">
         <SignupForm />
       </main>
-      <Footer />
     </>
   );
 }
