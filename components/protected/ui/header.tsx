@@ -114,7 +114,8 @@ export default function Header() {
               onClick={async () => {
                 try {
                   await signOut(auth);
-                  router.push("/");
+                  await fetch("/api/clear-session-cookie", { method: "POST" });
+                  router.push("/signin");
                 } catch (error) {
                   console.error("Error signing out:", error);
                   alert("Failed to sign out. Please try again.");
