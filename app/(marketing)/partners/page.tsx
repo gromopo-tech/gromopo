@@ -1,6 +1,5 @@
 "use client";
 import PartnersForm from "@/components/marketing/partners-form";
-import Footer from "@/components/marketing/ui/footer";
 
 export default function SignupPage() {
   return (

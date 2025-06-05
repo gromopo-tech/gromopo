@@ -1,6 +1,5 @@
 "use client";
 import SignupForm from "@/components/marketing/signup-form";
-import Footer from "@/components/marketing/ui/footer";
 
 export default function SignupPage() {
   return (

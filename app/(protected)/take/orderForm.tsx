@@ -116,7 +116,7 @@ export default function OrderForm() {
         recipient: MERCHANT_WALLET,
         amount: usdcTotal,
         reference: refKey,
-        label: `Sandra's Sandwiches`,
+        label: userData?.businessName || 'Unknown Business',
         message: `Order for ${form.name}`,
       });
       setSolanaPayUrl(url);
