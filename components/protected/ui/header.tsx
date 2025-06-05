@@ -3,8 +3,8 @@
 import { useEffect, useState, useRef } from "react";
 import Logo from "@/components/protected/ui/logo";
 import { auth } from "@/lib/firebase/config";
-import { getUserData } from '@/lib/getUserData';
-import { signOut, onAuthStateChanged } from "firebase/auth";
+import { signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -12,7 +12,23 @@ export default function Header() {
   const router = useRouter();
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { userData, loadingUserData } = getUserData();
+  const [role, setRole] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setDisplayName(user.displayName || null);
+        // Get custom claims
+        const idTokenResult = await user.getIdTokenResult();
+        setRole(typeof idTokenResult.claims.role === 'string' ? idTokenResult.claims.role : null);
+      } else {
+        setDisplayName(null);
+        setRole(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
@@ -53,7 +69,7 @@ export default function Header() {
               className="absolute top-full left-0 mt-2 bg-white shadow-md rounded-md z-40"
             >
               <ul className="p-4">
-                {(userData?.role === 'owner' || userData?.role === 'admin') && (
+                {(role === 'owner' || role === 'admin') && (
                   <li>
                     <Link 
                       href="/dashboard/employees" 
@@ -63,7 +79,7 @@ export default function Header() {
                     </Link>
                   </li>
                 )}
-                {(userData?.role === 'owner' || userData?.role === 'admin' || userData?.role === 'taker') && (
+                {(role === 'owner' || role === 'admin' || role === 'taker') && (
                   <><li>
                     <Link
                       href="/dashboard/menus"
@@ -107,7 +123,7 @@ export default function Header() {
             </ul>
           </div>
           <ul className="md:flex flex-1 justify-center text-amber-300">
-            {userData ? `Hello ${userData.firstName} ${userData.lastName}` : "Hello!"}
+            {displayName ? `Hello ${displayName}` : "Hello!"}
           </ul>
           <ul className="flex flex-1 justify-end gap-3">
             <button
