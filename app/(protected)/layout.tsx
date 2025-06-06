@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
-import { BusinessIdContextProvider, RoleContextProvider } from './context';
+import { BusinessIdContextProvider, RoleContextProvider, BusinessNameContextProvider } from './context';
 
 export default async function ProtectedLayout({
   children,
@@ -22,7 +22,9 @@ export default async function ProtectedLayout({
   return (
     <RoleContextProvider role={role}>
       <BusinessIdContextProvider businessId={businessId}>
-        {children}
+        <BusinessNameContextProvider businessId={businessId}>
+          {children}
+        </BusinessNameContextProvider>
       </BusinessIdContextProvider>
     </RoleContextProvider>
   );

@@ -61,7 +61,7 @@ export default function OrdersList() {
                 className="border-t cursor-pointer hover:bg-gray-50"
                 onClick={() => setSelectedOrder(order)}
               >
-                <td className="p-2">{order.orderId.slice(0, 4)}</td>
+                <td className="p-2">{order.orderNumber ? order.orderNumber.toString().padStart(4, '0') : order.orderId.slice(0, 4)}</td>
                 <td className="p-2">{order.name}</td>
                 <td className="p-2">{order.orderTaker}</td>
                 <td className="p-2">{order.orderMaker}</td>

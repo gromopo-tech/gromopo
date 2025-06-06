@@ -73,8 +73,7 @@ service cloud.firestore {
     }
     
     function isUserInBusiness(businessId) {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        request.auth.token.businessId == businessId;
+      return request.auth.token.businessId == businessId;
     }
 
     function isAdminOrOwner() {

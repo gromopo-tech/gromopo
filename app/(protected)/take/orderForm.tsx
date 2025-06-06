@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase/config';
 import { generateSolanaPayUrl, pollSolanaPayPayment, MERCHANT_WALLET } from './solanaPay';
 import { Keypair } from '@solana/web3.js';
 import { getAuth } from 'firebase/auth';
-import { BusinessIdContext } from '../context';
+import { BusinessIdContext, BusinessNameContext } from '../context';
 
 export default function OrderForm() {
   const [form, setForm] = useState({
@@ -26,6 +26,7 @@ export default function OrderForm() {
   });
 
   const businessId = useContext(BusinessIdContext);
+  const businessName = useContext(BusinessNameContext);
   const printRef = useRef<HTMLDivElement>(null);
   const [solanaPayUrl, setSolanaPayUrl] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'confirmed' | 'none'>('none');
@@ -117,7 +118,7 @@ export default function OrderForm() {
         recipient: MERCHANT_WALLET,
         amount: usdcTotal,
         reference: refKey,
-        label: 'Unknown Business',
+        label: businessName || 'Unknown Business',
         message: `Order for ${form.name}`,
       });
       setSolanaPayUrl(url);
@@ -127,7 +128,7 @@ export default function OrderForm() {
       setReference('');
       setPaymentStatus('none');
     }
-  }, [form, usdcTotal]);
+  }, [form, usdcTotal, businessName]);
 
   // Poll for payment confirmation
   useEffect(() => {
