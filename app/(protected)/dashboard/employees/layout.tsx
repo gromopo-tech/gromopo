@@ -13,22 +13,15 @@ export default async function EmployeesLayout({
     redirect('/signin');
   }
 
-  let redirect_path = null;
-  try {
-    // Decode JWT to get custom claims
-    const decoded: any = jwt.decode(token);
-    const role = decoded?.role;
-    if (role !== 'owner' && role !== 'admin') {
-      redirect_path = '/dashboard';
-    }
-  } catch (err) {
-    console.error('Auth failed:', err, err instanceof Error ? err.message : err);
+  // Decode JWT to get custom claims
+  const decoded: any = jwt.decode(token);
+  const role: string | null = decoded?.role || null;
+  if (!role) {
     redirect('/signin');
-  } finally {
-    if (redirect_path) {
-      redirect(redirect_path);
-    } else {
-      return <>{children}</>;
-    }
   }
+  if (role === 'taker') {
+    redirect('/dashboard');
+  }
+
+  return <>{children}</>;
 }

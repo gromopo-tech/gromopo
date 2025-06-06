@@ -13,22 +13,15 @@ export default async function DashboardLayout({
     redirect('/signin');
   }
 
-  let redirect_path = null;
-  try {
-    // Decode JWT to get custom claims
-    const decoded: any = jwt.decode(token);
-    const role = decoded?.role;
-    if (["maker"].includes(role)) {
-      redirect_path = '/make';
-    }
-  } catch (err) {
-    console.error('Auth failed:', err);
+  // Decode JWT to get custom claims
+  const decoded: any = jwt.decode(token);
+  const role: string | null = decoded?.role || null;
+  if (!role) {
     redirect('/signin');
-  } finally {
-    if (redirect_path) {
-      redirect(redirect_path);
-    } else {
-      return <>{children}</>;
-    }
   }
+  if (role === 'maker') {
+    redirect('/make');
+  }
+
+  return <>{children}</>;
 }

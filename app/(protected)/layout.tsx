@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { BusinessIdContextProvider, RoleContextProvider } from './context';
 
-export default async function EmployeesLayout({
+export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode
@@ -13,22 +14,16 @@ export default async function EmployeesLayout({
     redirect('/signin');
   }
 
-  let redirect_path = null;
-  try {
-    // Decode JWT to get custom claims
-    const decoded: any = jwt.decode(token);
-    const role = decoded?.role;
-    if (!['owner', 'admin', 'taker', 'maker'].includes(role)) {
-      redirect_path = '/signin';
-    }
-  } catch (err) {
-    console.error('Auth failed:', err);
-    redirect('/signin');
-  } finally {
-    if (redirect_path) {
-      redirect(redirect_path);
-    } else {
-      return <>{children}</>;
-    }
-  }
+  // Decode JWT to get custom claims
+  const decoded: any = jwt.decode(token);
+  const role: string | null = decoded?.role || null;
+  const businessId: string | null = decoded?.businessId || null;
+
+  return (
+    <RoleContextProvider role={role}>
+      <BusinessIdContextProvider businessId={businessId}>
+        {children}
+      </BusinessIdContextProvider>
+    </RoleContextProvider>
+  );
 }

@@ -24,11 +24,11 @@ service cloud.firestore {
 
       match /orders/{orderId} {
         allow create: if request.auth != null &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.businessId == businessId &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ["owner", "admin", "taker"];
+          request.auth.token.businessId == businessId &&
+          request.auth.token.role in ["owner", "admin", "taker"];
         allow read: if request.auth != null &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.businessId == businessId &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ["owner", "admin", "taker"];
+          request.auth.token.businessId == businessId &&
+          request.auth.token.role in ["owner", "admin", "taker"];
       }
     }
 
@@ -42,21 +42,20 @@ service cloud.firestore {
     }
 
     function canModifyRole(targetUserId) {
-      let requester = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
       let target = get(/databases/$(database)/documents/users/$(targetUserId)).data;
 
       // Admins can only change roles between 'maker' and 'taker'
-      return (requester.role == 'admin' &&
+      return (request.auth.token.role == 'admin' &&
               target.role in ['maker', 'taker'] &&
               request.resource.data.role in ['maker', 'taker']) ||
              // Prevent admins from assigning 'admin' role
-             (requester.role == 'admin' && request.resource.data.role == 'admin' ? false :
+             (request.auth.token.role == 'admin' && request.resource.data.role == 'admin' ? false :
              // Owners cannot have their roles modified
              (target.role == 'owner' ? false :
              // Only owners can modify admin roles
-             (target.role == 'admin' ? requester.role == 'owner' :
+             (target.role == 'admin' ? request.auth.token.role == 'owner' :
              // Admins and owners can modify other roles
-             requester.role in ['admin', 'owner'])));
+             request.auth.token.role in ['admin', 'owner'])));
     }
 
     function isNotSelf(targetUserId) {
@@ -64,43 +63,44 @@ service cloud.firestore {
     }
 
     function canCreateWithRole() {
-      let requester = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
       let incoming = request.resource.data;
 
       // Allow owners to create admins and admins to create maker/taker users
       return (
-        (requester.role == 'owner' && incoming.role in ['admin', 'maker', 'taker']) ||
-        (requester.role == 'admin' && incoming.role in ['maker', 'taker'])
+        (request.auth.token.role == 'owner' && incoming.role in ['admin', 'maker', 'taker']) ||
+        (request.auth.token.role == 'admin' && incoming.role in ['maker', 'taker'])
       );
     }
     
     function isUserInBusiness(businessId) {
       return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.businessId == businessId;
+        request.auth.token.businessId == businessId;
     }
 
     function isAdminOrOwner() {
-      let requester = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-      return requester.role in ['admin', 'owner'];
+      return request.auth.token.role in ['admin', 'owner'];
     }
 
     function isSameBusiness(targetUserId) {
-      let requester = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
       let target = get(/databases/$(database)/documents/users/$(targetUserId)).data;
       return request.auth != null &&
-             requester.businessId != null &&
+             request.auth.token.businessId != null &&
              target.businessId != null &&
-             requester.businessId == target.businessId;
+             request.auth.token.businessId == target.businessId;
     }
 
     function isSameBusinessForCreate() {
-      let requester = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
       let incoming = request.resource.data;
 
       return request.auth != null &&
-             requester.businessId != null &&
+             request.auth.token.businessId != null &&
              incoming.businessId != null &&
-             requester.businessId == incoming.businessId;
+             request.auth.token.businessId == incoming.businessId;
+    }
+
+    match /{document=**} {
+      // Deny list on all collections by default
+      allow list: if false;
     }
   }
 }

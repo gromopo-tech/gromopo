@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
 import { doc, setDoc, query, where, getDocs, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { getUserData } from '@/lib/getUserData';
 import { generateSolanaPayUrl, pollSolanaPayPayment, MERCHANT_WALLET } from './solanaPay';
 import { Keypair } from '@solana/web3.js';
+import { getAuth } from 'firebase/auth';
+import { BusinessIdContext } from '../context';
 
 export default function OrderForm() {
   const [form, setForm] = useState({
@@ -24,7 +25,7 @@ export default function OrderForm() {
     name: '',
   });
 
-  const { userData } = getUserData();
+  const businessId = useContext(BusinessIdContext);
   const printRef = useRef<HTMLDivElement>(null);
   const [solanaPayUrl, setSolanaPayUrl] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'confirmed' | 'none'>('none');
@@ -116,7 +117,7 @@ export default function OrderForm() {
         recipient: MERCHANT_WALLET,
         amount: usdcTotal,
         reference: refKey,
-        label: userData?.businessName || 'Unknown Business',
+        label: 'Unknown Business',
         message: `Order for ${form.name}`,
       });
       setSolanaPayUrl(url);
@@ -166,7 +167,10 @@ export default function OrderForm() {
         return;
       }
       try {
-        if (!userData?.businessId) throw new Error('No businessId found for user');
+        if (!businessId) throw new Error('No businessId found for user');
+        const auth = getAuth();
+        const user = auth.currentUser;
+        const orderTaker = user?.displayName || user?.email || 'Unknown';
         const now = new Date();
         const dd = String(now.getDate()).padStart(2, '0');
         const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -175,25 +179,23 @@ export default function OrderForm() {
         const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
         const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
         const q = query(
-          collection(db, `businesses/${userData.businessId}/orders`),
+          collection(db, `businesses/${businessId}/orders`),
           where('createdAt', '>=', startOfDay),
           where('createdAt', '<=', endOfDay)
         );
         const snapshot = await getDocs(q);
-        const orderNumber = String(snapshot.size + 1).padStart(4, '0');
-        const orderId = `${orderNumber}${dateStr}`;
-        const orderRef = doc(db, `businesses/${userData.businessId}/orders/${orderId}`);
-        await setDoc(orderRef, {
+        const orderNumber = snapshot.size + 1;
+        const orderData = {
           ...form,
-          total,
-          orderTaker: `${userData.lastName}, ${userData.firstName}`,
-          orderMaker: '',
+          createdAt: new Date().toISOString(),
+          orderNumber,
+          orderTaker,
           status: 'Order Created',
-          createdAt: now.toISOString(),
-          preparingAt: '',
-          preparedAt: '',
-          paidAt: '',
-        });
+          arsTotal,
+          usdcTotal,
+          reference,
+        };
+        await setDoc(doc(db, `businesses/${businessId}/orders`, `${dateStr}-${orderNumber}`), orderData);
         // Reset form after submission
         setForm({
           sandwich: '', sandwichPrice: '', extras: '', extrasPrice: '', instructions: '', instructionsPrice: '', bread: '', breadPrice: '', ingredients: [], ingredientsPrice: '', misc: '', miscPrice: '', name: '',

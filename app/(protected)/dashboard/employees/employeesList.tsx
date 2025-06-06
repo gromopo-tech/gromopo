@@ -1,71 +1,101 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import { Trash2, Pencil } from 'lucide-react'
 import { doc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
-import { getUserData } from '@/lib/getUserData'
 import { toast } from 'react-hot-toast'
 import type { Employee } from '@/types/employee'
+import { RoleContext } from '../../context'
 
 export default function EmployeesList({ employees }: { employees: Employee[] }) {
   const [filter, setFilter] = useState<'all' | 'admin' | 'taker' | 'maker'>('all')
   const [employeeList, setEmployeeList] = useState(employees)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const { userData } = getUserData()
+  const role = useContext(RoleContext)
 
-    const handleDelete = async (id: string) => {
-      if (!userData || (userData?.role !== 'owner' && userData?.role !== 'admin')) {
-        toast.error('Unauthorized.')
-        return
-      }
-      const confirm = window.confirm('Are you sure you want to delete this employee?')
-      if (!confirm) return
-    
-      try {
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
-          toast.error('User not authenticated')
-          return
-        }
-
-        const idToken = await currentUser.getIdToken(true); // Force refresh the token to ensure validity
-
-        const res = await fetch('/api/delete-employee', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          },
-          body: JSON.stringify({ uid: id }),
-        });
-
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || 'Failed to delete user');
-        }
-
-        setEmployeeList((prev) => prev.filter((emp) => emp.id !== id));
-      } catch (err) {
-        if (err instanceof Error) {
-          toast.error(err.message || 'Error deleting employee. Please try again.');
-        } else {
-          toast.error('Error deleting employee. Please try again.');
-        }
-      }
-    }
-    
-
-  const handleRoleChange = async (id: string, newRole: Employee['role']) => {
-    if (!userData || (userData?.role !== 'owner' && userData?.role !== 'admin')) {
+  const handleDelete = async (id: string) => {
+    if (!role || (role !== 'owner' && role !== 'admin')) {
       toast.error('Unauthorized.')
       return
     }
-    await updateDoc(doc(db, 'users', id), { role: newRole })
-    setEmployeeList((prev) =>
-      prev.map((emp) => (emp.id === id ? { ...emp, role: newRole } : emp))
-    )
-    setEditingId(null)
+    const confirm = window.confirm('Are you sure you want to delete this employee?')
+    if (!confirm) return
+  
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        toast.error('User not authenticated')
+        return
+      }
+
+      const idToken = await currentUser.getIdToken(true); // Force refresh the token to ensure validity
+
+      const res = await fetch('/api/delete-employee', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ uid: id }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to delete user');
+      }
+
+      setEmployeeList((prev) => prev.filter((emp) => emp.id !== id));
+    } catch (err) {
+      if (err instanceof Error) {
+        toast.error(err.message || 'Error deleting employee. Please try again.');
+      } else {
+        toast.error('Error deleting employee. Please try again.');
+      }
+    }
+  }
+  
+
+  const handleRoleChange = async (id: string, newRole: Employee['role']) => {
+    if (!role || (role !== 'owner' && role !== 'admin')) {
+      toast.error('Unauthorized.')
+      return
+    }
+    try {
+      // Update Firestore for display
+      await updateDoc(doc(db, 'users', id), { role: newRole })
+      // Update custom claims via API
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error('User not authenticated');
+      const idToken = await currentUser.getIdToken(true);
+      // Get businessId from context or employeeList
+      const employee = employeeList.find(emp => emp.id === id);
+      const businessId = employee?.businessId;
+      if (!businessId) throw new Error('Missing businessId for user');
+      const res = await fetch('/api/update-role', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ uid: id, role: newRole, businessId }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to update user role');
+      }
+      setEmployeeList((prev) =>
+        prev.map((emp) => (emp.id === id ? { ...emp, role: newRole } : emp))
+      )
+      setEditingId(null)
+      toast.success('Role updated!');
+    } catch (err) {
+      if (err instanceof Error) {
+        toast.error(err.message || 'Error updating role. Please try again.');
+      } else {
+        toast.error('Error updating role. Please try again.');
+      }
+    }
   }
 
   const filtered = filter === 'all' ? employeeList : employeeList.filter(e => e.role === filter)
@@ -109,7 +139,7 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
                       onChange={(ev) => handleRoleChange(e.id, ev.target.value as Employee['role'])}
                       className="border rounded px-2 py-1"
                     >
-                      {userData?.role === 'owner' && <option value="admin">admin</option>}
+                      {role === 'owner' && <option value="admin">admin</option>}
                       {['taker', 'maker'].map((r) => (
                         <option key={r} value={r}>
                           {r}
@@ -121,7 +151,7 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
                   )}
                 </td>
                 <td className="p-2 flex gap-2">
-                  {e.role === 'owner' as Employee['role'] || (userData?.role === 'admin' && (e.role === 'owner' as Employee['role'] || e.role === 'admin' as Employee['role'])) ? (
+                  {e.role === 'owner' as Employee['role'] || (role === 'admin' && (e.role === 'owner' as Employee['role'] || e.role === 'admin' as Employee['role'])) ? (
                     <span className="text-gray-500">disabled</span>
                   ) : (
                     <>
