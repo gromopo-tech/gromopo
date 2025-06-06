@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
 import { doc, setDoc, query, where, getDocs, collection } from 'firebase/firestore';
-import { db, storage } from '@/lib/firebase/config';
-import { getUserData } from '@/lib/getUserData';
-import QRCode from 'qrcode';
-import { Document, Page, Text, View, StyleSheet, Image as PDFImage, pdf } from '@react-pdf/renderer';
+import { db, auth } from '@/lib/firebase/config';
+import { generateSolanaPayUrl, pollSolanaPayPayment } from '../../../lib/solanaPay/config';
+import { Keypair } from '@solana/web3.js';
+import { BusinessIdContext, BusinessNameContext } from '../context';
 
 export default function OrderForm() {
   const [form, setForm] = useState({
@@ -24,9 +24,19 @@ export default function OrderForm() {
     name: '',
   });
 
-  const { userData } = getUserData();
+  const businessId = useContext(BusinessIdContext);
+  const businessName = useContext(BusinessNameContext);
   const printRef = useRef<HTMLDivElement>(null);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [solanaPayUrl, setSolanaPayUrl] = useState<string>('');
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'confirmed' | 'none'>('none');
+  const [reference, setReference] = useState<string>('');
+
+  const [arsTotal, setArsTotal] = useState<number>(0);
+  const [usdcTotal, setUsdcTotal] = useState<number>(0);
+  const [conversionLoading, setConversionLoading] = useState<boolean>(false);
+  const [conversionError, setConversionError] = useState<string | null>(null);
+  const [usdToArs, setUsdToArs] = useState<number | null>(null);
+  const [merchantWallet, setMerchantWallet] = useState<string | null>(null);
 
   const breads = [
     'MARBLE RYE', 'LIGHT RYE', 'DARK RYE', 'FRENCH', 'SOURDOUGH', 'ONION', 'KAISER', 'PITA', 'MULTIGRAIN', 'CIABATTA', 'CRANBERRY WALNUT',
@@ -34,7 +44,6 @@ export default function OrderForm() {
 
   const ingredients = ['MAYONNAISE', 'MUSTARD', 'LETTUCE', 'TOMATO', 'CHEESE'];
 
-  // Move total calculation above QR code functions so it is available
   const total = [
     form.sandwichPrice,
     form.extrasPrice,
@@ -62,143 +71,222 @@ export default function OrderForm() {
     });
   };
 
-  const generateOrderQRPNG = async (order: any) => {
-    const qrData = JSON.stringify({
-      sandwich: order.sandwich,
-      sandwichPrice: order.sandwichPrice,
-      extras: order.extras,
-      extrasPrice: order.extrasPrice,
-      instructions: order.instructions,
-      instructionsPrice: order.instructionsPrice,
-      bread: order.bread,
-      breadPrice: order.breadPrice,
-      ingredients: order.ingredients,
-      ingredientsPrice: order.ingredientsPrice,
-      misc: order.misc,
-      miscPrice: order.miscPrice,
-      name: order.name,
-      total: total.toFixed(2),
-    });
-    try {
-      return await QRCode.toDataURL(qrData, { width: 180 });
-    } catch (err) {
-      return '';
-    }
-  };
-
-  const pdfStyles = StyleSheet.create({
-    page: { padding: 24, fontSize: 14, fontFamily: 'Helvetica' },
-    section: { marginBottom: 12 },
-    heading: { fontSize: 22, fontWeight: 'bold', marginBottom: 8 },
-    qr: { marginBottom: 12, alignItems: 'center', display: 'flex', justifyContent: 'center' },
-    list: { margin: 0, padding: 0 },
-    item: { marginBottom: 2 },
-  });
-
-  const OrderSummaryPDF = ({ form, total, qrPngUrl }: any) => (
-    <Document>
-      <Page size="A4" style={pdfStyles.page}>
-        <View style={pdfStyles.section}>
-          <Text style={pdfStyles.heading}>Order Summary</Text>
-        </View>
-        <View style={pdfStyles.qr}>
-          {qrPngUrl && (
-            <PDFImage src={qrPngUrl} style={{ width: 120, height: 120 }} />
-          )}
-        </View>
-        <View style={pdfStyles.section}>
-          <Text>Sandwich: {form.sandwich}</Text>
-          <Text>Sandwich Price: {form.sandwichPrice}</Text>
-          {form.extras && <Text>Extras: {form.extras}</Text>}
-          {form.extrasPrice && <Text>Extras Price: {form.extrasPrice}</Text>}
-          {form.instructions && <Text>Instructions: {form.instructions}</Text>}
-          {form.instructionsPrice && <Text>Instructions Price: {form.instructionsPrice}</Text>}
-          <Text>Bread: {form.bread}</Text>
-          <Text>Bread Price: {form.breadPrice}</Text>
-          {form.ingredients.length > 0 && <Text>ingredients: {form.ingredients.join(', ')}</Text>}
-          {form.ingredientsPrice && <Text>ingredients Price: {form.ingredientsPrice}</Text>}
-          {form.misc && <Text>Misc: {form.misc}</Text>}
-          {form.miscPrice && <Text>Misc Price: {form.miscPrice}</Text>}
-          <Text>Name: {form.name}</Text>
-          <Text>Total: ${total.toFixed(2)}</Text>
-        </View>
-      </Page>
-    </Document>
-  );
-
   useEffect(() => {
-    (async () => {
-      if (form.sandwich && form.bread && form.name) {
-        const url = await generateOrderQRPNG(form);
-        setQrCodeUrl(url);
-      } else {
-        setQrCodeUrl('');
-      }
-    })();
+    const sum = [
+      form.sandwichPrice,
+      form.extrasPrice,
+      form.instructionsPrice,
+      form.breadPrice,
+      form.ingredientsPrice,
+      form.miscPrice,
+    ].reduce((acc, val) => acc + (parseFloat(val) || 0), 0);
+    setArsTotal(sum);
   }, [form]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.sandwich) {
-      alert('Please fill out Sandwich field.');
+  useEffect(() => {
+    if (arsTotal > 0) {
+      setConversionLoading(true);
+      setConversionError(null);
+      fetch('https://api.coingecko.com/api/v3/simple/price?ids=usd-coin,argentine-peso&vs_currencies=usd,ars')
+        .then(res => res.json())
+        .then(data => {
+          const arsPerUsdc = data['usd-coin']?.ars;
+          const usdToArsRate = data['usd-coin']?.ars;
+          if (!arsPerUsdc || arsPerUsdc === 0) throw new Error('Invalid ARS/USDC rate');
+          setUsdToArs(usdToArsRate || null);
+          // Use toFixed(6) and parseFloat to ensure 6 decimals, no rounding error
+          const usdc = parseFloat((arsTotal / arsPerUsdc).toFixed(6));
+          setUsdcTotal(usdc);
+          setConversionLoading(false);
+        })
+        .catch(err => {
+          setConversionError('Failed to fetch ARS/USDC rate');
+          setConversionLoading(false);
+          setUsdToArs(null);
+        });
+    } else {
+      setUsdcTotal(0);
+      setUsdToArs(null);
+    }
+  }, [arsTotal]);
+
+  // Fetch and cache merchantWallet
+  useEffect(() => {
+    if (!businessId) {
+      setMerchantWallet(null);
       return;
     }
-    if (!form.sandwichPrice) {
-      alert('Please fill out Sandwich Price field.');
+    const cacheKey = `merchantWallet-${businessId}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      setMerchantWallet(cached);
       return;
     }
-    if (!form.bread) {
-      alert('Please fill out Bread field.');
-      return;
-    }
-    if (!form.name) {
-      alert('Please fill out Name field.');
-      return;
-    }
-    try {
-      if (!userData?.businessId) throw new Error('No businessId found for user');
-      const now = new Date();
-      const dd = String(now.getDate()).padStart(2, '0');
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const yyyy = now.getFullYear();
-      const dateStr = dd + mm + yyyy;
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
-      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
-      const q = query(
-        collection(db, `businesses/${userData.businessId}/orders`),
-        where('createdAt', '>=', startOfDay),
-        where('createdAt', '<=', endOfDay)
-      );
-      const snapshot = await getDocs(q);
-      const orderNumber = String(snapshot.size + 1).padStart(4, '0');
-      const orderId = `${orderNumber}${dateStr}`;
-      const orderRef = doc(db, `businesses/${userData.businessId}/orders/${orderId}`);
-      await setDoc(orderRef, {
-        ...form,
-        total,
-        orderTaker: `${userData.lastName}, ${userData.firstName}`,
-        orderMaker: '',
-        status: 'Order Created',
-        createdAt: now.toISOString(),
-        preparingAt: '',
-        preparedAt: '',
-        paidAt: '',
+    (async () => {
+      try {
+        const snap = await import('firebase/firestore').then(({ doc, getDoc }) => getDoc(doc(db, 'businesses', businessId)));
+        if (snap.exists()) {
+          const wallet = snap.data().merchantWallet || '';
+          setMerchantWallet(wallet);
+          sessionStorage.setItem(cacheKey, wallet);
+        } else {
+          setMerchantWallet('');
+        }
+      } catch (err) {
+        setMerchantWallet('');
+      }
+    })();
+  }, [businessId]);
+
+  useEffect(() => {
+    if (
+      form.sandwich &&
+      form.bread &&
+      form.name &&
+      usdcTotal > 0 &&
+      merchantWallet &&
+      merchantWallet.length > 0
+    ) {
+      try {
+        // Validate merchantWallet as a public key
+        const _ = new Keypair(); // just to ensure Keypair is imported
+        const walletKey = new window.Uint8Array(32);
+        // Try to create a PublicKey, will throw if invalid
+        new (require('@solana/web3.js').PublicKey)(merchantWallet);
+      } catch (e) {
+        setSolanaPayUrl("");
+        setReference("");
+        setPaymentStatus("none");
+        return;
+      }
+      const refKey = Keypair.generate().publicKey.toBase58();
+      setReference(refKey);
+      const url = generateSolanaPayUrl({
+        recipient: merchantWallet,
+        amount: usdcTotal,
+        reference: refKey,
+        label: businessName || 'Unknown Business',
+        message: `Order for ${form.name}`,
       });
-      alert('Order submitted!');
-      setForm({
-        sandwich: '', sandwichPrice: '', extras: '', extrasPrice: '', instructions: '', instructionsPrice: '', bread: '', breadPrice: '', ingredients: [], ingredientsPrice: '', misc: '', miscPrice: '', name: '',
-      });
-    } catch (err) {
-      alert('Failed to submit order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      setSolanaPayUrl(url);
+      setPaymentStatus('pending');
+    } else {
+      setSolanaPayUrl('');
+      setReference('');
+      setPaymentStatus('none');
     }
-  };
+  }, [form, usdcTotal, businessName, merchantWallet]);
+
+  useEffect(() => {
+    let stop = false;
+    if (
+      paymentStatus === 'pending' &&
+      reference &&
+      merchantWallet &&
+      merchantWallet.length > 0 &&
+      usdcTotal > 0
+    ) {
+      try {
+        new (require('@solana/web3.js').PublicKey)(merchantWallet);
+      } catch (e) {
+        setPaymentStatus('none');
+        return;
+      }
+      (async () => {
+        let retries = 0;
+        let delay = 1000; // start with 1 second
+        const maxRetries = 10; // after 10 tries, give up
+        while (!stop && retries < maxRetries) {
+          try {
+            const confirmed = await pollSolanaPayPayment({
+              reference,
+              amount: usdcTotal,
+              recipient: merchantWallet,
+              timeout: 10, // short timeout for each try
+              interval: 500 // short interval for each try
+            });
+            if (confirmed) {
+              setPaymentStatus('confirmed');
+              return;
+            }
+          } catch (err: any) {
+            if (err?.message?.includes('429')) {
+              // Too many requests, back off
+              delay = Math.min(delay * 2, 30000); // max 30s
+            } else {
+              delay = 1000; // reset delay for other errors
+            }
+          }
+          retries++;
+          await new Promise(res => setTimeout(res, delay));
+        }
+        if (!stop) {
+          setPaymentStatus('none');
+          alert('Payment not detected. Please ensure your wallet supports Solana Pay reference and try again.');
+        }
+      })();
+    }
+    return () => { stop = true; };
+  }, [paymentStatus, reference, usdcTotal, merchantWallet]);
+
+  // Submit order to Firestore when payment is confirmed
+  useEffect(() => {
+    const submitOrder = async () => {
+      if (!form.sandwich || !form.sandwichPrice || !form.bread || !form.name) {
+        // Required fields missing, do not submit
+        return;
+      }
+      try {
+        if (!businessId) throw new Error('No businessId found for user');
+        const user = auth.currentUser;
+        const orderTaker = user?.displayName || user?.email || 'Unknown';
+        const now = new Date();
+        const dd = String(now.getDate()).padStart(2, '0');
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const yyyy = now.getFullYear();
+        const dateStr = dd + mm + yyyy;
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+        const q = query(
+          collection(db, `businesses/${businessId}/orders`),
+          where('createdAt', '>=', startOfDay),
+          where('createdAt', '<=', endOfDay)
+        );
+        const snapshot = await getDocs(q);
+        const orderNumber = snapshot.size + 1;
+        const orderData = {
+          ...form,
+          createdAt: new Date().toISOString(),
+          orderNumber,
+          orderTaker,
+          status: 'Order Created',
+          arsTotal,
+          usdcTotal,
+          reference,
+        };
+        await setDoc(doc(db, `businesses/${businessId}/orders`, `${dateStr}-${orderNumber}`), orderData);
+        // Reset form after submission
+        setForm({
+          sandwich: '', sandwichPrice: '', extras: '', extrasPrice: '', instructions: '', instructionsPrice: '', bread: '', breadPrice: '', ingredients: [], ingredientsPrice: '', misc: '', miscPrice: '', name: '',
+        });
+      } catch (err) {
+        alert('Failed to submit order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      }
+    };
+
+    if (paymentStatus === 'confirmed') {
+      submitOrder().then(() => {
+        window.location.href = '/take/confirmation';
+      });
+    }
+  }, [paymentStatus]);
 
   const orderSummary = (
     <div ref={printRef} className="p-4 bg-white text-black w-full max-w-lg">
       <h2 className="text-2xl font-bold mb-2">Order Summary</h2>
       <div className="mb-2">
-        {qrCodeUrl && (
-          <img src={qrCodeUrl} alt="Order QR Code" />
+        {solanaPayUrl && (
+          <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(solanaPayUrl)}`} alt="Solana Pay QR Code" />
         )}
       </div>
       <ul className="mb-2">
@@ -210,18 +298,25 @@ export default function OrderForm() {
         {form.instructionsPrice && <li><b>Instructions Price:</b> {form.instructionsPrice}</li>}
         {form.bread && <li><b>Bread:</b> {form.bread}</li>}
         {form.breadPrice && <li><b>Bread Price:</b> {form.breadPrice}</li>}
-        {form.ingredients.length > 0 && <li><b>ingredients:</b> {form.ingredients.join(', ')}</li>}
-        {form.ingredientsPrice && <li><b>ingredients Price:</b> {form.ingredientsPrice}</li>}
+        {form.ingredients.length > 0 && <li><b>Ingredients:</b> {form.ingredients.join(', ')}</li>}
+        {form.ingredientsPrice && <li><b>Ingredients Price:</b> {form.ingredientsPrice}</li>}
         {form.misc && <li><b>Misc:</b> {form.misc}</li>}
         {form.miscPrice && <li><b>Misc Price:</b> {form.miscPrice}</li>}
         {form.name && <li><b>Name:</b> {form.name}</li>}
-        <li><b>Total:</b> {total.toFixed(2)}</li>
+        <li><b>Total:</b> {arsTotal.toFixed(2)} ARS</li>
+        <li><b>Total (USDC):</b> {conversionLoading ? 'Loading...' : conversionError ? conversionError : usdcTotal.toFixed(4) + ' USDC'}</li>
       </ul>
+      {paymentStatus === 'pending' && solanaPayUrl && (
+        <div className="text-yellow-600 font-semibold">Waiting for payment confirmation...</div>
+      )}
+      {paymentStatus === 'confirmed' && (
+        <div className="text-green-600 font-semibold">Payment confirmed!</div>
+      )}
     </div>
   );
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 space-y-4">
+    <form className="max-w-xl mx-auto p-4 space-y-4">
       <h1 className="text-3xl font-bold">Sandra's Sandwiches</h1>
 
       <div className="flex gap-2 items-end">
@@ -319,11 +414,12 @@ export default function OrderForm() {
         <input type="text" name="name" value={form.name} onChange={handleChange} className="w-full border p-2" style={{ textTransform: 'uppercase' }} />
       </div>
 
-      <div className="mt-4 font-bold text-lg">Total: ${total.toFixed(2)}</div>
-
-      <button type="submit" className="bg-black text-white py-2 px-4 rounded">
-        Submit Order
-      </button>
+      <div className="mt-4 font-bold text-lg">
+        Total: {arsTotal.toFixed(2)} ARS / {conversionLoading ? 'Loading...' : conversionError ? conversionError : usdcTotal.toFixed(4)} USDC
+        {usdToArs && (
+          <span className="text-xs text-gray-500"> (1 USDC ≈ {usdToArs.toLocaleString('en-US', { maximumFractionDigits: 2 })} ARS)</span>
+        )}
+      </div>
 
       {orderSummary}
     </form>

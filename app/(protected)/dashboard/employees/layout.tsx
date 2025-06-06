@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { getRequesterDataFromToken } from '@/lib/adminGetUserData';
+import jwt from 'jsonwebtoken';
 
 export default async function EmployeesLayout({
   children,
@@ -13,26 +13,15 @@ export default async function EmployeesLayout({
     redirect('/signin');
   }
 
-  let redirect_path = null;
-  try {
-    const req = new Request('http://placeholder', { headers: { Authorization: `Bearer ${token}` } });
-    const { userData } = await getRequesterDataFromToken(req);
-    const role = userData?.role;
-    
-    if (['taker'].includes(role)) {
-      redirect_path = '/take';
-    } else if (['maker'].includes(role)) {
-      redirect_path = '/make';
-    }
-
-  } catch (err) {
-    console.error('Auth failed:', err, err instanceof Error ? err.message : err);
+  // Decode JWT to get custom claims
+  const decoded: any = jwt.decode(token);
+  const role: string | null = decoded?.role || null;
+  if (!role) {
     redirect('/signin');
-  } finally {
-      if (redirect_path) {
-        redirect(redirect_path);
-  } else {
-        return <>{children}</>;
-      }
   }
+  if (role === 'taker') {
+    redirect('/dashboard');
+  }
+
+  return <>{children}</>;
 }

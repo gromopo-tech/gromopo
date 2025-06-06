@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
-export default async function TakeLayout({
+export default async function MenusLayout({
   children,
 }: {
   children: React.ReactNode
@@ -15,9 +15,12 @@ export default async function TakeLayout({
 
   // Decode JWT to get custom claims
   const decoded: any = jwt.decode(token);
-  const role = decoded?.role;
-  if (role === 'maker') {
-    redirect('/make');
+  const role: string | null = decoded?.role || null;
+  if (!role) {
+    redirect('/signin');
+  }
+  if (role !== 'owner' && role !== 'admin') {
+    redirect('/dashboard');
   }
 
   return <>{children}</>;

@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { getAuth, connectAuthEmulator } from "firebase/auth";
-import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
@@ -19,43 +19,28 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-let localAuth;
-let localDb;
-let localStorage;
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
 if (process.env.NODE_ENV === "development") {
-  // connect SDKs to emulators
-  localAuth = getAuth();
-  connectAuthEmulator(
-    localAuth, 
-    process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_URL || "http://127.0.0.1:9099");
-
-  localDb = getFirestore();
+  connectAuthEmulator(auth, process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_URL || "http://127.0.0.1:9099");
   connectFirestoreEmulator(
-    localDb, 
+    db,
     process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST || "127.0.0.1",
     Number(process.env.NEXT_PUBLIC_FIREBASE_DB_EMULATOR_PORT) || 8080
   );
-
-  localStorage = getStorage();
   connectStorageEmulator(
-    localStorage,
+    storage,
     process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST || "127.0.0.1",
     Number(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_EMULATOR_PORT) || 9199
   );
-
   console.log("Connected to emulators");
 } else {
-  // Use production config
-  localAuth = getAuth(app);
-  localDb = getFirestore(app);
-  localStorage = getStorage(app);
   console.log("Connected to production");
 }
 
-export const auth = localAuth;
-export const db = localDb;
-export const storage = localStorage;
+export { auth, db, storage };
 export const analytics = isSupported().then((isSupported) => {
   if (isSupported) {
     return getAnalytics(app);
