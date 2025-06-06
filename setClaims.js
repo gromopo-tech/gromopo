@@ -1,3 +1,6 @@
+// TODO: Change this to an onboarding script that initializes owner's user data in firestore
+// and sets necessary paths for the business such as menu path in firebase storage
+
 // run `node setClaims.js` to create custom claims manually for first user of a business
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';

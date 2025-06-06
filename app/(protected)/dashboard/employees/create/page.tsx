@@ -4,7 +4,7 @@ import { useState, useContext } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-hot-toast'
 import { RoleContext, BusinessIdContext } from '../../../context'
-import { getAuth } from 'firebase/auth'
+import { auth } from '@/lib/firebase/config';
 
 export default function CreateEmployeePage() {
   const router = useRouter()
@@ -40,7 +40,6 @@ export default function CreateEmployeePage() {
 
     try {
       // Get the current user's ID token from Firebase Auth
-      const auth = getAuth();
       const user = auth.currentUser;
       if (!user) {
         toast.error('Not signed in');

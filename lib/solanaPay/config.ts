@@ -2,22 +2,20 @@ import { Keypair, PublicKey, Connection, clusterApiUrl } from '@solana/web3.js';
 import { encodeURL, findReference, validateTransfer } from '@solana/pay';
 import BigNumber from 'bignumber.js';
 
-export let USDC_MINT: PublicKey;
-export const SOLANA_NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'localhost';
-export const MERCHANT_WALLET = process.env.NEXT_PUBLIC_SOLANA_MERCHANT_WALLET || '';
+// Use environment variables for network and merchant wallet, with dev/prod logic
+let SOLANA_NETWORK: string;
+let USDC_MINT_ADDRESS: PublicKey;
+
+if (process.env.NODE_ENV === 'development') {
+  SOLANA_NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet';
+  USDC_MINT_ADDRESS = new PublicKey(process.env.NEXT_PUBLIC_SOLANA_USDC_MINT_ADDRESS || '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'); // Default to devnet USDC mint address
+} else {
+  SOLANA_NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'mainnet-beta';
+  USDC_MINT_ADDRESS = new PublicKey(process.env.NEXT_PUBLIC_SOLANA_USDC_MINT_ADDRESS || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // Default to mainnet-beta USDC mint address
+}
 
 export function getSolanaConnection() {
-  let mint: PublicKey;
-  if (SOLANA_NETWORK === 'localhost') {
-    mint = new PublicKey(''); // Replace with your local USDC SPL Token mint address if available
-  } else if (SOLANA_NETWORK === 'devnet') {
-    mint = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
-  } else if (SOLANA_NETWORK === 'testnet') {
-    mint = new PublicKey(''); // Replace with the testnet USDC mint address if available
-  } else {
-    mint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // mainnet-beta
-  }
-  return { connection: new Connection(clusterApiUrl(SOLANA_NETWORK as any)), mint };
+  return { connection: new Connection(clusterApiUrl(SOLANA_NETWORK as any)), mint: USDC_MINT_ADDRESS };
 }
 
 export function generateSolanaPayUrl({
@@ -35,13 +33,10 @@ export function generateSolanaPayUrl({
   message?: string;
   memo?: string;
 }) {
-  // Fix: reference must be a valid base58 string (public key)
-  // If reference is not a valid public key, generate a new one
   let referenceKey: PublicKey;
   try {
     referenceKey = new PublicKey(reference);
   } catch (e) {
-    // fallback: generate a random key
     referenceKey = Keypair.generate().publicKey;
   }
   const { mint } = getSolanaConnection();

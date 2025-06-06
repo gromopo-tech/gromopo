@@ -2,10 +2,9 @@
 
 import { useState, useRef, useEffect, useContext } from 'react';
 import { doc, setDoc, query, where, getDocs, collection } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import { generateSolanaPayUrl, pollSolanaPayPayment, MERCHANT_WALLET } from './solanaPay';
+import { db, auth } from '@/lib/firebase/config';
+import { generateSolanaPayUrl, pollSolanaPayPayment } from '../../../lib/solanaPay/config';
 import { Keypair } from '@solana/web3.js';
-import { getAuth } from 'firebase/auth';
 import { BusinessIdContext, BusinessNameContext } from '../context';
 
 export default function OrderForm() {
@@ -37,6 +36,7 @@ export default function OrderForm() {
   const [conversionLoading, setConversionLoading] = useState<boolean>(false);
   const [conversionError, setConversionError] = useState<string | null>(null);
   const [usdToArs, setUsdToArs] = useState<number | null>(null);
+  const [merchantWallet, setMerchantWallet] = useState<string | null>(null);
 
   const breads = [
     'MARBLE RYE', 'LIGHT RYE', 'DARK RYE', 'FRENCH', 'SOURDOUGH', 'ONION', 'KAISER', 'PITA', 'MULTIGRAIN', 'CIABATTA', 'CRANBERRY WALNUT',
@@ -110,12 +110,59 @@ export default function OrderForm() {
     }
   }, [arsTotal]);
 
+  // Fetch and cache merchantWallet
   useEffect(() => {
-    if (form.sandwich && form.bread && form.name && usdcTotal > 0 && MERCHANT_WALLET) {
+    if (!businessId) {
+      setMerchantWallet(null);
+      return;
+    }
+    const cacheKey = `merchantWallet-${businessId}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      setMerchantWallet(cached);
+      return;
+    }
+    (async () => {
+      try {
+        const snap = await import('firebase/firestore').then(({ doc, getDoc }) => getDoc(doc(db, 'businesses', businessId)));
+        if (snap.exists()) {
+          const wallet = snap.data().merchantWallet || '';
+          setMerchantWallet(wallet);
+          sessionStorage.setItem(cacheKey, wallet);
+        } else {
+          setMerchantWallet('');
+        }
+      } catch (err) {
+        setMerchantWallet('');
+      }
+    })();
+  }, [businessId]);
+
+  useEffect(() => {
+    if (
+      form.sandwich &&
+      form.bread &&
+      form.name &&
+      usdcTotal > 0 &&
+      merchantWallet &&
+      merchantWallet.length > 0
+    ) {
+      try {
+        // Validate merchantWallet as a public key
+        const _ = new Keypair(); // just to ensure Keypair is imported
+        const walletKey = new window.Uint8Array(32);
+        // Try to create a PublicKey, will throw if invalid
+        new (require('@solana/web3.js').PublicKey)(merchantWallet);
+      } catch (e) {
+        setSolanaPayUrl("");
+        setReference("");
+        setPaymentStatus("none");
+        return;
+      }
       const refKey = Keypair.generate().publicKey.toBase58();
       setReference(refKey);
       const url = generateSolanaPayUrl({
-        recipient: MERCHANT_WALLET,
+        recipient: merchantWallet,
         amount: usdcTotal,
         reference: refKey,
         label: businessName || 'Unknown Business',
@@ -128,37 +175,59 @@ export default function OrderForm() {
       setReference('');
       setPaymentStatus('none');
     }
-  }, [form, usdcTotal, businessName]);
+  }, [form, usdcTotal, businessName, merchantWallet]);
 
-  // Poll for payment confirmation
   useEffect(() => {
     let stop = false;
-    if (paymentStatus === 'pending' && reference && MERCHANT_WALLET && usdcTotal > 0) {
+    if (
+      paymentStatus === 'pending' &&
+      reference &&
+      merchantWallet &&
+      merchantWallet.length > 0 &&
+      usdcTotal > 0
+    ) {
+      try {
+        new (require('@solana/web3.js').PublicKey)(merchantWallet);
+      } catch (e) {
+        setPaymentStatus('none');
+        return;
+      }
       (async () => {
-        try {
-          const confirmed = await pollSolanaPayPayment({
-            reference,
-            amount: usdcTotal, // Use USDC amount, not ARS
-            recipient: MERCHANT_WALLET,
-            timeout: 180, // 3 minutes
-            interval: 1000 // 1 second
-          });
-          if (!stop && confirmed) {
-            setPaymentStatus('confirmed');
-          } else if (!stop) {
-            setPaymentStatus('none');
-            alert('Payment not detected. Please ensure your wallet supports Solana Pay reference and try again.');
+        let retries = 0;
+        let delay = 1000; // start with 1 second
+        const maxRetries = 10; // after 10 tries, give up
+        while (!stop && retries < maxRetries) {
+          try {
+            const confirmed = await pollSolanaPayPayment({
+              reference,
+              amount: usdcTotal,
+              recipient: merchantWallet,
+              timeout: 10, // short timeout for each try
+              interval: 500 // short interval for each try
+            });
+            if (confirmed) {
+              setPaymentStatus('confirmed');
+              return;
+            }
+          } catch (err: any) {
+            if (err?.message?.includes('429')) {
+              // Too many requests, back off
+              delay = Math.min(delay * 2, 30000); // max 30s
+            } else {
+              delay = 1000; // reset delay for other errors
+            }
           }
-        } catch (err) {
-          if (!stop) {
-            setPaymentStatus('none');
-            alert('Error while checking payment: ' + (err instanceof Error ? err.message : String(err)));
-          }
+          retries++;
+          await new Promise(res => setTimeout(res, delay));
+        }
+        if (!stop) {
+          setPaymentStatus('none');
+          alert('Payment not detected. Please ensure your wallet supports Solana Pay reference and try again.');
         }
       })();
     }
     return () => { stop = true; };
-  }, [paymentStatus, reference, usdcTotal]);
+  }, [paymentStatus, reference, usdcTotal, merchantWallet]);
 
   // Submit order to Firestore when payment is confirmed
   useEffect(() => {
@@ -169,7 +238,6 @@ export default function OrderForm() {
       }
       try {
         if (!businessId) throw new Error('No businessId found for user');
-        const auth = getAuth();
         const user = auth.currentUser;
         const orderTaker = user?.displayName || user?.email || 'Unknown';
         const now = new Date();
