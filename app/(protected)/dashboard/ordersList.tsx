@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import { getUserData } from "@/lib/getUserData";
+import { BusinessIdContext } from "../context";
 
 export default function OrdersList() {
-  const { userData } = getUserData();
+  const businessId = useContext(BusinessIdContext);
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
   useEffect(() => {
-    if (!userData?.businessId) return;
+    if (!businessId) return;
     const q = query(
-      collection(db, `businesses/${userData.businessId}/orders`),
+      collection(db, `businesses/${businessId}/orders`),
       orderBy("createdAt", "desc")
     );
     const unsub = onSnapshot(q, (snapshot) => {
@@ -22,7 +22,7 @@ export default function OrdersList() {
       );
     });
     return () => unsub();
-  }, [userData?.businessId]);
+  }, [businessId]);
 
   const getAsOf = (order: any) => {
     switch (order.status) {
@@ -61,7 +61,7 @@ export default function OrdersList() {
                 className="border-t cursor-pointer hover:bg-gray-50"
                 onClick={() => setSelectedOrder(order)}
               >
-                <td className="p-2">{order.orderId.slice(0, 4)}</td>
+                <td className="p-2">{order.orderNumber ? order.orderNumber.toString().padStart(4, '0') : order.orderId.slice(0, 4)}</td>
                 <td className="p-2">{order.name}</td>
                 <td className="p-2">{order.orderTaker}</td>
                 <td className="p-2">{order.orderMaker}</td>

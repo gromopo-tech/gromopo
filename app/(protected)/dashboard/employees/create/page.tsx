@@ -1,13 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import { useRouter } from 'next/navigation'
-import { getUserData } from '@/lib/getUserData'
 import { toast } from 'react-hot-toast'
+import { RoleContext, BusinessIdContext } from '../../../context'
+import { auth } from '@/lib/firebase/config';
 
 export default function CreateEmployeePage() {
   const router = useRouter()
-  const { user, userData } = getUserData()
+  const role = useContext(RoleContext)
+  const businessId = useContext(BusinessIdContext)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState<string | null>(null);
   const [resetLink, setResetLink] = useState('null')
@@ -24,8 +26,12 @@ export default function CreateEmployeePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!userData || (userData?.role !== 'owner' && userData?.role !== 'admin')) {
+    if (!role || (role !== 'owner' && role !== 'admin')) {
       toast.error('Unauthorized.')
+      return
+    }
+    if (!businessId) {
+      toast.error('No businessId found.')
       return
     }
 
@@ -33,17 +39,23 @@ export default function CreateEmployeePage() {
     setSuccess(null)
 
     try {
-      const token = await user?.getIdToken() // Retrieve the user's token
-
+      // Get the current user's ID token from Firebase Auth
+      const user = auth.currentUser;
+      if (!user) {
+        toast.error('Not signed in');
+        setLoading(false);
+        return;
+      }
+      const token = await user.getIdToken();
       const res = await fetch('/api/create-employee', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // Include the Authorization header
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           ...form,
-          businessId: userData.businessId,
+          businessId,
         }),
       })
 
@@ -105,7 +117,7 @@ export default function CreateEmployeePage() {
           className="w-full border p-2 rounded"
         >
           <option value="" disabled>Select role</option>
-          {userData?.role === 'owner' && <option value="admin">Admin</option>}
+          {role === 'owner' && <option value="admin">Admin</option>}
           <option value="maker">Maker</option>
           <option value="taker">Taker</option>
         </select>

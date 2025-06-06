@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { getRequesterDataFromToken } from '@/lib/adminGetUserData';
+import jwt from 'jsonwebtoken';
+import { BusinessIdContextProvider, RoleContextProvider, BusinessNameContextProvider } from './context';
 
-export default async function EmployeesLayout({
+export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode
@@ -13,24 +14,18 @@ export default async function EmployeesLayout({
     redirect('/signin');
   }
 
-  let redirect_path = null;
-  try {
-    const req = new Request('http://placeholder', { headers: { Authorization: `Bearer ${token}` } });
-    const { userData } = await getRequesterDataFromToken(req);
-    const role = userData?.role;
-    
-    if (!['owner', 'admin', 'taker', 'maker'].includes(role)) {
-      redirect_path = '/signin';
-    }
+  // Decode JWT to get custom claims
+  const decoded: any = jwt.decode(token);
+  const role: string | null = decoded?.role || null;
+  const businessId: string | null = decoded?.businessId || null;
 
-  } catch (err) {
-    console.error('Auth failed:', err);
-    redirect('/signin');
-  } finally {
-      if (redirect_path) {
-        redirect(redirect_path);
-  } else {
-        return <>{children}</>;
-      }
-  }
+  return (
+    <RoleContextProvider role={role}>
+      <BusinessIdContextProvider businessId={businessId}>
+        <BusinessNameContextProvider businessId={businessId}>
+          {children}
+        </BusinessNameContextProvider>
+      </BusinessIdContextProvider>
+    </RoleContextProvider>
+  );
 }

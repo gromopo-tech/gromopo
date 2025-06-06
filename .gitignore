@@ -9,3 +9,4 @@ apphosting.emulator.yaml
 firestore-debug.log
 firebase-debug.log
 playground.tsx
+test-ledger/
