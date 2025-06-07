@@ -117,11 +117,7 @@ export default function OrderForm() {
       return;
     }
     const cacheKey = `merchantWallet-${businessId}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) {
-      setMerchantWallet(cached);
-      return;
-    }
+    // Always check Firestore for the latest value after login or businessId change
     (async () => {
       try {
         const snap = await import('firebase/firestore').then(({ doc, getDoc }) => getDoc(doc(db, 'businesses', businessId)));
@@ -131,9 +127,11 @@ export default function OrderForm() {
           sessionStorage.setItem(cacheKey, wallet);
         } else {
           setMerchantWallet('');
+          sessionStorage.removeItem(cacheKey);
         }
       } catch (err) {
         setMerchantWallet('');
+        sessionStorage.removeItem(cacheKey);
       }
     })();
   }, [businessId]);
