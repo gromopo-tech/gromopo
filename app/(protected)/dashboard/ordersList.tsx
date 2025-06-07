@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useContext } from "react";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, Timestamp, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { BusinessIdContext } from "../context";
 
@@ -9,11 +9,21 @@ export default function OrdersList() {
   const businessId = useContext(BusinessIdContext);
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().slice(0, 10); // yyyy-mm-dd
+  });
 
   useEffect(() => {
-    if (!businessId) return;
+    if (!businessId || !selectedDate) return;
+    // Calculate start and end of selected day in local time (not UTC)
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0).toISOString();
+    const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999).toISOString();
     const q = query(
       collection(db, `businesses/${businessId}/orders`),
+      where("createdAt", ">=", startOfDay),
+      where("createdAt", "<=", endOfDay),
       orderBy("createdAt", "desc")
     );
     const unsub = onSnapshot(q, (snapshot) => {
@@ -22,7 +32,7 @@ export default function OrdersList() {
       );
     });
     return () => unsub();
-  }, [businessId]);
+  }, [businessId, selectedDate]);
 
   const getAsOf = (order: any) => {
     switch (order.status) {
@@ -42,6 +52,17 @@ export default function OrdersList() {
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Orders</h2>
+      <div className="mb-4 flex items-center gap-2">
+        <label htmlFor="order-date" className="font-semibold">Date:</label>
+        <input
+          id="order-date"
+          type="date"
+          value={selectedDate}
+          onChange={e => setSelectedDate(e.target.value)}
+          className="border p-1 rounded"
+          max={new Date().toISOString().slice(0, 10)}
+        />
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full border text-left">
           <thead className="bg-gray-100">
