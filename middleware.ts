@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // Protect all routes under /(protected)
+  // Protect all routes under /(private)
   if (
-    request.nextUrl.pathname.startsWith('/dashboard') ||
-    request.nextUrl.pathname.startsWith('/make') ||
-    request.nextUrl.pathname.startsWith('/take')
+    request.nextUrl.pathname.startsWith('/dashboard')
   ) {
     const token = request.cookies.get('__session')?.value;
     if (!token) {
@@ -18,7 +16,5 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
-    '/make/:path*',
-    '/take/:path*',
   ],
 };
