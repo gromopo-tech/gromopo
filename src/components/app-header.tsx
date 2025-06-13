@@ -1,6 +1,6 @@
 'use client'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Menu, X } from 'lucide-react'
@@ -10,6 +10,7 @@ import Image from 'next/image'
 import { signOut } from 'firebase/auth';
 import { useRouter } from "next/navigation";
 import { auth } from '@/lib/firebase/config';
+import { RoleContext } from '@/components/protected/role-provider'
 
 const customerLinks: { label: string; path: string }[] = [
   // More links...
@@ -48,12 +49,19 @@ function AuthButton({ isAuthenticated }: { isAuthenticated: boolean }) {
 export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
   const pathname = usePathname()
   const [showMenu, setShowMenu] = useState(false)
+  const role = useContext(RoleContext);
 
   function isActive(path: string) {
     return path === '/' ? pathname === '/' : pathname.startsWith(path)
   }
 
   const isPizzaCero = pathname === '/order/pizza-cero'
+
+  // Conditionally add Employees link for owner/admin
+  const effectiveBusinessLinks = [...businessLinks]
+  if (isAuthenticated && (role === 'owner' || role === 'admin')) {
+    effectiveBusinessLinks.push({ label: 'Employees', path: '/dashboard/employees' })
+  }
 
   return (
     <header className="relative z-50 px-4 py-2 bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400">
@@ -65,7 +73,7 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
           </Link>
           <div className="hidden md:flex items-center">
             <ul className="flex gap-4 flex-nowrap items-center">
-              {(isAuthenticated ? businessLinks : customerLinks).map(({ label, path }) => (
+              {(isAuthenticated ? effectiveBusinessLinks : customerLinks).map(({ label, path }) => (
                 <li key={path}>
                   <Link
                     className={`hover:text-neutral-500 dark:hover:text-white ${isActive(path) ? 'text-neutral-500 dark:text-white' : ''}`}
@@ -116,7 +124,7 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
           <div className="md:hidden fixed inset-x-0 top-[52px] bottom-0 bg-neutral-100/95 dark:bg-neutral-900/95 backdrop-blur-sm">
             <div className="flex flex-col p-4 gap-4 border-t dark:border-neutral-800">
               <ul className="flex flex-col gap-4">
-                {(isAuthenticated ? businessLinks : customerLinks).map(({ label, path }) => (
+                {(isAuthenticated ? effectiveBusinessLinks : customerLinks).map(({ label, path }) => (
                   <li key={path}>
                     <Link
                       className={`hover:text-neutral-500 dark:hover:text-white block text-lg py-2  ${isActive(path) ? 'text-neutral-500 dark:text-white' : ''} `}

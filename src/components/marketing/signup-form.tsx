@@ -133,7 +133,7 @@ export default function SignupForm() {
               <select
                 id="businessType"
                 {...register("businessType")}
-                className="w-full border rounded-lg text-sm font-medium"
+                className="w-full border rounded-lg cursor-pointer"
               >
                 <option value=""></option>
                 <option value="restaurant">Restaurant</option>
