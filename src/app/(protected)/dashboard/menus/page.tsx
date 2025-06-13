@@ -1,0 +1,191 @@
+"use client";
+
+import { useContext, useEffect, useState, useRef } from "react";
+import { BusinessIdContext } from "@/components/protected/business-id-provider";
+import { storage } from "@/lib/firebase/config";
+import {
+  ref,
+  listAll,
+  getDownloadURL,
+  uploadBytes,
+  deleteObject,
+} from "firebase/storage";
+import type { MenuFile, MenuError } from '@/../types/menu';
+
+export default function MenusPage() {
+  const businessId = useContext(BusinessIdContext);
+  const [menus, setMenus] = useState<MenuFile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [replacingId, setReplacingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchMenus = async () => {
+    if (!businessId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const menusRef = ref(storage, `businesses/${businessId}/menus/`);
+      const res = await listAll(menusRef);
+      const files: MenuFile[] = await Promise.all(
+        res.items.map(async (item) => {
+          const url = await getDownloadURL(item);
+          return {
+            name: item.name,
+            fullPath: item.fullPath,
+            url,
+          };
+        })
+      );
+      setMenus(files);
+    } catch (err) {
+      const error = err as MenuError;
+      // Log error for debugging
+      console.error('Error loading menus:', error);
+      setError("Failed to load menus. " + (error.code ? `(${error.code})` : ''));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMenus();
+    // eslint-disable-next-line
+  }, [businessId]);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!businessId || !e.target.files?.length) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const file = e.target.files[0];
+      const menuRef = ref(storage, `businesses/${businessId}/menus/${file.name}`);
+      await uploadBytes(menuRef, file);
+      await fetchMenus();
+    } catch (err) {
+      const error = err as MenuError;
+      setError("Failed to upload menu." + (error.code ? ` (${error.code})` : ''));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleReplace = async (menu: MenuFile, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!businessId || !e.target.files?.length) return;
+    setReplacingId(menu.fullPath);
+    setError(null);
+    try {
+      const file = e.target.files[0];
+      const menuRef = ref(storage, menu.fullPath);
+      await uploadBytes(menuRef, file);
+      await fetchMenus();
+    } catch (err) {
+      const error = err as MenuError;
+      setError("Failed to replace menu." + (error.code ? ` (${error.code})` : ''));
+    } finally {
+      setReplacingId(null);
+      if (replaceInputRef.current) replaceInputRef.current.value = "";
+    }
+  };
+
+  const handleDelete = async (menu: MenuFile) => {
+    if (!window.confirm(`Delete menu '${menu.name}'?`)) return;
+    setError(null);
+    try {
+      const menuRef = ref(storage, menu.fullPath);
+      await deleteObject(menuRef);
+      await fetchMenus();
+    } catch (err) {
+      const error = err as MenuError;
+      setError("Failed to delete menu." + (error.code ? ` (${error.code})` : ''));
+    }
+  };
+
+  return (
+    <div className="flex flex-col w-full h-full p-6 space-y-6">
+      <div className="p-4 bg-white rounded shadow-md max-w-2xl">
+        <h2 className="text-lg font-semibold text-gray-600 mb-2">Menus</h2>
+        <p className="text-gray-600 mb-4">Add, replace, or delete menus for your business.</p>
+        {error && <div className="text-red-600 mb-2">{error}</div>}
+        {loading ? (
+          <div className="text-gray-500">Loading menus...</div>
+        ) : menus.length === 0 ? (
+          <div>
+            <div className="mb-4 text-gray-700">Upload a menu to get started.</div>
+            <label className="inline-block cursor-pointer bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition mb-2">
+              Choose file
+              <input
+                type="file"
+                accept="application/pdf,image/*"
+                onChange={handleUpload}
+                ref={fileInputRef}
+                disabled={uploading}
+                className="hidden"
+              />
+            </label>
+            {uploading && <div className="text-gray-500">Uploading...</div>}
+          </div>
+        ) : (
+          <div>
+            <div className="mb-4 flex items-center gap-2">
+              <label className="inline-block cursor-pointer bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition mr-2 mb-0">
+                Choose file
+                <input
+                  type="file"
+                  accept="application/pdf,image/*"
+                  onChange={handleUpload}
+                  ref={fileInputRef}
+                  disabled={uploading}
+                  className="hidden"
+                />
+              </label>
+              <span className="text-sm text-gray-500">Add new menu</span>
+              {uploading && <span className="ml-2 text-gray-500">Uploading...</span>}
+            </div>
+            <table className="w-full border text-left bg-white">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="p-2">Menu File</th>
+                  <th className="p-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {menus.map((menu) => (
+                  <tr key={menu.fullPath} className="border-t">
+                    <td className="p-2">
+                      <a href={menu.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{menu.name}</a>
+                    </td>
+                    <td className="p-2 flex gap-2 items-center">
+                      <label className="inline-block cursor-pointer bg-blue-100 text-blue-700 px-3 py-1 rounded shadow hover:bg-blue-200 transition mr-2 mb-0">
+                        Replace
+                        <input
+                          type="file"
+                          accept="application/pdf,image/*"
+                          style={{ display: "none" }}
+                          onChange={(e) => handleReplace(menu, e)}
+                          ref={replaceInputRef}
+                          disabled={replacingId === menu.fullPath}
+                        />
+                      </label>
+                      <button
+                        className="text-red-600 hover:underline"
+                        onClick={() => handleDelete(menu)}
+                        disabled={replacingId === menu.fullPath}
+                      >
+                        Delete
+                      </button>
+                      {replacingId === menu.fullPath && <span className="ml-2 text-gray-500">Replacing...</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
