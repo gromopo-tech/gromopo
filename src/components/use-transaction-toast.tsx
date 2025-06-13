@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { ExplorerLink } from './cluster/cluster-ui'
+import { ExplorerLink } from './public/cluster/cluster-ui'
 
 export function useTransactionToast() {
   return (signature: string) => {

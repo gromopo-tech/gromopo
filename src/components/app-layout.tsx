@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from "react";
+import { usePathname, useRouter } from 'next/navigation';
 import { auth } from "@/lib/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
 import { ThemeProvider } from './theme-provider'
@@ -8,22 +9,23 @@ import { Toaster } from './ui/sonner'
 import { AppHeader } from '@/components/app-header'
 import React from 'react'
 import { AppFooter } from '@/components/app-footer'
-import { ClusterChecker } from '@/components/cluster/cluster-ui'
-import { AccountChecker } from '@/components/account/account-ui'
+import { ClusterChecker } from '@/components/public/cluster/cluster-ui'
+import { AccountChecker } from '@/components/public/account/account-ui'
 
-export function AppLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsAuthenticated(!!user);
+      if (!user && pathname.startsWith('/dashboard')) {
+        router.replace('/signin');
+      }
     });
     return () => unsubscribe();
-  }, []);
+  }, [pathname, router]);
 
   // TODO: Reconsider refresh logic
   useEffect(() => {
@@ -55,7 +57,7 @@ export function AppLayout({
         </main>
         <AppFooter />
       </div>
-      <Toaster />
+      <Toaster position="top-right" />
     </ThemeProvider>
   )
 }

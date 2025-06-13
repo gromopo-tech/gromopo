@@ -3,6 +3,9 @@ import './globals.css'
 import { AppProviders } from '@/components/app-providers'
 import { AppLayout } from '@/components/app-layout'
 import React from 'react'
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
+import { RoleProvider } from '@/components/private/role-provider';
 
 export const metadata: Metadata = {
   title: 'GroMoPo',
@@ -18,13 +21,24 @@ export const viewport = {
   themeColor: '#ff6600',
 }
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Get JWT from cookies and decode role (server-side only)
+  let role: string | null = null;
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('__session');
+  const token = sessionCookie?.value;
+  if (token) {
+    const decoded = jwt.decode(token) as { role?: string } | null;
+    role = decoded?.role || null;
+  }
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`antialiased`}>
-        <AppProviders>
-          <AppLayout>{children}</AppLayout>
-        </AppProviders>
+        <RoleProvider role={role}>
+          <AppProviders>
+            <AppLayout>{children}</AppLayout>
+          </AppProviders>
+        </RoleProvider>
       </body>
     </html>
   )

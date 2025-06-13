@@ -5,12 +5,12 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Menu, X } from 'lucide-react'
 import { ThemeSelect } from '@/components/theme-select'
-import { ClusterButton, WalletButton } from '@/components/solana/solana-provider'
+import { ClusterButton, WalletButton } from '@/components/public/solana/solana-provider'
 import Image from 'next/image'
 import { signOut } from 'firebase/auth';
 import { useRouter } from "next/navigation";
 import { auth } from '@/lib/firebase/config';
-import { RoleContext } from '@/components/protected/role-provider'
+import { RoleContext } from '@/components/private/role-provider'
 
 const customerLinks: { label: string; path: string }[] = [
   // More links...
@@ -58,9 +58,12 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
   const isPizzaCero = pathname === '/order/pizza-cero'
 
   // Conditionally add Employees link for owner/admin
-  const effectiveBusinessLinks = [...businessLinks]
+  let effectiveBusinessLinks = [...businessLinks];
   if (isAuthenticated && (role === 'owner' || role === 'admin')) {
-    effectiveBusinessLinks.push({ label: 'Employees', path: '/dashboard/employees' })
+    effectiveBusinessLinks = [
+      { label: 'Employees', path: '/dashboard/employees' },
+      ...businessLinks
+    ];
   }
 
   return (
@@ -87,8 +90,14 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
           </div>
         </div>
 
-        {/* Center: Pizza Cero Logo (only on /order/pizza-cero) */}
-        {isPizzaCero && (
+        {/* Center: Pizza Cero Logo (only on /order/pizza-cero) or user name if authenticated */}
+        {isAuthenticated ? (
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center w-full pointer-events-none">
+            <span className="pointer-events-auto font-semibold text-lg text-neutral-700 dark:text-neutral-200 bg-white/80 dark:bg-neutral-900/80 px-4 py-1 rounded shadow">
+              Hello, {auth.currentUser?.displayName || 'User'}
+            </span>
+          </div>
+        ) : isPizzaCero && (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center w-full pointer-events-none">
             <a
               href="https://www.pizzacero.com.ar/"
@@ -110,7 +119,7 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
 
         {/* Right: Wallet, Cluster, Theme, and Auth Buttons */}
         <div className="hidden md:flex items-center gap-4">
-          <WalletButton size="sm" />
+          {!isAuthenticated && <WalletButton size="sm" />}
           <ClusterButton size="sm" />
           <ThemeSelect />
           <AuthButton isAuthenticated={isAuthenticated} />
@@ -137,7 +146,7 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
                 ))}
               </ul>
               <div className="flex flex-col gap-4">
-                <WalletButton />
+                {!isAuthenticated && <WalletButton />}
                 <ClusterButton />
                 <ThemeSelect />
                 <AuthButton isAuthenticated={isAuthenticated} />

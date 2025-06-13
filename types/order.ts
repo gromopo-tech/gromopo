@@ -1,6 +1,7 @@
 export interface Order {
   orderId: string;
   orderNumber?: number;
+  orderType: string;
   name?: string;
   orderTaker?: string;
   orderMaker?: string;
