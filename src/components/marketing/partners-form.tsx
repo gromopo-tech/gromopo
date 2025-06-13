@@ -53,17 +53,17 @@ export default function PartnersForm() {
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 sm:px-6">
-      <h1 className="pb-12 w-full max-w-4xl text-center animate-[gradient_6s_linear_infinite] bg-[linear-gradient(to_right,var(--color-green-800),var(--color-green-800),var(--color-green-950),var(--color-green-950),var(--color-green-800))] bg-[length:800%_auto] bg-clip-text font-nacelle text-3xl font-semibold text-transparent md:text-4xl">
+      <h1 className="pb-12 w-full max-w-4xl text-center bg-[length:800%_auto] bg-clip-text text-3xl font-semibold md:text-4xl">
       Interested in supporting GroMoPo?
       </h1>
-      <p className="pb-12 w-full max-w-2xl text-center text-green-800/65 max-w-2xl text-lg">
+      <p className="pb-12 w-full max-w-2xl text-center max-w-2xl text-lg">
       If you&apos;re an investor or industry advisor excited about growing mom and pop shops in the food and beverage industry, 
       we&apos;d love to connect. 
       <br />
       Reach out to partners@gromopo.com or leave your details below:
       </p>
       {success ? (
-        <div className="text-green-600">
+        <div>
           <h2>🎉 Excellent!</h2>
           <p>We&apos;ll email you to connect.</p>
         </div>
@@ -71,14 +71,14 @@ export default function PartnersForm() {
         // center the form
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 flex flex-col items-center">
           <div className="w-full max-w-2xl">
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="name" className="block text-sm font-medium">
               Name <span className="text-red-500">*</span>
             </label>
             <input
               id="name"
               type="name"
               {...register("name")}
-              className="form-input w-full text-gray-950"
+              className="form-input w-full border rounded-lg"
               required
             />
             {errors.name && (
@@ -87,14 +87,14 @@ export default function PartnersForm() {
           </div>
           <div className="w-full max-w-2xl">
             <label 
-              htmlFor="email" className="block text-sm font-medium text-gray-700">
+              htmlFor="email" className="block text-sm font-medium">
               Email <span className="text-red-500">*</span>
             </label>
             <input
               id="email"
               type="email"
               {...register("email")}
-              className="form-input w-full text-gray-950"
+              className="form-input w-full border rounded-lg"
               required
             />
             {errors.email && (
@@ -102,14 +102,14 @@ export default function PartnersForm() {
             )}
           </div>
           <div className="w-full max-w-2xl">
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="name" className="block text-sm font-medium">
                 What problems excite you the most about mom and pop shops in the food and beverage industry?
               </label>
               <input
                 id="excitement"
                 type="excitement"
                 {...register("excitement")}
-                className="form-input w-full text-gray-950"
+                className="form-input w-full border rounded-lg"
               />
               {errors.excitement && (
                 <p className="mt-1 text-sm text-red-600">{errors.excitement.message}</p>
@@ -118,7 +118,7 @@ export default function PartnersForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="btn w-full max-w-2xl bg-linear-to-t from-orange-400 to-orange-500 bg-[length:100%_100%] bg-[bottom] text-orange-200 shadow-[inset_0px_1px_0px_0px_--theme(--color-white/.16)] hover:bg-[length:100%_150%]"
+            className="btn w-full border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
           >
             {isSubmitting ? "Sending..." : "Join Our Journey"}
           </button>

@@ -70,25 +70,25 @@ export default function SignupForm() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6">
-      <h1 className="pb-12 animate-[gradient_6s_linear_infinite] bg-[linear-gradient(to_right,var(--color-green-800),var(--color-green-800),var(--color-green-950),var(--color-green-950),var(--color-green-800))] bg-[length:800%_auto] bg-clip-text font-nacelle text-3xl font-semibold text-transparent md:text-4xl">
+      <h1 className="pb-12 bg-clip-text text-3xl font-semibold md:text-4xl">
       Signup for early access
       </h1>
       {success ? (
-        <div className="text-green-600">
+        <div>
           <h2>🎉 Success!</h2>
           <p>We&apos;ll email you as soon we&apos;re ready to onboard you for early access.</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="name" className="block text-sm font-medium">
               Name <span className="text-red-500">*</span>
             </label>
             <input
               id="name"
               type="name"
               {...register("name")}
-              className="form-input w-full text-gray-950"
+              className="form-input w-full border rounded-lg"
               required
             />
             {errors.name && (
@@ -97,14 +97,14 @@ export default function SignupForm() {
           </div>
           <div>
             <label 
-              htmlFor="email" className="block text-sm font-medium text-gray-700">
+              htmlFor="email" className="block text-sm font-medium">
               Email <span className="text-red-500">*</span>
             </label>
             <input
               id="email"
               type="email"
               {...register("email")}
-              className="form-input w-full text-gray-950"
+              className="form-input w-full border rounded-lg"
               required
             />
             {errors.email && (
@@ -112,14 +112,14 @@ export default function SignupForm() {
             )}
           </div>
           <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="name" className="block text-sm font-medium">
                 Business Name <span className="text-red-500">*</span>
               </label>
               <input
                 id="businessName"
                 type="businessName"
                 {...register("businessName")}
-                className="form-input w-full text-gray-950"
+                className="form-input w-full border rounded-lg"
                 required
               />
               {errors.businessName && (
@@ -127,13 +127,13 @@ export default function SignupForm() {
               )}
             </div>
             <div>
-              <label htmlFor="business type" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="business type" className="block text-sm font-medium">
                 Business Type 
               </label>
               <select
                 id="businessType"
                 {...register("businessType")}
-                className="w-full rounded-lg text-sm font-medium text-gray-900/60 bg-green-800/55"
+                className="w-full border rounded-lg text-sm font-medium"
               >
                 <option value=""></option>
                 <option value="restaurant">Restaurant</option>
@@ -150,7 +150,7 @@ export default function SignupForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="btn w-full bg-linear-to-t from-orange-400 to-orange-500 bg-[length:100%_100%] bg-[bottom] text-orange-200 shadow-[inset_0px_1px_0px_0px_--theme(--color-white/.16)] hover:bg-[length:100%_150%]"
+            className="btn w-full border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
           >
             {isSubmitting ? "Sending..." : "Get Early Access"}
           </button>
