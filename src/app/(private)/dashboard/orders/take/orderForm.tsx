@@ -275,17 +275,38 @@ export default function OrderForm() {
 
     if (paymentStatus === 'confirmed') {
       submitOrder().then(() => {
-        window.location.href = '/take/confirmation';
+        window.location.href = '/dashboard/orders/take/confirmation';
       });
     }
   }, [paymentStatus]);
+
+  // Helper to determine why QR is missing
+  let qrError: string | null = null;
+  if (!merchantWallet || merchantWallet.length === 0) {
+    qrError = 'Merchant wallet not set. Please check business settings.';
+  } else {
+    try {
+      new (require('@solana/web3.js').PublicKey)(merchantWallet);
+    } catch (e) {
+      qrError = 'Merchant wallet is not a valid Solana address.';
+    }
+  }
+  if (!form.sandwich || !form.bread || !form.name) {
+    qrError = 'Please fill in Sandwich, Bread, and Name.';
+  } else if (usdcTotal <= 0) {
+    qrError = 'Total must be greater than 0.';
+  }
 
   const orderSummary = (
     <div ref={printRef} className="p-4 border w-full max-w-lg">
       <h2 className="text-2xl font-bold mb-2">Order Summary</h2>
       <div className="mb-2">
-        {solanaPayUrl && (
+        {solanaPayUrl && !qrError ? (
           <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(solanaPayUrl)}`} alt="Solana Pay QR Code" />
+        ) : (
+          <div className="text-red-600 font-semibold min-h-[180px] flex items-center justify-center border border-dashed border-red-300 bg-red-50 rounded">
+            {qrError || 'QR code cannot be generated.'}
+          </div>
         )}
       </div>
       <ul className="mb-2">
@@ -305,7 +326,7 @@ export default function OrderForm() {
         <li><b>Total:</b> {arsTotal.toFixed(2)} ARS</li>
         <li><b>Total (USDC):</b> {conversionLoading ? 'Loading...' : conversionError ? conversionError : usdcTotal.toFixed(4) + ' USDC'}</li>
       </ul>
-      {paymentStatus === 'pending' && solanaPayUrl && (
+      {paymentStatus === 'pending' && solanaPayUrl && !qrError && (
         <div className="text-yellow-600 font-semibold">Waiting for payment confirmation...</div>
       )}
       {paymentStatus === 'confirmed' && (

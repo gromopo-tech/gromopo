@@ -17,7 +17,7 @@ export function BusinessNameProvider({ businessId, children }: { businessId: str
         getDoc(doc(db, 'businesses', businessId)).then((snap) => {
           if (isMounted && snap.exists()) {
             // Try both 'name' and 'businessName' fields for compatibility
-            const name = snap.data().businessName || '';
+            const name = snap.data().name || '';
             setBusinessName(name);
             sessionStorage.setItem(`businessName-${businessId}`, name);
           }
