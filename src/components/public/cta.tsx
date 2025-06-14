@@ -15,8 +15,8 @@ export default function Cta() {
             >
               Join the customer-first platform
             </h2>
-            <div className="mx-auto max-w-xs sm:flex sm:max-w-none sm:justify-center">
-              <div data-aos="fade-up" data-aos-delay={400}>
+            <div className="mx-auto flex flex-col sm:flex-row gap-6 sm:justify-center">
+              <div className="flex-1 sm:flex-none" data-aos="fade-up" data-aos-delay={400}>
                 <a
                   className="btn w-full border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500"
                   href="signup"
@@ -29,9 +29,9 @@ export default function Cta() {
                   </span>
                 </a>
               </div>
-              <div data-aos="fade-up" data-aos-delay={600}>
+              <div className="flex-1 sm:flex-none" data-aos="fade-up" data-aos-delay={600}>
                 <a
-                  className="btn w-full border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 sm:ml-4 sm:w-auto"
+                  className="btn w-full border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500"
                   href="partners"
                 >
                   <span className="relative inline-flex items-center">
