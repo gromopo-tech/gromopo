@@ -1,5 +1,6 @@
 "use client";
 
+import Image from 'next/image'
 import { useState, useRef, useEffect, useContext } from 'react';
 import { doc, setDoc, query, where, getDocs, collection } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase/config';
@@ -44,15 +45,6 @@ export default function OrderForm() {
   ];
 
   const ingredients = ['MAYONNAISE', 'MUSTARD', 'LETTUCE', 'TOMATO', 'CHEESE'];
-
-  const total = [
-    form.sandwichPrice,
-    form.extrasPrice,
-    form.instructionsPrice,
-    form.breadPrice,
-    form.ingredientsPrice,
-    form.miscPrice,
-  ].reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -100,8 +92,9 @@ export default function OrderForm() {
           setUsdcTotal(usdc);
           setConversionLoading(false);
         })
-        .catch(err => {
-          setConversionError('Failed to fetch ARS/USDC rate');
+        .catch((err) => {
+          setConversionError('Failed to fetch ARS/USDC rate' + (err instanceof Error ? `: ${err.message}` : ''));
+          console.error('Conversion error:', err);
           setConversionLoading(false);
           setUsdToArs(null);
         });
@@ -131,6 +124,7 @@ export default function OrderForm() {
           sessionStorage.removeItem(cacheKey);
         }
       } catch (err) {
+        console.error('Error fetching merchant wallet:', err);
         setMerchantWallet('');
         sessionStorage.removeItem(cacheKey);
       }
@@ -146,18 +140,6 @@ export default function OrderForm() {
       merchantWallet &&
       merchantWallet.length > 0
     ) {
-      try {
-        // Validate merchantWallet as a public key
-        const _ = new Keypair(); // just to ensure Keypair is imported
-        const walletKey = new window.Uint8Array(32);
-        // Try to create a PublicKey, will throw if invalid
-        new (require('@solana/web3.js').PublicKey)(merchantWallet);
-      } catch (e) {
-        setSolanaPayUrl("");
-        setReference("");
-        setPaymentStatus("none");
-        return;
-      }
       const refKey = Keypair.generate().publicKey.toBase58();
       setReference(refKey);
       const url = generateSolanaPayUrl({
@@ -185,12 +167,6 @@ export default function OrderForm() {
       merchantWallet.length > 0 &&
       usdcTotal > 0
     ) {
-      try {
-        new (require('@solana/web3.js').PublicKey)(merchantWallet);
-      } catch (e) {
-        setPaymentStatus('none');
-        return;
-      }
       (async () => {
         let retries = 0;
         let delay = 1000; // start with 1 second
@@ -208,12 +184,14 @@ export default function OrderForm() {
               setPaymentStatus('confirmed');
               return;
             }
-          } catch (err: any) {
-            if (err?.message?.includes('429')) {
-              // Too many requests, back off
-              delay = Math.min(delay * 2, 30000); // max 30s
-            } else {
-              delay = 1000; // reset delay for other errors
+          } catch (err) {
+            if (err instanceof Error) {
+              if (err.message.includes('429')) {
+                // Too many requests, back off
+                delay = Math.min(delay * 2, 30000); // max 30s
+              } else {
+                delay = 1000; // reset delay for other errors
+              }
             }
           }
           retries++;
@@ -231,10 +209,6 @@ export default function OrderForm() {
   // Submit order to Firestore when payment is confirmed
   useEffect(() => {
     const submitOrder = async () => {
-      if (!form.sandwich || !form.sandwichPrice || !form.bread || !form.name) {
-        // Required fields missing, do not submit
-        return;
-      }
       try {
         if (!businessId) throw new Error('No businessId found for user');
         const user = auth.currentUser;
@@ -278,21 +252,12 @@ export default function OrderForm() {
         window.location.href = '/dashboard/orders/take/confirmation';
       });
     }
-  }, [paymentStatus]);
+  }, [paymentStatus, reference, usdcTotal, arsTotal, form, businessId]);
 
   // Helper to determine why QR is missing
   let qrError: string | null = null;
   if (!merchantWallet || merchantWallet.length === 0) {
     qrError = 'Merchant wallet not set. Please check business settings.';
-  } else {
-    try {
-      new (require('@solana/web3.js').PublicKey)(merchantWallet);
-    } catch (e) {
-      qrError = 'Merchant wallet is not a valid Solana address.';
-    }
-  }
-  if (!form.sandwich || !form.bread || !form.name) {
-    qrError = 'Please fill in Sandwich, Bread, and Name.';
   } else if (usdcTotal <= 0) {
     qrError = 'Total must be greater than 0.';
   }
@@ -302,7 +267,7 @@ export default function OrderForm() {
       <h2 className="text-2xl font-bold mb-2">Order Summary</h2>
       <div className="mb-2">
         {solanaPayUrl && !qrError ? (
-          <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(solanaPayUrl)}`} alt="Solana Pay QR Code" />
+          <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(solanaPayUrl)}`} alt="Solana Pay QR Code" />
         ) : (
           <div className="text-red-600 font-semibold min-h-[180px] flex items-center justify-center border border-dashed border-red-300 bg-red-50 rounded">
             {qrError || 'QR code cannot be generated.'}
