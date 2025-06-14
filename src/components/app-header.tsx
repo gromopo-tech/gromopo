@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Menu, X } from 'lucide-react'
 import { ThemeSelect } from '@/components/theme-select'
-import { ClusterButton, WalletButton } from '@/components/public/solana/solana-provider'
+import { WalletButton } from '@/components/public/solana/solana-provider'
 import Image from 'next/image'
 import { signOut } from 'firebase/auth';
 import { useRouter } from "next/navigation";
@@ -120,7 +120,6 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
         {/* Right: Wallet, Cluster, Theme, and Auth Buttons */}
         <div className="hidden md:flex items-center gap-4">
           {!isAuthenticated && <WalletButton size="sm" />}
-          <ClusterButton size="sm" />
           <ThemeSelect />
           <AuthButton isAuthenticated={isAuthenticated} />
         </div>
@@ -147,7 +146,6 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
               </ul>
               <div className="flex flex-col gap-4">
                 {!isAuthenticated && <WalletButton />}
-                <ClusterButton />
                 <ThemeSelect />
                 <AuthButton isAuthenticated={isAuthenticated} />
               </div>
