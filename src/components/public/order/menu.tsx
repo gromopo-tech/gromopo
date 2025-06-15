@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { PaymentActions } from './payment-actions';
+import { SolConversion } from './sol-conversion';
 
 type PizzaSize = 'GRANDE' | 'MEDIANA' | 'INDIVIDUAL';
 
@@ -53,8 +55,9 @@ const menu: PizzaItem[] = [
 
 export default function Menu() {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const total = cart.reduce((sum, item) => sum + item.precio, 0);
 
-  const agregarAlCarrito = (pizza: PizzaItem, tamaño: PizzaSize) => {
+  const addToCart = (pizza: PizzaItem, tamaño: PizzaSize) => {
     const precio = pizza.precios[tamaño];
     if (!precio) return;
 
@@ -67,11 +70,9 @@ export default function Menu() {
     setCart([...cart, item]);
   };
 
-  const eliminarDelCarrito = (index: number) => {
+  const removeFromCart = (index: number) => {
     setCart(cart => cart.filter((_, i) => i !== index));
   };
-
-  const total = cart.reduce((sum, item) => sum + item.precio, 0);
 
   return (
     <div className="p-4 max-w-3xl mx-auto">
@@ -86,7 +87,7 @@ export default function Menu() {
                 <button
                   key={tamaño}
                   className="px-3 py-1 border rounded hover:bg-gray-100"
-                  onClick={() => agregarAlCarrito(pizza, tamaño)}
+                  onClick={() => addToCart(pizza, tamaño)}
                 >
                   {tamaño} - ${pizza.precios[tamaño]}
                 </button>
@@ -100,22 +101,42 @@ export default function Menu() {
       {cart.length === 0 ? (
         <p className="text-gray-500">El carrito está vacío.</p>
       ) : (
-        <ul className="mt-2 space-y-1">
-          {cart.map((item, index) => (
-            <li key={index} className="text-sm">
-              <span>
-                {item.nombre} ({item.tamaño}) - ${item.precio}
-              </span>
-              <button
-                className="ml-2 text-red-500 hover:text-red-700"
-                onClick={() => eliminarDelCarrito(index)}
-              >
-                Eliminar
-              </button>
+        <>
+          <ul className="mt-2 space-y-1">
+            {cart.map((item, index) => (
+              <li key={index} className="text-sm">
+                <span>
+                  {item.nombre} ({item.tamaño}) - ${item.precio}
+                </span>
+                <button
+                  className="ml-2 text-red-500 hover:text-red-700"
+                  onClick={() => removeFromCart(index)}
+                >
+                  Eliminar
+                </button>
+              </li>
+            ))}
+            <li className="font-bold mt-2">Total: ${total}</li>
+            <li className="text-lg font-semibold">
+              <SolConversion arsTotal={total}>
+                {(solTotal, loading, error, usdToArs) => (
+                  <>
+                    Total (SOL): {loading ? 'Loading...' : error ? error : solTotal.toFixed(4) + ' SOL'}
+                    {usdToArs && (
+                      <span className="text-xs text-gray-500"> (1 USDC ≈ {usdToArs.toLocaleString('en-US', { maximumFractionDigits: 2 })} ARS)</span>
+                    )}
+                  </>
+                )}
+              </SolConversion>
             </li>
-          ))}
-          <li className="font-bold mt-2">Total: ${total}</li>
-        </ul>
+            <li className="text-lg font-semibold">Pagar con:</li>
+          </ul>
+          <SolConversion arsTotal={total}>
+            {(solTotal, loading, error, usdToArs) => (
+              <PaymentActions solTotal={solTotal} clearCart={() => setCart([])} />
+            )}
+          </SolConversion>
+        </>
       )}
     </div>
   );
