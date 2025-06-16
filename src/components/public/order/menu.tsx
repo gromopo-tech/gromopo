@@ -55,6 +55,8 @@ const menu: PizzaItem[] = [
 
 export default function Menu() {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [orderType, setOrderType] = useState<'retirar' | 'comer en el lugar'>('retirar');
+  const [customerName, setCustomerName] = useState('');
   const total = cart.reduce((sum, item) => sum + item.precio, 0);
 
   const addToCart = (pizza: PizzaItem, tamaño: PizzaSize) => {
@@ -119,21 +121,65 @@ export default function Menu() {
             <li className="font-bold mt-2">Total: ${total}</li>
             <li className="text-lg font-semibold">
               <SolConversion arsTotal={total}>
-                {(solTotal, loading, error, usdToArs) => (
+                {(solTotal) => (
                   <>
-                    Total (SOL): {loading ? 'Loading...' : error ? error : solTotal.toFixed(4) + ' SOL'}
-                    {usdToArs && (
-                      <span className="text-xs text-gray-500"> (1 USDC ≈ {usdToArs.toLocaleString('en-US', { maximumFractionDigits: 2 })} ARS)</span>
-                    )}
+                    Total (SOL): {solTotal.toFixed(4) + ' SOL'}
                   </>
                 )}
               </SolConversion>
             </li>
-            <li className="text-lg font-semibold">Pagar con:</li>
           </ul>
+          {/* Customer name input */}
+          <div className="my-4">
+            <label className="font-semibold mr-2" htmlFor="customerName">Nombre del cliente:</label>
+            <input
+              id="customerName"
+              type="text"
+              value={customerName}
+              onChange={e => setCustomerName(e.target.value)}
+              className="border rounded px-2 py-1"
+              placeholder="Tu nombre"
+            />
+          </div>
+          {/* Order type radio buttons */}
+          <div className="my-4">
+            <label className="font-semibold mr-4">Tipo de orden:</label>
+            <label className="mr-4">
+              <input
+                type="radio"
+                name="orderType"
+                value="retirar"
+                checked={orderType === 'retirar'}
+                onChange={() => setOrderType('retirar')}
+                className="mr-1"
+              />
+              Retirar
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="orderType"
+                value="comer en el lugar"
+                checked={orderType === 'comer en el lugar'}
+                onChange={() => setOrderType('comer en el lugar')}
+                className="mr-1"
+              />
+              Comer en el lugar
+            </label>
+          </div>
+          <p className="text-lg font-semibold">Pagar con:</p>
           <SolConversion arsTotal={total}>
-            {(solTotal, loading, error, usdToArs) => (
-              <PaymentActions solTotal={solTotal} clearCart={() => setCart([])} />
+            {(solTotal) => (
+              <PaymentActions
+                solTotal={solTotal}
+                arsTotal={total}
+                cart={cart}
+                customerName={customerName}
+                businessId={undefined}
+                businessName={undefined}
+                orderType={orderType}
+                clearCart={() => setCart([])}
+              />
             )}
           </SolConversion>
         </>

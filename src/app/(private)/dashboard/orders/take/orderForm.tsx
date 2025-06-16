@@ -231,7 +231,6 @@ export default function OrderForm() {
           ...form,
           createdAt: new Date().toISOString(),
           orderNumber,
-          orderTaker,
           status: 'Order Created',
           arsTotal,
           usdcTotal,

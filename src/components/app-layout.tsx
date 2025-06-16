@@ -10,7 +10,6 @@ import { AppHeader } from '@/components/app-header'
 import React from 'react'
 import { AppFooter } from '@/components/app-footer'
 import { ClusterChecker } from '@/components/public/cluster/cluster-ui'
-import { AccountChecker } from '@/components/public/account/account-ui'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -50,9 +49,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col min-h-screen">
         <AppHeader isAuthenticated={isAuthenticated} />
         <main className="flex-grow container mx-auto p-4">
-          <ClusterChecker>
-            <AccountChecker />
-          </ClusterChecker>
           {children}
         </main>
         <AppFooter />

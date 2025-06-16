@@ -1,5 +1,5 @@
 // src/app/api/coingecko/price/route.ts
-let cached: { data: any; timestamp: number } | null = null;
+let cached: { data: Record<string, unknown>; timestamp: number } | null = null;
 const CACHE_TTL = 60 * 1000; // 1 minute
 
 export async function GET() {
