@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useState, useRef, useEffect, useContext } from 'react';
 import { doc, setDoc, query, where, getDocs, collection } from 'firebase/firestore';
-import { db, auth } from '@/lib/firebase/config';
+import { db } from '@/lib/firebase/config';
 import { generateSolanaPayUrl, pollSolanaPayPayment } from '@/lib/solanaPay/config';
 import { BusinessIdContext } from '@/components/private/business-id-provider';
 import { BusinessNameContext } from '@/components/private/business-name-provider';
@@ -211,8 +211,6 @@ export default function OrderForm() {
     const submitOrder = async () => {
       try {
         if (!businessId) throw new Error('No businessId found for user');
-        const user = auth.currentUser;
-        const orderTaker = user?.displayName || user?.email || 'Unknown';
         const now = new Date();
         const dd = String(now.getDate()).padStart(2, '0');
         const mm = String(now.getMonth() + 1).padStart(2, '0');

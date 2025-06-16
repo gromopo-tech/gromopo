@@ -4,7 +4,7 @@ import { assertIsAddress } from 'gill'
 import { useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import { ExplorerLink } from '../cluster/cluster-ui'
-import { AccountBalance, AccountTokens, AccountTransactions } from './account-ui'
+import { AccountBalance, AccountTransactions } from './account-ui'
 import { AppHero } from '../../app-hero'
 import { ellipsify } from '@/lib/utils'
 
