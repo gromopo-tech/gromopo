@@ -119,7 +119,7 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
 
         {/* Right: Wallet, Cluster, Theme, and Auth Buttons */}
         <div className="hidden md:flex items-center gap-4">
-          {!isAuthenticated && <WalletButton size="sm" />}
+          {!isAuthenticated && <WalletButton />}
           <ThemeSelect />
           <AuthButton isAuthenticated={isAuthenticated} />
         </div>

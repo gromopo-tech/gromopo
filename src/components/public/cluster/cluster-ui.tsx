@@ -1,24 +1,32 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import * as React from 'react'
 import { ReactNode } from 'react'
-import { getExplorerLink, GetExplorerLinkArgs } from 'gill'
 import { Button } from '@/components/ui/button'
 import { AppAlert } from '@/components/app-alert'
-import { useWalletUi, useWalletUiCluster } from '@wallet-ui/react'
+import { useConnection } from '@solana/wallet-adapter-react'
 
 export function ExplorerLink({
   className,
   label = '',
-  ...link
-}: GetExplorerLinkArgs & {
+  address,
+  transaction,
+  block,
+}: {
   className?: string
   label: string
+  address?: string
+  transaction?: string
+  block?: string
 }) {
+  let url = 'https://explorer.solana.com/'
+  if (address) url += `address/${address}`
+  else if (transaction) url += `tx/${transaction}`
+  else if (block) url += `block/${block}`
+  url += '?cluster=devnet'
   return (
     <a
-      href={getExplorerLink(link)}
+      href={url}
       target="_blank"
       rel="noopener noreferrer"
       className={className ? className : `link font-mono`}
@@ -29,29 +37,39 @@ export function ExplorerLink({
 }
 
 export function ClusterChecker({ children }: { children: ReactNode }) {
-  const { client } = useWalletUi()
-  const { cluster } = useWalletUiCluster()
+  const { connection } = useConnection()
+  const [version, setVersion] = React.useState<string | null>(null)
+  const [error, setError] = React.useState<string | null>(null)
+  const [loading, setLoading] = React.useState(true)
 
-  const query = useQuery({
-    queryKey: ['version', { cluster, endpoint: cluster.urlOrMoniker }],
-    queryFn: () => client.rpc.getVersion(),
-    retry: 1,
-  })
-  if (query.isLoading) {
-    return null
-  }
-  if (query.isError || !query.data) {
+  React.useEffect(() => {
+    setLoading(true)
+    setError(null)
+    connection
+      .getVersion()
+      .then((v) => {
+        setVersion(v['solana-core'])
+        setLoading(false)
+      })
+      .catch((e) => {
+        setError(e.message)
+        setLoading(false)
+      })
+  }, [connection])
+
+  if (loading) return null
+  if (error || !version) {
     return (
       <AppAlert
         action={
-          <Button variant="outline" onClick={() => query.refetch()}>
+          <Button variant="outline" onClick={() => window.location.reload()}>
             Refresh
           </Button>
         }
       >
-        Error connecting to cluster <span className="font-bold">{cluster.label}</span>.
+        Error connecting to cluster.
       </AppAlert>
     )
   }
-  return children
+  return <>{children}</>
 }

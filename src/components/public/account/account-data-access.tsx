@@ -1,195 +1,72 @@
 'use client'
 
-import { TOKEN_2022_PROGRAM_ADDRESS, TOKEN_PROGRAM_ADDRESS } from 'gill/programs/token'
-import { getTransferSolInstruction } from 'gill/programs'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  UiWalletAccount,
-  useWalletAccountTransactionSendingSigner,
-  useWalletUi,
-  useWalletUiCluster,
-} from '@wallet-ui/react'
-import {
-  address,
-  Address,
-  airdropFactory,
-  appendTransactionMessageInstruction,
-  assertIsTransactionMessageWithSingleSendingSigner,
-  Blockhash,
-  createTransactionMessage,
-  getBase58Decoder,
-  lamports,
-  pipe,
-  setTransactionMessageFeePayerSigner,
-  setTransactionMessageLifetimeUsingBlockhash,
-  signAndSendTransactionMessageWithSigners,
-  SolanaClient,
-  TransactionSendingSigner,
-} from 'gill'
-import { toast } from 'sonner'
-import { useTransactionToast } from '../../use-transaction-toast'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
-export function useGetBalance({ address }: { address: Address }) {
-  const { cluster } = useWalletUiCluster()
-  const { client } = useWalletUi()
-
+export function useGetBalance({ address }: { address: string }) {
+  const { connection } = useConnection();
   return useQuery({
-    queryKey: ['get-balance', { cluster, address }],
-    queryFn: () =>
-      client.rpc
-        .getBalance(address)
-        .send()
-        .then((res) => res.value),
-  })
+    queryKey: ['get-balance', { address }],
+    queryFn: async () => {
+      const pubkey = new PublicKey(address);
+      return await connection.getBalance(pubkey);
+    },
+  });
 }
 
-export function useGetSignatures({ address }: { address: Address }) {
-  const { cluster } = useWalletUiCluster()
-  const { client } = useWalletUi()
-
-  return useQuery({
-    queryKey: ['get-signatures', { cluster, address }],
-    queryFn: () => client.rpc.getSignaturesForAddress(address).send(),
-  })
-}
-
-export function useGetTokenAccounts({ address }: { address: Address }) {
-  const { cluster } = useWalletUiCluster()
-  const { client } = useWalletUi()
-
-  return useQuery({
-    queryKey: ['get-token-accounts', { cluster, address }],
-    queryFn: async () =>
-      Promise.all([
-        client.rpc
-          .getTokenAccountsByOwner(
-            address,
-            { programId: TOKEN_PROGRAM_ADDRESS },
-            { commitment: 'confirmed', encoding: 'jsonParsed' },
-          )
-          .send()
-          .then((res) => res.value ?? []),
-        client.rpc
-          .getTokenAccountsByOwner(
-            address,
-            { programId: TOKEN_2022_PROGRAM_ADDRESS },
-            { commitment: 'confirmed', encoding: 'jsonParsed' },
-          )
-          .send()
-          .then((res) => res.value ?? []),
-      ]).then(([tokenAccounts, token2022Accounts]) => [...tokenAccounts, ...token2022Accounts]),
-  })
-}
-
-export function useTransferSol({ address, account }: { address: Address; account: UiWalletAccount }) {
-  const { cluster } = useWalletUiCluster()
-  const { client } = useWalletUi()
-  const toastTransaction = useTransactionToast()
-  const txSigner = useWalletAccountTransactionSendingSigner(account, cluster.id)
-  const queryClient = useQueryClient()
-
+export function useTransferSol() {
+  const { publicKey, sendTransaction, connected } = useWallet();
+  const { connection } = useConnection();
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationKey: ['transfer-sol', { cluster, address }],
-    mutationFn: async (input: { destination: Address; amount: number }) => {
-      try {
-        const { signature } = await createTransaction({
-          txSigner,
-          destination: input.destination,
-          amount: input.amount,
-          client,
+    mutationKey: ['transfer-sol'],
+    mutationFn: async ({ destination, amount }: { destination: string; amount: number }) => {
+      if (!connected || !publicKey) throw new Error('Wallet not connected');
+      const toPubkey = new PublicKey(destination);
+      const tx = new (await import('@solana/web3.js')).Transaction().add(
+        (await import('@solana/web3.js')).SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey,
+          lamports: Math.round(amount * LAMPORTS_PER_SOL),
         })
-
-        console.log(signature)
-        return signature
-      } catch (error: unknown) {
-        console.log('error', `Transaction failed! ${error}`)
-
-        return
-      }
+      );
+      tx.feePayer = publicKey;
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+      tx.recentBlockhash = blockhash;
+      const signature = await sendTransaction(tx, connection);
+      await connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature });
+      return signature;
     },
-    onSuccess: async (signature) => {
-      if (signature?.length) {
-        toastTransaction(signature)
-      }
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ['get-balance', { cluster, address }],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ['get-signatures', { cluster, address }],
-        }),
-      ])
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['get-balance'] });
     },
-    onError: (error) => {
-      toast.error(`Transaction failed! ${error}`)
-    },
-  })
+  });
 }
 
-export function useRequestAirdrop({ address }: { address: Address }) {
-  const { cluster } = useWalletUiCluster()
-  const { client } = useWalletUi()
-  const queryClient = useQueryClient()
-  const toastTransaction = useTransactionToast()
-  const airdrop = airdropFactory(client)
-
-  return useMutation({
-    mutationKey: ['airdrop', { cluster, address }],
-    mutationFn: async (amount: number = 1) =>
-      airdrop({
-        commitment: 'confirmed',
-        recipientAddress: address,
-        lamports: lamports(BigInt(Math.round(amount * 1_000_000_000))),
-      }),
-    onSuccess: async (signature) => {
-      toastTransaction(signature)
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['get-balance', { cluster, address }] }),
-        queryClient.invalidateQueries({ queryKey: ['get-signatures', { cluster, address }] }),
-      ])
+export function useGetSignatures({ address }: { address: string }) {
+  const { connection } = useConnection();
+  return useQuery({
+    queryKey: ['get-signatures', { address }],
+    queryFn: async () => {
+      const pubkey = new PublicKey(address);
+      return await connection.getSignaturesForAddress(pubkey, { limit: 50 });
     },
-  })
+  });
 }
 
-async function createTransaction({
-  amount,
-  destination,
-  client,
-  txSigner,
-}: {
-  amount: number
-  destination: Address
-  client: SolanaClient
-  txSigner: TransactionSendingSigner
-}): Promise<{
-  signature: string
-  latestBlockhash: {
-    blockhash: Blockhash
-    lastValidBlockHeight: bigint
-  }
-}> {
-  const { value: latestBlockhash } = await client.rpc.getLatestBlockhash({ commitment: 'confirmed' }).send()
-
-  const message = pipe(
-    createTransactionMessage({ version: 0 }),
-    (m) => setTransactionMessageFeePayerSigner(txSigner, m),
-    (m) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, m),
-    (m) =>
-      appendTransactionMessageInstruction(
-        getTransferSolInstruction({
-          amount,
-          destination: address(destination),
-          source: txSigner,
-        }),
-        m,
-      ),
-  )
-  assertIsTransactionMessageWithSingleSendingSigner(message)
-
-  const signature = await signAndSendTransactionMessageWithSigners(message)
-
-  return {
-    signature: getBase58Decoder().decode(signature),
-    latestBlockhash,
-  }
+export function useGetTokenAccounts({ address }: { address: string }) {
+  const { connection } = useConnection();
+  return useQuery({
+    queryKey: ['get-token-accounts', { address }],
+    queryFn: async () => {
+      const pubkey = new PublicKey(address);
+      // Get SPL Token accounts (including Token-2022)
+      const [tokenAccounts, token2022Accounts] = await Promise.all([
+        connection.getParsedTokenAccountsByOwner(pubkey, { programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') }),
+        connection.getParsedTokenAccountsByOwner(pubkey, { programId: new PublicKey('TokenzQdB6rGz5rWQh6v3Qy1Q1rR1Q1Q1Q1Q1Q1Q1Q1Q1') }).catch(() => ({ value: [] })),
+      ]);
+      return [...tokenAccounts.value, ...(token2022Accounts.value ?? [])];
+    },
+  });
 }

@@ -4,19 +4,21 @@ import { assertIsAddress } from 'gill'
 import { useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import { ExplorerLink } from '../cluster/cluster-ui'
-import { AccountBalance, AccountButtons, AccountTokens, AccountTransactions } from './account-ui'
+import { AccountBalance, AccountTokens, AccountTransactions } from './account-ui'
 import { AppHero } from '../../app-hero'
 import { ellipsify } from '@/lib/utils'
 
 export default function AccountDetailFeature() {
   const params = useParams()
   const address = useMemo(() => {
-    if (!params.address || typeof params.address !== 'string') {
-      return
+    let addr = params.address;
+    if (Array.isArray(addr)) addr = addr[0];
+    if (!addr || typeof addr !== 'string') {
+      return;
     }
-    assertIsAddress(params.address)
-    return params.address
-  }, [params])
+    assertIsAddress(addr);
+    return addr;
+  }, [params]);
   if (!address) {
     return <div>Error loading account</div>
   }
@@ -31,12 +33,9 @@ export default function AccountDetailFeature() {
           </div>
         }
       >
-        <div className="my-4">
-          <AccountButtons address={address} />
-        </div>
       </AppHero>
       <div className="space-y-8">
-        <AccountTokens address={address} />
+        {/*<AccountTokens address={address} />*/}
         <AccountTransactions address={address} />
       </div>
     </div>
