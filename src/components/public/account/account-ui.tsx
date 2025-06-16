@@ -8,75 +8,19 @@ import {
   useGetBalance,
   useGetSignatures,
   useGetTokenAccounts,
-  useRequestAirdrop,
-  useTransferSol,
 } from './account-data-access'
 import { ellipsify } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { AppAlert } from '@/components/app-alert'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { AppModal } from '@/components/app-modal'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { UiWalletAccount, useWalletUi, useWalletUiCluster } from '@wallet-ui/react'
-import { address, Address, Lamports, lamportsToSol } from 'gill'
-import { ErrorBoundary } from 'next/dist/client/components/error-boundary'
+import { Address, Lamports, lamportsToSol } from 'gill'
 
 export function AccountBalance({ address }: { address: Address }) {
   const query = useGetBalance({ address })
 
   return (
     <h1 className="text-5xl font-bold cursor-pointer" onClick={() => query.refetch()}>
-      {query.data ? <BalanceSol balance={query.data} /> : '...'} SOL
+      {query.data ? <BalanceSol balance={query.data as unknown as Lamports} /> : '...'} SOL
     </h1>
-  )
-}
-
-export function AccountChecker() {
-  const { account } = useWalletUi()
-  if (!account) {
-    return null
-  }
-  return <AccountBalanceCheck address={address(account.address)} />
-}
-
-export function AccountBalanceCheck({ address }: { address: Address }) {
-  const { cluster } = useWalletUiCluster()
-  const mutation = useRequestAirdrop({ address })
-  const query = useGetBalance({ address })
-
-  if (query.isLoading) {
-    return null
-  }
-  if (query.isError || !query.data) {
-    return (
-      <AppAlert
-        action={
-          <Button variant="outline" onClick={() => mutation.mutateAsync(1).catch((err) => console.log(err))}>
-            Request Airdrop
-          </Button>
-        }
-      >
-        You are connected to <strong>{cluster.label}</strong> but your account is not found on this cluster.
-      </AppAlert>
-    )
-  }
-  return null
-}
-
-export function AccountButtons({ address }: { address: Address }) {
-  const { cluster } = useWalletUiCluster()
-  const { account } = useWalletUi()
-  return (
-    <div>
-      <div className="space-x-2">
-        {cluster.urlOrMoniker === 'mainnet' ? null : <ModalAirdrop address={address} />}
-        <ErrorBoundary errorComponent={() => null}>
-          {account ? <ModalSend address={address} account={account} /> : null}
-        </ErrorBoundary>
-        <ModalReceive address={address} />
-      </div>
-    </div>
   )
 }
 
@@ -250,84 +194,4 @@ export function AccountTransactions({ address }: { address: Address }) {
 
 function BalanceSol({ balance }: { balance: Lamports }) {
   return <span>{lamportsToSol(balance)}</span>
-}
-
-function ModalReceive({ address }: { address: Address }) {
-  return (
-    <AppModal title="Receive">
-      <p>Receive assets by sending them to your public key:</p>
-      <code>{address.toString()}</code>
-    </AppModal>
-  )
-}
-
-function ModalAirdrop({ address }: { address: Address }) {
-  const mutation = useRequestAirdrop({ address })
-  const [amount, setAmount] = useState('2')
-
-  return (
-    <AppModal
-      title="Airdrop"
-      submitDisabled={!amount || mutation.isPending}
-      submitLabel="Request Airdrop"
-      submit={() => mutation.mutateAsync(parseFloat(amount))}
-    >
-      <Label htmlFor="amount">Amount</Label>
-      <Input
-        disabled={mutation.isPending}
-        id="amount"
-        min="1"
-        onChange={(e) => setAmount(e.target.value)}
-        placeholder="Amount"
-        step="any"
-        type="number"
-        value={amount}
-      />
-    </AppModal>
-  )
-}
-
-function ModalSend(props: { address: Address; account: UiWalletAccount }) {
-  const mutation = useTransferSol({ address: props.address, account: props.account })
-  const [destination, setDestination] = useState('')
-  const [amount, setAmount] = useState('1')
-
-  if (!props.address || !props.account) {
-    return <div>Wallet not connected</div>
-  }
-
-  return (
-    <AppModal
-      title="Send"
-      submitDisabled={!destination || !amount || mutation.isPending}
-      submitLabel="Send"
-      submit={() => {
-        mutation.mutateAsync({
-          destination: address(destination),
-          amount: parseFloat(amount),
-        })
-      }}
-    >
-      <Label htmlFor="destination">Destination</Label>
-      <Input
-        disabled={mutation.isPending}
-        id="destination"
-        onChange={(e) => setDestination(e.target.value)}
-        placeholder="Destination"
-        type="text"
-        value={destination}
-      />
-      <Label htmlFor="amount">Amount</Label>
-      <Input
-        disabled={mutation.isPending}
-        id="amount"
-        min="1"
-        onChange={(e) => setAmount(e.target.value)}
-        placeholder="Amount"
-        step="any"
-        type="number"
-        value={amount}
-      />
-    </AppModal>
-  )
 }

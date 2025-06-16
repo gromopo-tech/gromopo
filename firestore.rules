@@ -23,12 +23,8 @@ service cloud.firestore {
       allow delete: if false;
 
       match /orders/{orderId} {
-        allow create: if request.auth != null &&
-          request.auth.token.businessId == businessId &&
-          request.auth.token.role in ["owner", "admin", "taker"];
-        allow read: if request.auth != null &&
-          request.auth.token.businessId == businessId &&
-          request.auth.token.role in ["owner", "admin", "taker"];
+        allow create: if true; // Allow anyone to create orders
+        allow read: if true;
       }
     }
 

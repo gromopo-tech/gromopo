@@ -102,14 +102,12 @@ export default function OrdersList() {
         <div className="flex-1" />
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full border text-left">
+        <table className="w-full border text-left border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           <thead>
-            <tr>
+            <tr className="bg-gray-100 dark:bg-gray-800">
               <th className="p-2">Order #</th>
               <th className="p-2">Order Type</th>
               <th className="p-2">Customer</th>
-              <th className="p-2">Order Taker</th>
-              <th className="p-2">Order Maker</th>
               <th className="p-2">Status</th>
               <th className="p-2">As of</th>
             </tr>
@@ -118,14 +116,12 @@ export default function OrdersList() {
             {filteredOrders.map((order) => (
               <tr
                 key={order.orderId}
-                className="border-t cursor-pointer hover:bg-gray-50"
+                className="border-t border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
                 onClick={() => setSelectedOrder(order)}
               >
                 <td className="p-2">{order.orderNumber ? order.orderNumber.toString().padStart(4, '0') : order.orderId.slice(0, 4)}</td>
                 <td className="p-2">{order.orderType}</td>
-                <td className="p-2">{order.name}</td>
-                <td className="p-2">{order.orderTaker}</td>
-                <td className="p-2">{order.orderMaker}</td>
+                <td className="p-2">{order.customerName}</td>
                 <td className="p-2">{order.status}</td>
                 <td className="p-2">{getAsOf(order)}</td>
               </tr>
@@ -134,20 +130,20 @@ export default function OrdersList() {
         </table>
       </div>
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg max-w-lg w-full relative">
+        <div className="fixed inset-0 bg-black bg-opacity-40 dark:bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow-lg max-w-lg w-full relative border border-gray-200 dark:border-gray-700">
             <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-black"
+              className="absolute top-2 right-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
               onClick={() => setSelectedOrder(null)}
             >
               &times;
             </button>
-            <h3 className="text-lg font-bold mb-2">Order Details</h3>
-            <pre className="bg-gray-100 p-2 rounded text-sm overflow-x-auto mb-2">
+            <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-gray-100">Order Details</h3>
+            <pre className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-sm overflow-x-auto mb-2 text-gray-800 dark:text-gray-100">
               {JSON.stringify(selectedOrder, null, 2)}
             </pre>
-            <h4 className="font-semibold mt-4 mb-1">Status History</h4>
-            <ul className="text-sm">
+            <h4 className="font-semibold mt-4 mb-1 text-gray-900 dark:text-gray-100">Status History</h4>
+            <ul className="text-sm text-gray-800 dark:text-gray-200">
               {selectedOrder.createdAt && (
                 <li>
                   <span className="font-medium">Order Created:</span> {selectedOrder.createdAt}
