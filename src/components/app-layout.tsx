@@ -9,7 +9,6 @@ import { Toaster } from './ui/sonner'
 import { AppHeader } from '@/components/app-header'
 import React from 'react'
 import { AppFooter } from '@/components/app-footer'
-import { ClusterChecker } from '@/components/public/cluster/cluster-ui'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

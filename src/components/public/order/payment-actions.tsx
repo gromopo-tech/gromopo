@@ -3,7 +3,7 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 // Firestore imports
 import { doc, setDoc, collection, getDocs, query, where } from 'firebase/firestore';
-import { db, auth } from '@/lib/firebase/config';
+import { db } from '@/lib/firebase/config';
 import { useRouter } from 'next/navigation';
 
 interface CartItem {
@@ -55,7 +55,6 @@ export function PaymentActions({
   const submitOrder = async () => {
     try {
       if (!businessId) throw new Error('No businessId found');
-      const user = auth.currentUser;
       const now = new Date();
       const dd = String(now.getDate()).padStart(2, '0');
       const mm = String(now.getMonth() + 1).padStart(2, '0');
