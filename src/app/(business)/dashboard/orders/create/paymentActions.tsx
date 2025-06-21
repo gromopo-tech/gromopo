@@ -6,7 +6,6 @@ import { db } from '@/lib/firebase/config';
 import { BusinessIdContext } from '@/components/business/business-id-provider';
 import { BusinessNameContext } from '@/components/business/business-name-provider';
 import { SolanaPay } from '@/components/solana/solana-pay';
-import { CartItem } from '@/types/cart';
 import { PaymentProps } from '@/types/payment';
 
 export function PaymentActions({

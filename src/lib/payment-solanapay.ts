@@ -1,13 +1,13 @@
 import { CartItem } from '@/types/cart';
-import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL, Connection } from '@solana/web3.js';
 
 interface SolanaPayParams {
   solTotal: number;
   cart: CartItem[];
   businessWallet: string;
-  publicKey: any;
-  sendTransaction: any;
-  connection: any;
+  publicKey: PublicKey | null;
+  sendTransaction: (tx: Transaction, connection: Connection) => Promise<string>;
+  connection: Connection;
   onSuccess: (signature: string) => void;
   onError: () => void;
   setPaymentStatus: (status: 'idle' | 'pending' | 'success' | 'error') => void;
