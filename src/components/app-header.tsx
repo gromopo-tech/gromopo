@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Menu, X } from 'lucide-react'
 import { ThemeSelect } from '@/components/theme-select'
 import { WalletButton } from '@/components/solana/solana-provider'
-import Image from 'next/image'
 import { signOut } from 'firebase/auth';
 import { useRouter } from "next/navigation";
 import { auth } from '@/lib/firebase/config';

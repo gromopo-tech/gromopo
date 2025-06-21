@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 // Firestore imports
 import { submitOrderToFirestore } from '@/lib/order';
-import { db } from '@/lib/firebase/config';
 import { useRouter } from 'next/navigation';
 import { CartItem } from '@/types/cart';
 import { PaymentProps } from '@/types/payment';
