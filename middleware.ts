@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // Protect all routes under /(private)
+  // Protect all routes under /(business)
   if (
     request.nextUrl.pathname.startsWith('/dashboard')
   ) {
