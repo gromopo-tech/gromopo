@@ -5,12 +5,12 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Menu, X } from 'lucide-react'
 import { ThemeSelect } from '@/components/theme-select'
-import { WalletButton } from '@/components/public/solana/solana-provider'
+import { WalletButton } from '@/components/solana/solana-provider'
 import Image from 'next/image'
 import { signOut } from 'firebase/auth';
 import { useRouter } from "next/navigation";
 import { auth } from '@/lib/firebase/config';
-import { RoleContext } from '@/components/private/role-provider'
+import { RoleContext } from '@/components/business/role-provider'
 
 const customerLinks: { label: string; path: string }[] = [
   // More links...
@@ -55,7 +55,7 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
     return path === '/' ? pathname === '/' : pathname.startsWith(path)
   }
 
-  const isPizzaCero = pathname === '/order/pizza-cero'
+  const isOrder = pathname === '/order'
 
   // Conditionally add Employees link for owner/admin
   let effectiveBusinessLinks = [...businessLinks];
@@ -97,23 +97,11 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
               Hello, {auth.currentUser?.displayName || 'User'}
             </span>
           </div>
-        ) : isPizzaCero && (
+        ) : isOrder && (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center w-full pointer-events-none">
-            <a
-              href="https://www.pizzacero.com.ar/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="pointer-events-auto"
-            >
-              <Image
-                src="/images/pizza-cero-logo.png"
-                alt="Pizza Cero Logo"
-                width={162}
-                height={54}
-                className="mx-auto cursor-pointer"
-                priority
-              />
-            </a>
+            <h1 className="pointer-events-auto text-2xl font-bold text-neutral-700 dark:text-neutral-200">
+              Pizza Hero
+            </h1>
           </div>
         )}
 
