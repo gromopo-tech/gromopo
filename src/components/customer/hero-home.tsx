@@ -103,25 +103,26 @@ export default function HeroHome() {
           {/* Section header */}
           <div className="pb-12 text-center md:pb-20">
             <h1
-              className="pb-5 text-4xl font-semibold md:text-5xl bg-gradient-to-r from-gray-400 via-gray-600 to-gray-400 bg-clip-text text-transparent animate-gradient-x"
+              className="pb-5 text-4xl font-semibold md:text-5xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 bg-clip-text text-transparent animate-gradient-x"
               data-aos="fade-up"
             >
-              Growing food and beverage businesses
+              Growing mom and pop shops
             </h1>
             <div className="mx-auto max-w-3xl">
               <p
-                className="mb-8 text-xl bg-gradient-to-r from-gray-400 via-gray-600 to-gray-400 bg-clip-text text-transparent animate-gradient-x"
+                className="mb-8 text-xl bg-gradient-to-r from-orange-400 via-rose-400 to-cyan-400 bg-clip-text text-transparent animate-gradient-x"
                 data-aos="fade-up"
                 data-aos-delay={200}
               >
-                Streamline ordering and reward loyalty to keep your customers coming back for more.
+                Leverage AI and the network effect on-chain to grow your business from the ground up.
+                Tailored specifically for mom and pop shops in the food and beverage industry.
                 <br></br>
                 Join us today to get exclusive early access!
               </p>
               <div className="mx-auto max-w-xs sm:flex sm:max-w-none sm:justify-center">
                 <div data-aos="fade-up" data-aos-delay={400}>
                   <a
-                    className="btn w-full border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500"
+                    className="btn bg-gradient-to-r from-fuchsia-500 to-cyan-400 text-white dark:text-black hover:from-fuchsia-600 hover:to-cyan-500 px-2 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-fuchsia-400"
                     href="signup"
                   >
                     <span className="relative inline-flex items-center">

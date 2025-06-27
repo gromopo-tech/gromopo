@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Menu, X } from 'lucide-react'
 import { ThemeSelect } from '@/components/theme-select'
-import { WalletButton } from '@/components/solana/solana-provider'
 import { signOut } from 'firebase/auth';
 import { useRouter } from "next/navigation";
 import { auth } from '@/lib/firebase/config';
@@ -13,8 +12,7 @@ import { RoleContext } from '@/components/business/role-provider'
 
 const customerLinks: { label: string; path: string }[] = [
   // More links...
-  { label: 'Home', path: '/' },
-  { label: 'Rewards', path: '/rewards' },
+  //{ label: 'Explore', path: '/explore' },
 ]
 
 const businessLinks: { label: string; path: string }[] = [
@@ -89,7 +87,6 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
           </div>
         </div>
 
-        {/* Center: Pizza Cero Logo (only on /order/pizza-cero) or user name if authenticated */}
         {isAuthenticated ? (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center w-full pointer-events-none">
             <span className="pointer-events-auto font-semibold text-lg text-neutral-700 dark:text-neutral-200 bg-white/80 dark:bg-neutral-900/80 px-4 py-1 rounded shadow">
@@ -106,7 +103,6 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
 
         {/* Right: Wallet, Cluster, Theme, and Auth Buttons */}
         <div className="hidden md:flex items-center gap-4">
-          {!isAuthenticated && <WalletButton />}
           <ThemeSelect />
           <AuthButton isAuthenticated={isAuthenticated} />
         </div>
@@ -132,7 +128,6 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
                 ))}
               </ul>
               <div className="flex flex-col gap-4">
-                {!isAuthenticated && <WalletButton />}
                 <ThemeSelect />
                 <AuthButton isAuthenticated={isAuthenticated} />
               </div>

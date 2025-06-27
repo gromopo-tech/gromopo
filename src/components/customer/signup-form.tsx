@@ -70,7 +70,7 @@ export default function SignupForm() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6">
-      <h1 className="pb-12 bg-clip-text text-3xl font-semibold md:text-4xl">
+      <h1 className="pb-5 text-4xl font-semibold md:text-5xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 bg-clip-text text-transparent animate-gradient-x">
       Signup for early access
       </h1>
       {success ? (
@@ -88,7 +88,7 @@ export default function SignupForm() {
               id="name"
               type="name"
               {...register("name")}
-              className="form-input w-full border rounded-lg"
+              className="form-input w-full border border-black dark:border-white rounded-lg"
               required
             />
             {errors.name && (
@@ -104,7 +104,7 @@ export default function SignupForm() {
               id="email"
               type="email"
               {...register("email")}
-              className="form-input w-full border rounded-lg"
+              className="form-input w-full border border-black dark:border-white rounded-lg"
               required
             />
             {errors.email && (
@@ -119,7 +119,7 @@ export default function SignupForm() {
                 id="businessName"
                 type="businessName"
                 {...register("businessName")}
-                className="form-input w-full border rounded-lg"
+                className="form-input w-full border border-black dark:border-white rounded-lg"
                 required
               />
               {errors.businessName && (
@@ -133,7 +133,7 @@ export default function SignupForm() {
               <select
                 id="businessType"
                 {...register("businessType")}
-                className="w-full border rounded-lg cursor-pointer"
+                className="w-full border border-black dark:border-white rounded-lg cursor-pointer"
               >
                 <option value=""></option>
                 <option value="restaurant">Restaurant</option>
@@ -150,7 +150,7 @@ export default function SignupForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="btn w-full border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
+            className="btn w-full border border-black dark:border-white bg-gradient-to-r from-fuchsia-500 to-cyan-400 text-white dark:text-black hover:from-fuchsia-600 hover:to-cyan-500 px-2 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-fuchsia-400 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
           >
             {isSubmitting ? "Sending..." : "Get Early Access"}
           </button>
