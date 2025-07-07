@@ -104,6 +104,7 @@ export function RagChat({
         <button
           onClick={handleSend}
           className="btn border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
+
           disabled={loading}
         >
           Send
