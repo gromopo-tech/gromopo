@@ -44,7 +44,7 @@ export default function SigninForm() {
       });
 
       setSuccess(true);
-      window.location.replace("/dashboard/orders");
+      window.location.replace("/dashboard");
     } catch (error) {
       console.error(error);
       if (error instanceof Error) {
