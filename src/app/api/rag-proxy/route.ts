@@ -14,7 +14,6 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
   }
-
   const body = await req.json();
   const res = await fetch("https://rag-api-185581376798.us-central1.run.app/rag/query", {
     method: "POST",
