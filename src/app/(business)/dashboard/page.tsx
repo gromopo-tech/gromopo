@@ -12,7 +12,7 @@ type Chat = {
   id: string;
   name: string;
   history: { role: string; text: string }[];
-  createdAt: any;
+  createdAt: import('firebase/firestore').Timestamp | Date;
 };
 
 function DashboardPage() {

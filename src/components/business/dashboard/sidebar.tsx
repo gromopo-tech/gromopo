@@ -1,16 +1,14 @@
-import React, { useState, useContext } from "react";
-import { BusinessIdContext } from "@/components/business/business-id-provider";
+import React, { useState } from "react";
 
 type Chat = {
   id: string;
   name: string;
   history: { role: string; text: string }[];
-  createdAt: any;
+  createdAt: import("firebase/firestore").Timestamp | Date;
 };
 
 export default function Sidebar({
   chats,
-  setChats,
   selectedChatId,
   setSelectedChatId,
   onNewChat,

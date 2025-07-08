@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   try {
     // Verify the Firebase ID token
     await adminAuth.verifyIdToken(idToken);
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
   }
 
