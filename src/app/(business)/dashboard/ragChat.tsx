@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import { auth } from "@/lib/firebase/config";
 
 export function RagChat({ placeId }: { placeId: string }) {
   const [query, setQuery] = useState("");
@@ -16,15 +17,30 @@ export function RagChat({ placeId }: { placeId: string }) {
     setQuery("")
     setLoading(true);
 
+    // Get Firebase ID token
+    const user = auth.currentUser;
+    if (!user) {
+      setHistory(h => [...h, { role: "assistant", text: "You must be signed in to use chat." }]);
+      setLoading(false);
+      return;
+    }
+    const idToken = await user.getIdToken();
+
     const res = await fetch("/api/rag-proxy", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
       body: JSON.stringify({ place_id: placeId, query })
     });
 
-    const { answer } = await res.json();
-
-    setHistory(h => [...h, { role: "assistant", text: answer }]);
+    const { answer, error } = await res.json();
+    if (error) {
+      setHistory(h => [...h, { role: "assistant", text: error }]);
+    } else {
+      setHistory(h => [...h, { role: "assistant", text: answer }]);
+    }
     setQuery("");
     setLoading(false);
   }
