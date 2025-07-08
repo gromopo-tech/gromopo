@@ -113,7 +113,7 @@ export default function MenusManager() {
         ) : menus.length === 0 ? (
           <div>
             <div className="mb-4">Upload a menu to get started.</div>
-            <label className="inline-block cursor-pointer bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition mb-2">
+            <label className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer">
               Choose file
               <input
                 type="file"

@@ -41,7 +41,7 @@ export default async function EmployeesPage() {
         <h1 className="text-2xl font-bold">Employees</h1>
         <Link
           href="/dashboard/employees/create"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
         >
           + New Employee
         </Link>
