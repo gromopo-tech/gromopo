@@ -1,26 +1,39 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import ReactMarkdown from "react-markdown";
-import { auth } from "@/lib/firebase/config";
+import { auth, db } from "@/lib/firebase/config";
+import { doc, updateDoc } from "firebase/firestore";
+import { BusinessIdContext } from "@/components/business/business-id-provider";
 
-export function RagChat({ placeId }: { placeId: string }) {
+export function RagChat({
+  placeId,
+  selectedChatId,
+  chatHistory,
+  setChatHistory,
+}: {
+  placeId: string;
+  selectedChatId: string | null;
+  chatHistory: { role: string; text: string }[];
+  setChatHistory: (h: { role: string; text: string }[]) => void;
+}) {
+  const businessId = useContext(BusinessIdContext);
   const [query, setQuery] = useState("");
-  const [history, setHistory] = useState<{ role: string; text: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   async function handleSend() {
     if (!query.trim()) return;
 
-    setHistory(h => [...h, { role: "user", text: query }]);
-    setQuery("")
+    const newHistory = [...chatHistory, { role: "user", text: query }];
+    setChatHistory(newHistory);
+    setQuery("");
     setLoading(true);
 
     // Get Firebase ID token
     const user = auth.currentUser;
     if (!user) {
-      setHistory(h => [...h, { role: "assistant", text: "You must be signed in to use chat." }]);
+      setChatHistory([...chatHistory, { role: "assistant", text: "You must be signed in to use chat." }]);
       setLoading(false);
       return;
     }
@@ -36,25 +49,34 @@ export function RagChat({ placeId }: { placeId: string }) {
     });
 
     const { answer, error } = await res.json();
+    let updatedHistory;
     if (error) {
-      setHistory(h => [...h, { role: "assistant", text: error }]);
+      updatedHistory = [...newHistory, { role: "assistant", text: error }];
     } else {
-      setHistory(h => [...h, { role: "assistant", text: answer }]);
+      updatedHistory = [...newHistory, { role: "assistant", text: answer }];
     }
+    setChatHistory(updatedHistory);
     setQuery("");
     setLoading(false);
+
+    // Auto-save to Firestore
+    if (businessId && selectedChatId) {
+      await updateDoc(doc(db, `businesses/${businessId}/chats/${selectedChatId}`), {
+        history: updatedHistory,
+      });
+    }
   }
 
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [history, loading]);
+  }, [chatHistory, loading]);
 
   return (
     <div>
       <div ref={chatContainerRef} className="shadow dark:shadow-gray-300 border rounded p-4 h-96 overflow-y-auto mb-2">
-        {history.map((m, i) => (
+        {chatHistory.map((m, i) => (
           <div key={i} className={`mb-2 ${m.role === "user" ? "text-right" : "text-left"}`}>
             {m.role === "assistant" ? (
               <span className="inline-block px-3 py-2 rounded text-left max-w-full break-words">
@@ -81,7 +103,7 @@ export function RagChat({ placeId }: { placeId: string }) {
         />
         <button
           onClick={handleSend}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          className="btn border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
           disabled={loading}
         >
           Send

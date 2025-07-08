@@ -83,7 +83,7 @@ export default function OrdersList() {
         {['all', 'dine-in', 'takeout', 'delivery'].map((type) => (
           <button
             key={type}
-            className={`mr-2 px-3 py-1 rounded ${orderTypeFilter === type ? 'bg-blue-600 text-white' : 'border'}`}
+            className={`mr-2 px-3 py-1 rounded ${orderTypeFilter === type ? 'dark:bg-gray-700 bg-gray-300' : 'border'}`}
             onClick={() => setOrderTypeFilter(type as typeof orderTypeFilter)}
           >
             {type}
@@ -93,7 +93,7 @@ export default function OrdersList() {
         {['all', 'Order Created', 'Preparing', 'Prepared', 'Paid'].map((status) => (
           <button
             key={status}
-            className={`mr-2 px-3 py-1 rounded ${statusFilter === status ? 'bg-blue-600 text-white' : 'border'}`}
+            className={`mr-2 px-3 py-1 rounded ${statusFilter === status ? 'dark:bg-gray-700 bg-gray-300' : 'border'}`}
             onClick={() => setStatusFilter(status as typeof statusFilter)}
           >
             {status}
