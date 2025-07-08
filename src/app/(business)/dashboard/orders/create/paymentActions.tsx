@@ -101,14 +101,7 @@ export function PaymentActions({
       <p className="text-lg font-semibold">Pagar con:</p>
       <div className="flex gap-2 mb-4">
         <button
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-          onClick={() => alert('Integración con Mercado Pago próximamente')}
-          type="button"
-        >
-          Mercado Pago
-        </button>
-        <button
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+          className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
           onClick={() => setShowSolanaPay(true)}
           disabled={paymentStatus === 'pending'}
         >

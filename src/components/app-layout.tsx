@@ -14,6 +14,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -43,11 +45,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, []);
 
+  const isDashboardRoot = mounted && pathname === "/dashboard";
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <div className="flex flex-col min-h-screen">
         <AppHeader isAuthenticated={isAuthenticated} />
-        <main className="flex-grow container mx-auto p-4">
+        <main className={isDashboardRoot ? "flex-grow" : "flex-grow container mx-auto p-4"}>
           {children}
         </main>
         <AppFooter />

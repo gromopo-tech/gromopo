@@ -107,7 +107,7 @@ export default function EmployeesList({ employees }: { employees: Employee[] }) 
         {['all', 'admin', 'taker', 'maker'].map((r) => (
           <button
             key={r}
-            className={`mr-2 px-3 py-1 rounded ${filter === r ? 'bg-blue-600 text-white' : 'border p1 rounded'}`}
+            className={`mr-2 px-3 py-1 rounded ${filter === r ? 'dark:bg-gray-700 bg-gray-300' : 'border p1 rounded'}`}
             onClick={() => setFilter(r as typeof filter)}
           >
             {r}

@@ -22,6 +22,11 @@ service cloud.firestore {
       // Disallow deletes unless you implement business deletion logic
       allow delete: if false;
 
+      match /chats/{chatId} {
+        allow read, write, update, list: if isUserInBusiness(businessId);
+        allow delete: if false; // or your own logic
+      }
+
       match /orders/{orderId} {
         allow create: if true; // Allow anyone to create orders
         allow read: if true;

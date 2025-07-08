@@ -10,7 +10,7 @@ export function HomeRedirectIfAuthenticated({ children }: { children: React.Reac
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        router.replace("/dashboard/orders");
+        router.replace("/dashboard");
       } else {
         setChecked(true);
       }
