@@ -15,6 +15,8 @@ env:
     value: devnet
   - variable: NEXT_PUBLIC_SOLANA_USDC_MINT_ADDRESS
     value: 4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU
+  - variable: RAG_API_URL
+    secret: rag-api-url
   #  availability:
   #    - BUILD
   #    - RUNTIME
