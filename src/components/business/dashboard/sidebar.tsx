@@ -55,6 +55,7 @@ export default function Sidebar({
                     if (e.key === "Enter") { onEditName(chat.id, editName); setEditingId(null); }
                     if (e.key === "Escape") setEditingId(null);
                   }}
+                  onBlur={() => { onEditName(chat.id, editName); setEditingId(null); }}
                   autoFocus
                 />
               ) : (
@@ -90,4 +91,4 @@ export default function Sidebar({
       </ul>
     </aside>
   );
-} 
+}

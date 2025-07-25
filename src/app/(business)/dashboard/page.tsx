@@ -61,10 +61,18 @@ function DashboardPage() {
   }, [businessId]);
 
   useEffect(() => {
-    if (!selectedChatId) return;
-    const chat = chats.find(c => c.id === selectedChatId);
-    setChatHistory(chat?.history || []);
-  }, [selectedChatId, chats]);
+    if (!selectedChatId || !businessId) return;
+    const fetchChat = async () => {
+      const chatDoc = await getDoc(doc(db, `businesses/${businessId}/chats/${selectedChatId}`));
+      if (chatDoc.exists()) {
+        const data = chatDoc.data();
+        setChatHistory(data.history || []);
+      } else {
+        setChatHistory([]);
+      }
+    };
+    fetchChat();
+  }, [selectedChatId, businessId]);
 
   const handleNewChat = async () => {
     if (!businessId) return;
