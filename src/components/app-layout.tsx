@@ -54,7 +54,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <main className={isDashboardRoot ? "flex-grow" : "flex-grow container mx-auto p-4"}>
           {children}
         </main>
-        <AppFooter />
+        <AppFooter isAuthenticated={isAuthenticated}/>
       </div>
       <Toaster position="top-right" />
     </ThemeProvider>

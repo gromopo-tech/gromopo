@@ -4,7 +4,7 @@ export default function Privacy() {
       <style
         dangerouslySetInnerHTML={{
           __html:
-            "\n  [data-custom-class='body'], [data-custom-class='body'] * {\n          background: transparent !important;\n        }\n[data-custom-class='title'], [data-custom-class='title'] * {\n          font-family: Arial !important;\nfont-size: 26px !important;\n        }\n[data-custom-class='subtitle'], [data-custom-class='subtitle'] * {\n          font-family: Arial !important;\nfont-size: 14px !important;\n        }\n[data-custom-class='heading_1'], [data-custom-class='heading_1'] * {\n          font-family: Arial !important;\nfont-size: 19px !important;\n}\n[data-custom-class='heading_2'], [data-custom-class='heading_2'] * {\n          font-family: Arial !important;\nfont-size: 17px !important;\n}\n[data-custom-class='body_text'], [data-custom-class='body_text'] * {\nfont-size: 14px !important;\nfont-family: Arial !important;\n        }\n[data-custom-class='link'], [data-custom-class='link'] * {\n          color: #3030F1 !important;\nfont-size: 14px !important;\nfont-family: Arial !important;\nword-break: break-word !important;\n        }\n"
+            "\n  [data-custom-class='body'], [data-custom-class='body'] * {\n          background: transparent !important;\n        }\n[data-custom-class='title'], [data-custom-class='title'] * {\n          font-family: Arial !important;\nfont-size: 26px !important;\n        }\n[data-custom-class='subtitle'], [data-custom-class='subtitle'] * {\n          font-family: Arial !important;\nfont-size: 14px !important;\n        }\n[data-custom-class='heading_1'], [data-custom-class='heading_1'] * {\n          font-family: Arial !important;\nfont-size: 19px !important;\n}\n[data-custom-class='heading_2'], [data-custom-class='heading_2'] * {\n          font-family: Arial !important;\nfont-size: 17px !important;\n}\n[data-custom-class='body_text'], [data-custom-class='body_text'] * {\nfont-size: 14px !important;\nfont-family: Arial !important;\n        }\n[data-custom-class='link'], [data-custom-class='link'] * {\n          color: #6a30f1ff !important;\nfont-size: 14px !important;\nfont-family: Arial !important;\nword-break: break-word !important;\n        }\n"
         }}
       />
       <span
@@ -17,7 +17,7 @@ export default function Privacy() {
         }}
       />
       <div data-custom-class="body">
-      <div style={{ textAlign: "left" }}>
+      <div style={{ textAlign: "left" }} className="privacy-content" data-custom-class="body">
           <div
             className="MsoNormal"
             data-custom-class="title"
@@ -2173,8 +2173,20 @@ export default function Privacy() {
       </div>
       <style
         dangerouslySetInnerHTML={{
-          __html:
-            "\n      ul {\n        list-style-type: square;\n      }\n      ul > li > ul {\n        list-style-type: circle;\n      }\n      ul > li > ul > li > ul {\n        list-style-type: square;\n      }\n      ol li {\n        font-family: Arial ;\n      }\n    "
+          __html: `
+            .privacy-content ul {
+              list-style-type: square;
+            }
+            .privacy-content ul > li > ul {
+              list-style-type: circle;
+            }
+            .privacy-content ul > li > ul > li > ul {
+              list-style-type: square;
+            }
+            .privacy-content ol li {
+              font-family: Arial ;
+            }
+          `
         }}
       />
     </>
