@@ -2,13 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-interface CartItem {
-  nombre: string;
-  descripción: string;
-  tamaño: string;
-  precio: number;
-}
+import { CartItem } from "@/types/cart";
 
 interface OrderConfirmation {
   orderNumber: number;
@@ -37,16 +31,16 @@ export default function OrderConfirmationPage() {
   if (!order) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="text-lg">Cargando confirmación de la orden...</div>
+        <div className="text-lg">Loading order confirmation...</div>
       </div>
     );
   }
 
   return (
     <div className="max-w-xl mx-auto p-6 mt-8 border rounded bg-green-50 text-green-900">
-      <h1 className="text-3xl font-bold mb-4 text-green-800">¡Orden confirmada!</h1>
-      <div className="mb-2">Número de orden: <b>{order.orderNumber}</b></div>
-      {order.customerName && <div className="mb-2">Cliente: <b>{order.customerName}</b></div>}
+      <h1 className="text-3xl font-bold mb-4 text-green-800">Order confirmed!</h1>
+      <div className="mb-2">Order number: <b>{order.orderNumber}</b></div>
+      {order.customerName && <div className="mb-2">Customer: <b>{order.customerName}</b></div>}
       <div className="mb-2">Total: <b>{order.total.toFixed(2)} USDC</b></div>
       {order.txSignature && (
         <div className="mb-2">
@@ -56,16 +50,16 @@ export default function OrderConfirmationPage() {
             rel="noopener noreferrer"
             className="text-blue-600 underline hover:text-blue-800"
           >
-            Ver transacción en Solana Explorer
+            See transaction on Solana Explorer
           </a>
         </div>
       )}
       <div className="mt-4">
-        <b>Detalle de la orden:</b>
+        <b>Order details:</b>
         <ul className="list-disc ml-6 mt-2">
           {order.cart.map((item, i) => (
             <li key={i}>
-              {item.nombre} ({item.tamaño}) - ${item.precio}
+              {item.name} ({item.size}) - ${item.price}
             </li>
           ))}
         </ul>
@@ -73,9 +67,9 @@ export default function OrderConfirmationPage() {
       <div className="mt-8 text-center">
         <a
           href="/customer/order"
-          className="inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          className="inline-block px-4 py-2 bg-green-600 rounded hover:bg-green-700"
         >
-          Hacer otra orden
+          Make another order
         </a>
       </div>
     </div>

@@ -116,7 +116,7 @@ export default function MenusManager() {
           ) : menus.length === 0 ? null : (
             <div>
               <div className="mb-4 flex items-center gap-2">
-                <label className="inline-block cursor-pointer bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition mr-2 mb-0">
+                <label className="inline-block cursor-pointer bg-blue-600 px-4 py-2 rounded shadow hover:bg-blue-700 transition mr-2 mb-0">
                   Choose file
                   <input
                     type="file"
