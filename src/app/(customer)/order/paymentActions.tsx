@@ -15,7 +15,7 @@ export function PaymentActions({
   customerName = 'Test Customer',
   businessId = 'kQKIuVShyepX9h8OqxdG',
   businessName = 'Sandra\'s Sandwiches',
-  orderType = 'retirar',
+  orderType = 'takeout',
   onSuccess,
   onError,
   clearCart,

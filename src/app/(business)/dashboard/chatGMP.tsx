@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useContext } from "react";
+import React, { useState, useRef, useEffect, useContext, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import { auth, db } from "@/lib/firebase/config";
 import { collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, query, orderBy, getDocs } from "firebase/firestore";
@@ -14,7 +14,7 @@ type Chat = {
   createdAt: import("firebase/firestore").Timestamp | Date;
 };
 
-export default function ChatBox() {
+export default function ChatGMP() {
   const businessId = useContext(BusinessIdContext);
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -32,15 +32,17 @@ export default function ChatBox() {
       const chatsRef = collection(db, `businesses/${businessId}/chats`);
       const q = query(chatsRef, orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
-      let chatList: Chat[] = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as Omit<Chat, 'id'>) }));
+      const chatList: Chat[] = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as Omit<Chat, 'id'>) }));
       setChats(chatList);
       setSelectedChatId(chatList[0]?.id || null);
     };
     fetchChats();
   }, [businessId]);
 
-  // Get the history for the selected chat
-  const selectedChatHistory = chats.find(c => c.id === selectedChatId)?.history || [];
+  // Get the history for the selected chat (memoized to prevent unnecessary re-renders)
+  const selectedChatHistory = useMemo(() => {
+    return chats.find(c => c.id === selectedChatId)?.history || [];
+  }, [chats, selectedChatId]);
 
   // Callback to update history for selected chat only
   const updateSelectedChatHistory = async (newHistory: { role: string; text: string }[]) => {
