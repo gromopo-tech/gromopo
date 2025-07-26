@@ -6,7 +6,7 @@ export interface PaymentProps {
   customerName?: string;
   businessId?: string;
   businessName?: string;
-  orderType?: 'retirar' | 'comer en el lugar';
+  orderType?: 'takeout' | 'dine-in';
   onSuccess?: (txSignature: string | null) => void;
   onError?: () => void;
   clearCart: () => void;

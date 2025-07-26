@@ -1,5 +1,5 @@
-import ChatBox from "@/app/(business)/dashboard/chatBox";
+import ChatGMP from "@/app/(business)/dashboard/chatGMP";
 
 export default function DashboardPage() {
-  return <ChatBox />;
+  return <ChatGMP />;
 }
