@@ -10,6 +10,8 @@ import {
   uploadBytes,
   deleteObject,
 } from "firebase/storage";
+
+import MenuUploadGate from '@/components/business/dashboard/MenuUploadGate';
 import type { MenuFile, MenuError } from '@/types/menu';
 
 export default function MenusManager() {
@@ -105,85 +107,72 @@ export default function MenusManager() {
   };
 
   return (
-    <div className="flex flex-col w-full h-full p-6 space-y-6">
-      <div className="p-4 rounded shadow-md max-w-2xl">
-        {error && <div className="text-red-600 mb-2">{error}</div>}
-        {loading ? (
-          <div>Loading menus...</div>
-        ) : menus.length === 0 ? (
-          <div>
-            <div className="mb-4">Upload a menu to get started.</div>
-            <label className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer">
-              Choose file
-              <input
-                type="file"
-                accept="application/pdf,image/*"
-                onChange={handleUpload}
-                ref={fileInputRef}
-                disabled={uploading}
-                className="hidden"
-              />
-            </label>
-            {uploading && <div>Uploading...</div>}
-          </div>
-        ) : (
-          <div>
-            <div className="mb-4 flex items-center gap-2">
-              <label className="inline-block cursor-pointer bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition mr-2 mb-0">
-                Choose file
-                <input
-                  type="file"
-                  accept="application/pdf,image/*"
-                  onChange={handleUpload}
-                  ref={fileInputRef}
-                  disabled={uploading}
-                  className="hidden"
-                />
-              </label>
-              <span className="text-sm">Add new menu</span>
-              {uploading && <span className="ml-2">Uploading...</span>}
-            </div>
-            <table className="w-full border text-left bg-white">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="p-2">Menu File</th>
-                  <th className="p-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {menus.map((menu) => (
-                  <tr key={menu.fullPath} className="border-t">
-                    <td className="p-2">
-                      <a href={menu.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{menu.name}</a>
-                    </td>
-                    <td className="p-2 flex gap-2 items-center">
-                      <label className="inline-block cursor-pointer bg-blue-100 text-blue-700 px-3 py-1 rounded shadow hover:bg-blue-200 transition mr-2 mb-0">
-                        Replace
-                        <input
-                          type="file"
-                          accept="application/pdf,image/*"
-                          style={{ display: "none" }}
-                          onChange={(e) => handleReplace(menu, e)}
-                          ref={replaceInputRef}
-                          disabled={replacingId === menu.fullPath}
-                        />
-                      </label>
-                      <button
-                        className="text-red-600 hover:underline"
-                        onClick={() => handleDelete(menu)}
-                        disabled={replacingId === menu.fullPath}
-                      >
-                        Delete
-                      </button>
-                      {replacingId === menu.fullPath && <span className="ml-2">Replacing...</span>}
-                    </td>
+    <MenuUploadGate>
+      <div className="flex flex-col w-full h-full p-6 space-y-6">
+        <div className="p-4 rounded shadow-md max-w-2xl">
+          {error && <div className="text-red-600 mb-2">{error}</div>}
+          {loading ? (
+            <div>Loading menus...</div>
+          ) : menus.length === 0 ? null : (
+            <div>
+              <div className="mb-4 flex items-center gap-2">
+                <label className="inline-block cursor-pointer bg-blue-600 px-4 py-2 rounded shadow hover:bg-blue-700 transition mr-2 mb-0">
+                  Choose file
+                  <input
+                    type="file"
+                    accept="application/pdf,image/*"
+                    onChange={handleUpload}
+                    ref={fileInputRef}
+                    disabled={uploading}
+                    className="hidden"
+                  />
+                </label>
+                <span className="text-sm">Add new menu</span>
+                {uploading && <span className="ml-2">Uploading...</span>}
+              </div>
+              <table className="w-full border text-left bg-white">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="p-2">Menu File</th>
+                    <th className="p-2">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {menus.map((menu) => (
+                    <tr key={menu.fullPath} className="border-t">
+                      <td className="p-2">
+                        <a href={menu.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{menu.name}</a>
+                      </td>
+                      <td className="p-2 flex gap-2 items-center">
+                        <label className="inline-block cursor-pointer bg-blue-100 text-blue-700 px-3 py-1 rounded shadow hover:bg-blue-200 transition mr-2 mb-0">
+                          Replace
+                          <input
+                            type="file"
+                            accept="application/pdf,image/*"
+                            style={{ display: "none" }}
+                            onChange={(e) => handleReplace(menu, e)}
+                            ref={replaceInputRef}
+                            disabled={replacingId === menu.fullPath}
+                          />
+                        </label>
+                        <button
+                          className="text-red-600 hover:underline"
+                          onClick={() => handleDelete(menu)}
+                          disabled={replacingId === menu.fullPath}
+                        >
+                          Delete
+                        </button>
+                        {replacingId === menu.fullPath && <span className="ml-2">Replacing...</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </MenuUploadGate>
   );
+// ...existing code ends here, no stray bracket...
 }

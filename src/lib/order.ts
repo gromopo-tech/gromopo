@@ -4,8 +4,7 @@ import { CartItem } from '@/types/cart';
 
 export interface SubmitOrderParams {
   cart: CartItem[];
-  arsTotal: number;
-  solTotal: number;
+  total: number;
   customerName: string;
   businessId: string;
   businessName: string;
@@ -15,8 +14,7 @@ export interface SubmitOrderParams {
 
 export async function submitOrderToFirestore({
   cart,
-  arsTotal,
-  solTotal,
+  total,
   customerName,
   businessId,
   businessName,
@@ -43,8 +41,7 @@ export async function submitOrderToFirestore({
     createdAt: new Date().toISOString(),
     orderNumber: nextOrderNumber,
     status: 'Order Created',
-    arsTotal,
-    solTotal,
+    total,
     customerName,
     businessName,
     txSignature,
