@@ -1,6 +1,6 @@
 import React from 'react'
 
-export function AppFooter() {
+export function AppFooter({ isAuthenticated }: { isAuthenticated: boolean }) {
   return (
     <footer className="text-center p-2 bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 text-xs">
       <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
@@ -20,7 +20,7 @@ export function AppFooter() {
           <div className="flex items-center space-x-4">
             <a
               className="hover:text-neutral-500 dark:hover:text-white"
-              href="/privacy-policy"
+              href={isAuthenticated ? ("/dashboard/privacy-policy") : ("/privacy-policy")}
             >
               Privacy policy
             </a>

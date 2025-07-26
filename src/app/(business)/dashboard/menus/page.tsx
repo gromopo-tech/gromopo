@@ -1,6 +1,6 @@
 "use client";
 
-import MenusManager from "./MenusManager";
+import MenusManager from "./menusManager";
 
 export default function MenusPage() {
   return (
@@ -8,5 +8,5 @@ export default function MenusPage() {
       <h1 className="text-2xl font-bold mb-6">Menus</h1>
       <MenusManager />
     </div>
-  )
+  );
 }

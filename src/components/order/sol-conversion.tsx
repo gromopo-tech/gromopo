@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 
 interface SolConversionProps {
   arsTotal: number;
-  children: (solTotal: number, loading: boolean, error: string | null, usdToArs: number | null) => React.ReactNode;
+  children: (total: number, loading: boolean, error: string | null, usdToArs: number | null) => React.ReactNode;
 }
 
 export function SolConversion({ arsTotal, children }: SolConversionProps) {
-  const [solTotal, setSolTotal] = useState(0);
+  const [total, setSolTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usdToArs, setUsdToArs] = useState<number | null>(null);
@@ -37,5 +37,5 @@ export function SolConversion({ arsTotal, children }: SolConversionProps) {
     }
   }, [arsTotal]);
 
-  return <>{children(solTotal, loading, error, usdToArs)}</>;
+  return <>{children(total, loading, error, usdToArs)}</>;
 }

@@ -9,8 +9,7 @@ import { SolanaPay } from '@/components/solana/solana-pay';
 import { PaymentProps } from '@/types/payment';
 
 export function PaymentActions({
-  solTotal,
-  arsTotal,
+  total,
   cart = [],
   customerName,
   orderType,
@@ -76,8 +75,7 @@ export function PaymentActions({
           createdAt: new Date().toISOString(),
           orderNumber,
           status: 'Order Created',
-          arsTotal,
-          solTotal,
+          total,
           customerName,
           orderType,
           reference,
@@ -93,12 +91,12 @@ export function PaymentActions({
         window.location.href = '/dashboard/orders/take/confirmation';
       });
     }
-  }, [paymentStatus, reference, solTotal, arsTotal, cart, businessId, customerName, orderType, clearCart]);
+  }, [paymentStatus, reference, total, cart, businessId, customerName, orderType, clearCart]);
 
   return (
     <div className="p-4 border w-full max-w-lg">
-      <h2 className="text-2xl font-bold mb-2">Pago</h2>
-      <p className="text-lg font-semibold">Pagar con:</p>
+      <h2 className="text-2xl font-bold mb-2">Payment</h2>
+      <p className="text-lg font-semibold">Pay with:</p>
       <div className="flex gap-2 mb-4">
         <button
           className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
@@ -110,7 +108,7 @@ export function PaymentActions({
       </div>
       {showSolanaPay && (
         <SolanaPay
-          solTotal={solTotal}
+          total={total}
           customerName={customerName || ''}
           businessName={businessName || ''}
           merchantWallet={merchantWallet}
@@ -119,12 +117,11 @@ export function PaymentActions({
       )}
       <ul className="mb-2">
         {cart.map((item, idx) => (
-          <li key={idx}><b>{item.nombre}</b> ({item.tamaño}) - ${item.precio}</li>
+          <li key={idx}><b>{item.name}</b> ({item.size}) - ${item.price}</li>
         ))}
-        <li><b>Total:</b> {(arsTotal ?? 0).toFixed(2)} ARS</li>
-        <li><b>Total (SOL):</b> {solTotal.toFixed(4)} SOL</li>
-        <li><b>Cliente:</b> {customerName}</li>
-        <li><b>Tipo de orden:</b> {orderType}</li>
+        <li><b>Total:</b> {total.toFixed(4)} USDC</li>
+        <li><b>Customer:</b> {customerName}</li>
+        <li><b>Order Type:</b> {orderType}</li>
       </ul>
     </div>
   );
