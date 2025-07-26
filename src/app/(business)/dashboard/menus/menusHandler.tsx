@@ -14,7 +14,7 @@ import {
 import MenuUploadGate from '@/components/business/dashboard/MenuUploadGate';
 import type { MenuFile, MenuError } from '@/types/menu';
 
-export default function MenusManager() {
+export default function MenusHandler() {
   const businessId = useContext(BusinessIdContext);
   const [menus, setMenus] = useState<MenuFile[]>([]);
   const [loading, setLoading] = useState(true);
