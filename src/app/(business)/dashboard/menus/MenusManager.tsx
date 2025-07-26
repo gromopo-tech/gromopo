@@ -174,5 +174,4 @@ export default function MenusManager() {
       </div>
     </MenuUploadGate>
   );
-// ...existing code ends here, no stray bracket...
 }
