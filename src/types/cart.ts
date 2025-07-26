@@ -1,6 +1,8 @@
+import { ItemSize } from '@/components/order/menu-types';
+
 export interface CartItem {
-  nombre: string;
-  descripción: string;
-  tamaño: string;
-  precio: number;
+  name: string;
+  description: string;
+  size: ItemSize;
+  price: number;
 }

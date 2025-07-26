@@ -1,8 +1,7 @@
 import { CartItem } from './cart';
 
 export interface PaymentProps {
-  solTotal: number;
-  arsTotal?: number;
+  total: number;
   cart?: CartItem[];
   customerName?: string;
   businessId?: string;

@@ -10,12 +10,11 @@ import { PaymentProps } from '@/types/payment';
 import { handleSolanaPayPayment } from '@/lib/payment-solanapay';
 
 export function PaymentActions({
-  solTotal,
-  arsTotal,
+  total,
   cart = [],
   customerName = 'Test Customer',
   businessId = 'kQKIuVShyepX9h8OqxdG',
-  businessName = 'Pizza Hero',
+  businessName = 'Sandra\'s Sandwiches',
   orderType = 'retirar',
   onSuccess,
   onError,
@@ -39,8 +38,7 @@ export function PaymentActions({
     try {
       const orderData = await submitOrderToFirestore({
         cart,
-        arsTotal: arsTotal ?? 0,
-        solTotal: solTotal ?? 0,
+        total: total ?? 0,
         customerName,
         businessId,
         businessName,
@@ -57,7 +55,7 @@ export function PaymentActions({
 
   const handlePay = async () => {
     await handleSolanaPayPayment({
-      solTotal,
+      total,
       cart,
       businessWallet,
       publicKey,
@@ -102,8 +100,7 @@ export function PaymentActions({
       const orderDetails = {
         orderNumber,
         customerName: customerName || 'Test Customer',
-        arsTotal,
-        solTotal,
+        total,
         cart: cartSnapshot.length > 0 ? cartSnapshot : cart,
         txSignature,
         orderType,
@@ -116,30 +113,30 @@ export function PaymentActions({
 
   return (
     <div className="flex flex-col gap-2 mt-4">
-      <p className="text-lg font-semibold">Pagar con:</p>
+      <p className="text-lg font-semibold">Pay with:</p>
       <div className="flex gap-2">
         <button
           className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
           onClick={handlePay}
           disabled={paymentStatus === 'pending' || !connected || !publicKey}
         >
-          {paymentStatus === 'pending' ? 'Pagando...' : 'Solana Pay'}
+          {paymentStatus === 'pending' ? 'Paying...' : 'Solana Pay'}
         </button>
       </div>
       {/* Always show payment success if paymentStatus is success and txSignature exists */}
       {paymentStatus === 'success' && txSignature && (
         <div className="mt-2 text-green-600">
-          ¡Pago realizado!{' '}
-          <a href={`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="underline">Ver transacción</a>
+          Payment made!{' '}
+          <a href={`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="underline">View transaction</a>
         </div>
       )}
       {/* Show order confirmation below payment success if confirmed (now handled by redirect) */}
       {/* orderConfirmed && ... (removed) */}
       {orderError && (
-        <div className="mt-2 text-red-600">Error al guardar la orden: {orderError}</div>
+        <div className="mt-2 text-red-600">Error saving order: {orderError}</div>
       )}
       {paymentStatus === 'error' && (
-        <div className="mt-2 text-red-600">Error al procesar el pago.</div>
+        <div className="mt-2 text-red-600">Error processing payment.</div>
       )}
     </div>
   );

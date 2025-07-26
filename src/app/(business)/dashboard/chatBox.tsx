@@ -184,7 +184,7 @@ export default function ChatBox() {
           <input
             type="text"
             className="flex-grow shadow dark:shadow-gray-300 rounded px-3 py-2"
-            placeholder="Hi what can I help you with?"
+            placeholder="Ask me about your reviews"
             value={userQuery}
             onChange={e => setUserQuery(e.target.value)}
             onKeyDown={e => e.key === "Enter" && handleSend()}

@@ -6,7 +6,7 @@ import { Keypair } from '@solana/web3.js';
 import { generateSolanaPayUrl, pollSolanaPayPayment } from '@/lib/solanaPay/config';
 
 interface SolanaPayProps {
-  solTotal: number;
+  total: number;
   customerName: string;
   businessName: string | null;
   merchantWallet: string | null;
@@ -14,7 +14,7 @@ interface SolanaPayProps {
 }
 
 export function SolanaPay({
-  solTotal,
+  total,
   customerName,
   businessName,
   merchantWallet,
@@ -27,7 +27,7 @@ export function SolanaPay({
   // Generate Solana Pay URL
   useEffect(() => {
     if (
-      solTotal > 0 &&
+      total > 0 &&
       customerName &&
       merchantWallet &&
       merchantWallet.length > 0
@@ -36,7 +36,7 @@ export function SolanaPay({
       setReference(refKey);
       const url = generateSolanaPayUrl({
         recipient: merchantWallet,
-        amount: solTotal,
+        amount: total,
         reference: refKey,
         label: businessName || 'Unknown Business',
         message: `Order for ${customerName}`,
@@ -48,7 +48,7 @@ export function SolanaPay({
       setReference('');
       setPaymentStatus('none');
     }
-  }, [solTotal, customerName, businessName, merchantWallet]);
+  }, [total, customerName, businessName, merchantWallet]);
 
   // Poll for payment
   useEffect(() => {
@@ -58,7 +58,7 @@ export function SolanaPay({
       reference &&
       merchantWallet &&
       merchantWallet.length > 0 &&
-      solTotal > 0
+      total > 0
     ) {
       (async () => {
         let retries = 0;
@@ -68,7 +68,7 @@ export function SolanaPay({
           try {
             const confirmed = await pollSolanaPayPayment({
               reference,
-              amount: solTotal,
+              amount: total,
               recipient: merchantWallet,
               timeout: 10,
               interval: 500,
@@ -92,12 +92,12 @@ export function SolanaPay({
       })();
     }
     return () => { stop = true; };
-  }, [paymentStatus, reference, solTotal, merchantWallet, onConfirmed]);
+  }, [paymentStatus, reference, total, merchantWallet, onConfirmed]);
 
   let qrError: string | null = null;
   if (!merchantWallet || merchantWallet.length === 0) {
     qrError = 'Merchant wallet not set. Please check business settings.';
-  } else if (solTotal <= 0) {
+  } else if (total <= 0) {
     qrError = 'Total must be greater than 0.';
   }
 

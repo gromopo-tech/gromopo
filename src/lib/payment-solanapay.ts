@@ -2,7 +2,7 @@ import { CartItem } from '@/types/cart';
 import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL, Connection } from '@solana/web3.js';
 
 interface SolanaPayParams {
-  solTotal: number;
+  total: number;
   cart: CartItem[];
   businessWallet: string;
   publicKey: PublicKey | null;
@@ -16,7 +16,7 @@ interface SolanaPayParams {
 }
 
 export async function handleSolanaPayPayment({
-  solTotal,
+  total,
   cart,
   businessWallet,
   publicKey,
@@ -29,21 +29,21 @@ export async function handleSolanaPayPayment({
   setCartSnapshot,
 }: SolanaPayParams) {
   if (!publicKey) {
-    alert('Conecta tu wallet para pagar.');
+    alert('Connect your wallet to pay.');
     return;
   }
-  if (solTotal <= 0) {
-    alert('El carrito está vacío.');
+  if (total <= 0) {
+    alert('The cart is empty.');
     return;
   }
   setPaymentStatus('pending');
   try {
-    const lamportsAmount = Math.round(solTotal * LAMPORTS_PER_SOL);
+    const lamportsAmount = Math.round(total * LAMPORTS_PER_SOL);
     const balance = await connection.getBalance(publicKey);
     const feeBuffer = 0.00001 * LAMPORTS_PER_SOL;
     if (balance < lamportsAmount + feeBuffer) {
       setPaymentStatus('idle');
-      alert('No tienes suficiente SOL para pagar y cubrir la comisión de la red.');
+      alert('You don\'t have enough SOL to pay and cover the network fee.');
       return;
     }
     const tx = new Transaction().add(

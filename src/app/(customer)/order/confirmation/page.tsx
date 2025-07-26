@@ -13,8 +13,7 @@ interface CartItem {
 interface OrderConfirmation {
   orderNumber: number;
   customerName?: string;
-  arsTotal?: number;
-  solTotal: number;
+  total: number;
   cart: CartItem[];
   txSignature?: string | null;
 }
@@ -48,7 +47,7 @@ export default function OrderConfirmationPage() {
       <h1 className="text-3xl font-bold mb-4 text-green-800">¡Orden confirmada!</h1>
       <div className="mb-2">Número de orden: <b>{order.orderNumber}</b></div>
       {order.customerName && <div className="mb-2">Cliente: <b>{order.customerName}</b></div>}
-      <div className="mb-2">Total: <b>{order.arsTotal?.toFixed(2) ?? "-"} ARS</b> / <b>{order.solTotal} SOL</b></div>
+      <div className="mb-2">Total: <b>{order.total.toFixed(2)} USDC</b></div>
       {order.txSignature && (
         <div className="mb-2">
           <a
