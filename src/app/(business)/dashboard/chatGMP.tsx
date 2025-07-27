@@ -24,6 +24,9 @@ export default function ChatGMP() {
   const [loading, setLoading] = useState(false);
   const [userQuery, setUserQuery] = useState("");
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingAnswer, setStreamingAnswer] = useState("");
 
   // Fetch chats on mount
   useEffect(() => {
@@ -38,6 +41,15 @@ export default function ChatGMP() {
     };
     fetchChats();
   }, [businessId]);
+
+  // Cleanup event source on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
 
   // Get the history for the selected chat (memoized to prevent unnecessary re-renders)
   const selectedChatHistory = useMemo(() => {
@@ -98,14 +110,131 @@ export default function ChatGMP() {
     });
   };
 
-  async function handleSend() {
+  // Handle streaming response
+  const handleStreamingResponse = async (query: string) => {
+    if (!userQuery.trim()) return;
+    
+    // Add user message to history
+    const newHistory = [...selectedChatHistory, { role: "user", text: query }];
+    await updateSelectedChatHistory(newHistory);
+    setUserQuery("");
+    
+    // Show loading state and prepare for streaming
+    setLoading(true);
+    setIsStreaming(true);
+    setStreamingAnswer("");
+    
+    // Get Firebase ID token
+    const user = auth.currentUser;
+    if (!user) {
+      await updateSelectedChatHistory([...newHistory, { role: "assistant", text: "You must be signed in to use chat." }]);
+      setLoading(false);
+      setIsStreaming(false);
+      return;
+    }
+    
+    const idToken = await user.getIdToken();
+    
+    // Close any existing EventSource
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+    
+    // Initialize temporary answer for streaming updates
+    let tempAnswer = "";
+    let receivedMetadata = false;
+    let context: string[] = [];
+    let intent: string | null = null;
+    let parsed_filter: any = null;
+    
+    // Use fetch with streaming instead of EventSource
+    try {
+      const response = await fetch('/api/rag-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ query, streaming: true })
+      });
+      
+      // Process the streaming response
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        // Add the new chunk to our buffer and process complete lines
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Process SSE messages (format: "data: {...}\n\n")
+        const messages = buffer.split('\n\n');
+        buffer = messages.pop() || ''; // Keep the last incomplete chunk
+        
+        for (const message of messages) {
+          if (message.startsWith('data: ')) {
+            try {
+              const jsonStr = message.slice(6); // Remove 'data: ' prefix
+              const data = JSON.parse(jsonStr);
+              
+              // Handle different message types
+              if (data.type === 'metadata' && data.data) {
+                receivedMetadata = true;
+                context = data.data.context || [];
+                intent = data.data.intent || null;
+                parsed_filter = data.data.parsed_filter || null;
+              }
+              else if (data.type === 'token' && data.text) {
+                tempAnswer += data.text;
+                setStreamingAnswer(tempAnswer);
+              }
+              else if (data.type === 'answer' && data.text) {
+                tempAnswer = data.text;
+                setStreamingAnswer(tempAnswer);
+              }
+              else if (data.type === 'end') {
+                // Update history with complete answer
+                const finalAnswer = data.text || tempAnswer;
+                updateSelectedChatHistory([...newHistory, { role: "assistant", text: finalAnswer }]);
+                setLoading(false);
+                setIsStreaming(false);
+                break;
+              }
+              else if (data.type === 'error') {
+                updateSelectedChatHistory([...newHistory, { role: "assistant", text: `Error: ${data.message || "Unknown error"}` }]);
+                setLoading(false);
+                setIsStreaming(false);
+                break;
+              }
+              else if (data.status === 'start') {
+                // Initial message, no action needed
+              }
+            } catch (error) {
+              console.error("Error parsing SSE message:", error);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error with streaming:", error);
+      // Handle error and fallback
+      updateSelectedChatHistory([...newHistory, { role: "assistant", text: `Error: ${error instanceof Error ? error.message : "Unknown error"}` }]);
+      setLoading(false);
+      setIsStreaming(false);
+    }
+  };
+
+  // Original non-streaming function (as fallback)
+  async function handleSendNonStreaming() {
     if (!userQuery.trim()) return;
     const newHistory = [...selectedChatHistory, { role: "user", text: userQuery }];
     await updateSelectedChatHistory(newHistory);
     setUserQuery("");
     setLoading(true);
 
-    // Get Firebase ID token
     const user = auth.currentUser;
     if (!user) {
       await updateSelectedChatHistory([...selectedChatHistory, { role: "assistant", text: "You must be signed in to use chat." }]);
@@ -120,7 +249,7 @@ export default function ChatGMP() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`
       },
-      body: JSON.stringify({ query: userQuery })
+      body: JSON.stringify({ query: userQuery, streaming: true })
     });
 
     const { answer, error } = await res.json();
@@ -131,15 +260,28 @@ export default function ChatGMP() {
       updatedHistory = [...newHistory, { role: "assistant", text: answer }];
     }
     await updateSelectedChatHistory(updatedHistory);
-    setUserQuery("");
     setLoading(false);
+  }
+
+  // Combined send function that uses streaming by default
+  async function handleSend() {
+    if (!userQuery.trim()) return;
+    
+    try {
+      // Use streaming approach
+      await handleStreamingResponse(userQuery);
+    } catch (error) {
+      console.error("Streaming error, falling back to non-streaming:", error);
+      // Fall back to non-streaming if there's an error
+      await handleSendNonStreaming();
+    }
   }
 
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [selectedChatHistory, loading]);
+  }, [selectedChatHistory, loading, streamingAnswer]);
 
   return (
     <div className="flex h-screen">
@@ -173,9 +315,17 @@ export default function ChatGMP() {
               )}
             </div>
           ))}
+          {/* Show streaming answer while it's coming in */}
+          {isStreaming && streamingAnswer && (
+            <div className="mb-2 text-left">
+              <span className="inline-block px-3 py-2 rounded text-left max-w-full break-words">
+                <ReactMarkdown>{streamingAnswer}</ReactMarkdown>
+              </span>
+            </div>
+          )}
           {loading && (
             <div className="flex items-center gap-2 text-sm">
-              <svg className="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
               </svg>
@@ -189,7 +339,8 @@ export default function ChatGMP() {
             placeholder="Ask me about your reviews"
             value={userQuery}
             onChange={e => setUserQuery(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleSend()}
+            onKeyDown={e => e.key === "Enter" && !loading && handleSend()}
+            disabled={loading}
           />
           <button
             onClick={handleSend}
