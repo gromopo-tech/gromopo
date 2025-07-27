@@ -28,7 +28,7 @@ if (process.env.NODE_ENV === "development") {
   connectFirestoreEmulator(
     db,
     process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST || "127.0.0.1",
-    Number(process.env.NEXT_PUBLIC_FIREBASE_DB_EMULATOR_PORT) || 8080
+    Number(process.env.NEXT_PUBLIC_FIREBASE_DB_EMULATOR_PORT) || 8081
   );
   connectStorageEmulator(
     storage,
