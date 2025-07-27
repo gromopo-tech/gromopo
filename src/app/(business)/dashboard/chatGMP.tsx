@@ -44,9 +44,11 @@ export default function ChatGMP() {
 
   // Cleanup event source on unmount
   useEffect(() => {
+    // Store the current eventSource in a variable to avoid stale references in cleanup
+    const eventSource = eventSourceRef.current;
     return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
+      if (eventSource) {
+        eventSource.close();
       }
     };
   }, []);
@@ -142,10 +144,8 @@ export default function ChatGMP() {
     
     // Initialize temporary answer for streaming updates
     let tempAnswer = "";
-    let receivedMetadata = false;
-    let context: string[] = [];
-    let intent: string | null = null;
-    let parsed_filter: any = null;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    let parsed_filter: Record<string, unknown> = {};
     
     // Use fetch with streaming instead of EventSource
     try {
@@ -182,10 +182,8 @@ export default function ChatGMP() {
               
               // Handle different message types
               if (data.type === 'metadata' && data.data) {
-                receivedMetadata = true;
-                context = data.data.context || [];
-                intent = data.data.intent || null;
-                parsed_filter = data.data.parsed_filter || null;
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                parsed_filter = data.data.parsed_filter || {};
               }
               else if (data.type === 'token' && data.text) {
                 tempAnswer += data.text;
