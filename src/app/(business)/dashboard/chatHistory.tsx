@@ -114,7 +114,7 @@ export default function ChatHistory(props: Props) {
                 )}
                 <div className="relative flex items-center">
                   <button
-                    className="opacity-0 group-hover:opacity-100 ml-2 px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer"
+                    className="ml-2 px-2 py-1 rounded bg-gray-200 dark:bg-gray-500 cursor-pointer"
                     onClick={e => { e.stopPropagation(); setMenuOpenId(chat.id === menuOpenId ? null : chat.id); }}
                   >
                     ...
