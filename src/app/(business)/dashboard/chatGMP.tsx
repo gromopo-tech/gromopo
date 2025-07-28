@@ -58,7 +58,7 @@ export default function ChatGMP() {
     };
     
     fetchChats();
-  }, [businessId]);
+  }, [businessId, selectedChatId]);
 
   // Cleanup event source on unmount
   useEffect(() => {

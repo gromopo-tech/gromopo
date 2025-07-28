@@ -39,8 +39,7 @@ export default function ChatHistory(props: Props) {
     setEditingId,
     editName,
     setEditName,
-    loading,
-    isLoadingChats, // Use this new prop instead of loading for displaying the spinner
+    isLoadingChats,
     handleNewChat,
     handleEditName,
     handleDeleteChat,
