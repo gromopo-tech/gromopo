@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useState, useEffect } from "react";
+import { Spinner } from "@/components/ui/spinner";
 
 type Chat = {
   id: string;
@@ -21,6 +22,7 @@ type Props = {
   editName: string;
   setEditName: (name: string) => void;
   loading: boolean;
+  isLoadingChats: boolean; // New prop specifically for chat history loading
   handleNewChat: () => void;
   handleEditName: (chatId: string, newName: string) => void;
   handleDeleteChat: (chatId: string) => void;
@@ -38,6 +40,7 @@ export default function ChatHistory(props: Props) {
     editName,
     setEditName,
     loading,
+    isLoadingChats, // Use this new prop instead of loading for displaying the spinner
     handleNewChat,
     handleEditName,
     handleDeleteChat,
@@ -67,7 +70,7 @@ export default function ChatHistory(props: Props) {
         </button>
       )}
       <aside
-        className={`w-64 bg-gray-200 dark:bg-gray-900 border-r h-screen p-4 flex flex-col transition-transform duration-300 z-20
+        className={`w-64 bg-gray-200 dark:bg-gray-900 border-r h-full p-4 flex flex-col transition-transform duration-300 z-20
           ${collapsed ? "-translate-x-full fixed top-0 left-0" : "translate-x-0 md:static"}`}
         style={{ boxShadow: collapsed ? "0 0 0 rgba(0,0,0,0)" : "2px 0 8px rgba(0,0,0,0.05)" }}
       >
@@ -83,11 +86,17 @@ export default function ChatHistory(props: Props) {
             ✕
           </button>
         </div>
-        <button className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer" 
-                onClick={handleNewChat}>+ New Chat</button>
+        <button 
+          className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer" 
+          onClick={handleNewChat}
+        >
+          + New Chat
+        </button>
         <ul className="flex-1 overflow-y-auto mb-4">
-          {loading ? (
-            <li>Loading...</li>
+          {isLoadingChats ? ( // Changed from loading to isLoadingChats
+            <li className="flex justify-center p-2">
+              <Spinner size="sm" />
+            </li>
           ) : (
             chats.map(chat => (
               <li

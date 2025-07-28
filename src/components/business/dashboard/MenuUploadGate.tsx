@@ -5,6 +5,7 @@ import { BusinessIdContext } from "@/components/business/business-id-provider";
 import { storage } from "@/lib/firebase/config";
 import { ref, listAll, uploadBytes, getDownloadURL } from "firebase/storage";
 import type { MenuFile, MenuError } from '@/types/menu';
+import { Spinner } from "@/components/ui/spinner";
 
 export default function MenuUploadGate({ children }: { children: React.ReactNode }) {
   const businessId = useContext(BusinessIdContext);
@@ -63,7 +64,7 @@ export default function MenuUploadGate({ children }: { children: React.ReactNode
   };
 
   if (loading) {
-    return <div>Loading menus...</div>;
+    return <Spinner />;
   }
 
   if (menus.length === 0) {

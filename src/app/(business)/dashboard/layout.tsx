@@ -23,5 +23,9 @@ export default async function DashboardLayout({
     redirect('/make');
   }
 
-  return <>{children}</>;
+  return (
+    <div className="h-[calc(100vh-3.5rem)] overflow-hidden">
+      {children}
+    </div>
+  );
 }

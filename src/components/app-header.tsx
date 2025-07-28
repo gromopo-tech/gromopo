@@ -64,7 +64,7 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
   }
 
   return (
-    <header className="relative z-50 px-4 py-2 bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400">
+    <header className="sticky top-0 z-50 px-4 py-2 bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 shadow-sm">
       <div className="mx-auto flex justify-between items-center">
         {/* Left: Always render the same container for hydration consistency */}
         <div className="flex items-baseline gap-4 min-w-0">
@@ -89,7 +89,7 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
 
         {isAuthenticated ? (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center w-full pointer-events-none">
-            <span className="pointer-events-auto font-semibold text-lg text-neutral-700 dark:text-neutral-200 bg-white/80 dark:bg-neutral-900/80 px-4 py-1 rounded shadow">
+            <span className="pointer-events-auto font-semibold text-lg text-neutral-700 dark:text-neutral-200 px-4 py-1 rounded">
               Hello, {auth.currentUser?.displayName || 'User'}
             </span>
           </div>
