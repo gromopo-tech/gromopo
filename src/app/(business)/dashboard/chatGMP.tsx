@@ -330,11 +330,11 @@ export default function ChatGMP() {
             </div>
           )}
         </div>
-        <div className="sticky bottom-0 left-0 w-full p-6 bg-white dark:bg-black border-t flex gap-2 z-10">
+        <div className="sticky bottom-0 left-0 w-full p-6 flex gap-2 z-10">
           <input
             type="text"
-            className="flex-grow shadow dark:shadow-gray-300 rounded px-3 py-2"
-            placeholder="Ask me about your reviews"
+            className="flex-grow shadow shadow-gray-900 dark:shadow-gray-100 bg-gray-100 dark:bg-gray-600 rounded px-3 py-2"
+            placeholder="Ask me what customer ratings/reviews are like or suggestions on how to improve business."
             value={userQuery}
             onChange={e => setUserQuery(e.target.value)}
             onKeyDown={e => e.key === "Enter" && !loading && handleSend()}
