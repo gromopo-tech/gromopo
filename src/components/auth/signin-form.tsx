@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { auth } from "@/lib/firebase/config";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { toast } from 'sonner';
 
 const schema = z.object({
   email: z.string().email("Invalid email"),
@@ -48,9 +49,9 @@ export default function SigninForm() {
     } catch (error) {
       console.error(error);
       if (error instanceof Error) {
-        alert("Error: " + error.message);
+        toast.error("Error: " + error.message);
       } else {
-        alert("An unknown error occurred.");
+        toast.error("An unknown error occurred.");
       }
     } finally {
       setIsSubmitting(false);

@@ -54,8 +54,9 @@ const HeroImages = () => {
                 width={400}
                 height={300}
                 alt={image.alt}
-                className="rounded-lg w-full h-[300px]"
-                priority={index === 0}
+                className="rounded-lg w-full"
+                style={{ width: "auto", height: "auto" }}
+                priority={true}
               />
             </div>
           ))}
@@ -87,7 +88,8 @@ const HeroImages = () => {
           height={300}
           alt={image.alt}
           className="rounded-lg object-cover w-[300px] h-[225px] md:w-[400px] md:h-[300px]"
-          priority={index === 0}
+          style={{ width: "auto", height: "auto" }}
+          priority={true}
         />
       ))}
     </div>

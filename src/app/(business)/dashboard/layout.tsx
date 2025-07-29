@@ -23,5 +23,9 @@ export default async function DashboardLayout({
     redirect('/make');
   }
 
-  return <>{children}</>;
+  return (
+    <div className="min-h-[calc(100vh-3.5rem)]">
+      {children}
+    </div>
+  );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useContext } from "react";
-import MenuUploadGate from '@/components/business/dashboard/MenuUploadGate';
 import { collection, query, orderBy, onSnapshot, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { BusinessIdContext } from "@/components/business/business-id-provider";
@@ -66,9 +65,8 @@ export default function OrdersList() {
   });
 
   return (
-    <MenuUploadGate>
-      <div>
-        <div className="mb-2 flex justify-between items-center gap-2">
+    <div>
+      <div className="mb-2 flex justify-between items-center gap-2">
           <div>
             <label htmlFor="order-date" className="font-semibold">Date:</label>
             <input
@@ -142,7 +140,7 @@ export default function OrdersList() {
           <div className="fixed inset-0 bg-black bg-opacity-40 dark:bg-opacity-70 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-900 p-6 rounded shadow-lg max-w-lg w-full relative border border-gray-200 dark:border-gray-700">
               <button
-                className="absolute top-2 right-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
+                className="absolute top-2 right-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white cursor-pointer"
                 onClick={() => setSelectedOrder(null)}
               >
                 &times;
@@ -173,7 +171,6 @@ export default function OrdersList() {
           </div>
         )}
       </div>
-    </MenuUploadGate>
   );
 }
 // ...existing code ends here, no stray bracket...

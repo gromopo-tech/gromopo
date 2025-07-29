@@ -3,6 +3,7 @@
 import { useContext, useEffect, useState, useRef } from "react";
 import { BusinessIdContext } from "@/components/business/business-id-provider";
 import { storage } from "@/lib/firebase/config";
+import { Spinner } from "@/components/ui/spinner";
 import {
   ref,
   listAll,
@@ -107,17 +108,19 @@ export default function MenusHandler() {
   };
 
   return (
-    <MenuUploadGate>
+    <MenuUploadGate menus={menus} loading={loading} onMenuUploaded={fetchMenus}>
       <div className="flex flex-col w-full h-full p-6 space-y-6">
         <div className="p-4 rounded shadow-md max-w-2xl">
           {error && <div className="text-red-600 mb-2">{error}</div>}
           {loading ? (
-            <div>Loading menus...</div>
+            <div className="flex justify-center py-4">
+              <Spinner />
+            </div>
           ) : menus.length === 0 ? null : (
             <div>
               <div className="mb-4 flex items-center gap-2">
-                <label className="inline-block cursor-pointer bg-blue-600 px-4 py-2 rounded shadow hover:bg-blue-700 transition mr-2 mb-0">
-                  Choose file
+                <label className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer">
+                  Upload menu
                   <input
                     type="file"
                     accept="application/pdf,image/*"
@@ -127,12 +130,11 @@ export default function MenusHandler() {
                     className="hidden"
                   />
                 </label>
-                <span className="text-sm">Add new menu</span>
-                {uploading && <span className="ml-2">Uploading...</span>}
+                {uploading && <Spinner size="xs" className="ml-2" />}
               </div>
-              <table className="w-full border text-left bg-white">
-                <thead className="bg-gray-100">
-                  <tr>
+              <table className="w-full border text-left border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                <thead>
+                  <tr className="bg-gray-100 dark:bg-gray-800">
                     <th className="p-2">Menu File</th>
                     <th className="p-2">Actions</th>
                   </tr>
@@ -144,7 +146,7 @@ export default function MenusHandler() {
                         <a href={menu.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{menu.name}</a>
                       </td>
                       <td className="p-2 flex gap-2 items-center">
-                        <label className="inline-block cursor-pointer bg-blue-100 text-blue-700 px-3 py-1 rounded shadow hover:bg-blue-200 transition mr-2 mb-0">
+                        <label className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer">
                           Replace
                           <input
                             type="file"
@@ -156,7 +158,7 @@ export default function MenusHandler() {
                           />
                         </label>
                         <button
-                          className="text-red-600 hover:underline"
+                          className="text-red-600 hover:underline cursor-pointer"
                           onClick={() => handleDelete(menu)}
                           disabled={replacingId === menu.fullPath}
                         >

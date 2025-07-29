@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { db } from "@/lib/firebase/config";
 import { collection, addDoc } from "firebase/firestore";
+import { toast } from 'sonner';
 
 // Schema for form validation
 const schema = z.object({
@@ -42,9 +43,9 @@ export default function PartnersForm() {
     } catch (error) {
       console.error(error);
       if (error instanceof Error) {
-        alert("Error: " + error.message);
+        toast.error("Error: " + error.message);
       } else {
-        alert("An unknown error occurred.");
+        toast.error("An unknown error occurred.");
       }
     } finally {
       setIsSubmitting(false);
