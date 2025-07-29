@@ -1,4 +1,4 @@
-import type { MenuItem } from '@/components/order/menu-types';
+import type { MenuItem } from '@/types/menu';
 
 export const drinks: MenuItem[] = [
   {

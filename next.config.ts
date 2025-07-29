@@ -7,6 +7,16 @@ const withPWA = require('next-pwa')({
 
 const nextConfig: NextConfig = withPWA({
   /* config options here */
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'api.qrserver.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
 })
 
 export default nextConfig

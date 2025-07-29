@@ -3,7 +3,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { auth } from "@/lib/firebase/config"; //import auth here
+import { auth } from "@/lib/firebase/config";
+import { toast } from 'sonner';
 import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth";
 
 // Schema for form validation
@@ -45,9 +46,9 @@ export default function RegisterForm() {
     } catch (error) {
       console.error(error);
       if (error instanceof Error) {
-        alert("Error: " + error.message);
+        toast.error("Error: " + error.message);
       } else {
-        alert("An unknown error occurred.");
+        toast.error("An unknown error occurred.");
       }
     } finally {
       setIsSubmitting(false);

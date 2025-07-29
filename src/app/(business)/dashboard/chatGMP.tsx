@@ -6,6 +6,7 @@ import { auth, db } from "@/lib/firebase/config";
 import { collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, query, orderBy, getDocs } from "firebase/firestore";
 import { BusinessIdContext } from "@/components/business/business-id-provider";
 import ChatHistory from "./chatHistory";
+import { Spinner } from "@/components/ui/spinner";
 
 type Chat = {
   id: string;
@@ -22,6 +23,7 @@ export default function ChatGMP() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isLoadingChats, setIsLoadingChats] = useState(false); // New state for tracking chat history loading
   const [userQuery, setUserQuery] = useState("");
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -32,15 +34,31 @@ export default function ChatGMP() {
   useEffect(() => {
     const fetchChats = async () => {
       if (!businessId) return;
-      const chatsRef = collection(db, `businesses/${businessId}/chats`);
-      const q = query(chatsRef, orderBy("createdAt", "desc"));
-      const snapshot = await getDocs(q);
-      const chatList: Chat[] = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as Omit<Chat, 'id'>) }));
-      setChats(chatList);
-      setSelectedChatId(chatList[0]?.id || null);
+      
+      setIsLoadingChats(true); // Set loading state for chat history
+      try {
+        const chatsRef = collection(db, `businesses/${businessId}/chats`);
+        const q = query(chatsRef, orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(q);
+        const chatDocs = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Chat[];
+        
+        setChats(chatDocs);
+        
+        if (chatDocs.length > 0 && !selectedChatId) {
+          setSelectedChatId(chatDocs[0].id);
+        }
+      } catch (error) {
+        console.error("Error fetching chats:", error);
+      } finally {
+        setIsLoadingChats(false); // Clear loading state
+      }
     };
+    
     fetchChats();
-  }, [businessId]);
+  }, [businessId, selectedChatId]);
 
   // Cleanup event source on unmount
   useEffect(() => {
@@ -186,6 +204,7 @@ export default function ChatGMP() {
                 parsed_filter = data.data.parsed_filter || {};
               }
               else if (data.type === 'token' && data.text) {
+                setLoading(false);
                 tempAnswer += data.text;
                 setStreamingAnswer(tempAnswer);
               }
@@ -220,7 +239,6 @@ export default function ChatGMP() {
       console.error("Error with streaming:", error);
       // Handle error and fallback
       updateSelectedChatHistory([...newHistory, { role: "assistant", text: `Error: ${error instanceof Error ? error.message : "Unknown error"}` }]);
-      setLoading(false);
       setIsStreaming(false);
     }
   };
@@ -282,7 +300,7 @@ export default function ChatGMP() {
   }, [selectedChatHistory, loading, streamingAnswer]);
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
       <ChatHistory
         chats={chats}
         selectedChatId={selectedChatId}
@@ -294,6 +312,7 @@ export default function ChatGMP() {
         editName={editName}
         setEditName={setEditName}
         loading={loading}
+        isLoadingChats={isLoadingChats} // Pass the new state for chat history loading
         handleNewChat={handleNewChat}
         handleEditName={handleEditName}
         handleDeleteChat={handleDeleteChat}
@@ -322,15 +341,12 @@ export default function ChatGMP() {
             </div>
           )}
           {loading && (
-            <div className="flex items-center gap-2 text-sm">
-              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-              </svg>
+            <div className="text-sm">
+              <Spinner size="sm" />
             </div>
           )}
         </div>
-        <div className="sticky bottom-0 left-0 w-full p-6 flex gap-2 z-10">
+        <div className="sticky bottom-0 left-0 w-full p-6 flex gap-2 z-10 bg-white dark:bg-black">
           <input
             type="text"
             className="flex-grow shadow shadow-gray-900 dark:shadow-gray-100 bg-gray-100 dark:bg-gray-600 rounded px-3 py-2"

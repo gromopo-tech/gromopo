@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-// Firestore imports
 import { submitOrderToFirestore } from '@/lib/order';
 import { useRouter } from 'next/navigation';
 import { CartItem } from '@/types/cart';
 import { PaymentProps } from '@/types/payment';
-import { handleSolanaPayPayment } from '@/lib/payment-solanapay';
+import { handleSolanaPayPayment } from '@/lib/solanaPay/wallet-payment';
+import { toast } from 'sonner';
+import { WalletButton } from '@/components/solana/solana-provider';
 
 export function PaymentActions({
   total,
@@ -54,6 +55,31 @@ export function PaymentActions({
   };
 
   const handlePay = async () => {
+    // Check for errors before processing payment
+    if (total <= 0) {
+      toast.error('The cart is empty.');
+      return;
+    }
+    if (!customerName || customerName.trim() === '') {
+      toast.error('Customer name is required.');
+      return;
+    }
+
+    // Check balance before attempting payment
+    try {
+      const balance = await connection.getBalance(publicKey!);
+      const lamportsAmount = Math.round(total * 1000000000); // LAMPORTS_PER_SOL
+      const feeBuffer = 0.00001 * 1000000000; // Fee buffer in lamports
+      
+      if (balance < lamportsAmount + feeBuffer) {
+        toast.error('You don\'t have enough SOL to pay and cover the network fee.');
+        return;
+      }
+    } catch (err) {
+      toast.error('Failed to check wallet balance: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      return;
+    }
+
     await handleSolanaPayPayment({
       total,
       cart,
@@ -113,15 +139,18 @@ export function PaymentActions({
 
   return (
     <div className="flex flex-col gap-2 mt-4">
-      <p className="text-lg font-semibold">Pay with:</p>
+      <h2 className="text-2xl font-bold mb-2">Pay ${total.toFixed(2)} with:</h2>
       <div className="flex gap-2">
-        <button
-          className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
-          onClick={handlePay}
-          disabled={paymentStatus === 'pending' || !connected || !publicKey}
-        >
-          {paymentStatus === 'pending' ? 'Paying...' : 'Solana Pay'}
-        </button>
+        {(!connected || !publicKey) ? (
+          <WalletButton />
+        ) : (
+          <button
+            className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
+            onClick={handlePay}
+          >
+            {paymentStatus === 'pending' ? 'Paying...' : 'Solana Pay'}
+          </button>
+        )}
       </div>
       {/* Always show payment success if paymentStatus is success and txSignature exists */}
       {paymentStatus === 'success' && txSignature && (

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Keypair } from '@solana/web3.js';
 import { generateSolanaPayUrl, pollSolanaPayPayment } from '@/lib/solanaPay/config';
+import { toast } from 'sonner';
 
 interface SolanaPayProps {
   total: number;
@@ -87,34 +88,33 @@ export function SolanaPay({
         }
         if (!stop) {
           setPaymentStatus('none');
-          alert('Payment not detected. Please ensure your wallet supports Solana Pay reference and try again.');
+          toast.error('Payment not detected. Please ensure your wallet supports Solana Pay reference and try again.');
         }
       })();
     }
     return () => { stop = true; };
   }, [paymentStatus, reference, total, merchantWallet, onConfirmed]);
 
-  let qrError: string | null = null;
-  if (!merchantWallet || merchantWallet.length === 0) {
-    qrError = 'Merchant wallet not set. Please check business settings.';
-  } else if (total <= 0) {
-    qrError = 'Total must be greater than 0.';
-  }
-
   return (
     <div className="mb-2">
-      {solanaPayUrl && !qrError ? (
-        <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(solanaPayUrl)}`} alt="Solana Pay QR Code" />
+      {solanaPayUrl ? (
+        <Image
+          src={`https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(solanaPayUrl)}`} 
+          alt="Solana Pay QR Code" 
+          width={360}
+          height={360}
+          className="mx-auto"
+        />
       ) : (
-        <div className="text-red-600 font-semibold min-h-[180px] flex items-center justify-center border border-dashed border-red-300 bg-red-50 rounded">
-          {qrError || 'QR code cannot be generated.'}
+        <div className="text-gray-600 font-semibold min-h-[180px] flex items-center justify-center border border-dashed border-gray-300 bg-gray-50 rounded">
+          Generating QR code...
         </div>
       )}
-      {paymentStatus === 'pending' && solanaPayUrl && !qrError && (
-        <div className="text-yellow-600 font-semibold">Esperando confirmación de pago...</div>
+      {paymentStatus === 'pending' && solanaPayUrl && (
+        <div className="text-yellow-600 font-semibold">Waiting for payment confirmation...</div>
       )}
       {paymentStatus === 'confirmed' && (
-        <div className="text-green-600 font-semibold">¡Pago confirmado!</div>
+        <div className="text-green-600 font-semibold">Payment confirmed!</div>
       )}
     </div>
   );
