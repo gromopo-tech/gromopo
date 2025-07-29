@@ -1,49 +1,29 @@
 "use client";
 
-import { useContext, useEffect, useState, useRef } from "react";
+import { useContext, useState, useRef } from "react";
 import { BusinessIdContext } from "@/components/business/business-id-provider";
 import { storage } from "@/lib/firebase/config";
-import { ref, listAll, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes } from "firebase/storage";
 import type { MenuFile, MenuError } from '@/types/menu';
 import { Spinner } from "@/components/ui/spinner";
 
-export default function MenuUploadGate({ children }: { children: React.ReactNode }) {
+interface MenuUploadGateProps {
+  children: React.ReactNode;
+  menus?: MenuFile[];
+  loading: boolean;
+  onMenuUploaded: () => void;
+}
+
+export default function MenuUploadGate({ 
+  children, 
+  menus = [], 
+  loading, 
+  onMenuUploaded 
+}: MenuUploadGateProps) {
   const businessId = useContext(BusinessIdContext);
-  const [menus, setMenus] = useState<MenuFile[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const fetchMenus = async () => {
-    if (!businessId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const menusRef = ref(storage, `businesses/${businessId}/menus/`);
-      const res = await listAll(menusRef);
-      const files: MenuFile[] = await Promise.all(
-        res.items.map(async (item) => {
-          return {
-            name: item.name,
-            fullPath: item.fullPath,
-            url: await getDownloadURL(item),
-          };
-        })
-      );
-      setMenus(files);
-    } catch (err) {
-      const error = err as MenuError;
-      setError("Failed to load menus. " + (error.code ? `(${error.code})` : ''));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMenus();
-    // eslint-disable-next-line
-  }, [businessId]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!businessId || !e.target.files?.length) return;
@@ -53,7 +33,7 @@ export default function MenuUploadGate({ children }: { children: React.ReactNode
       const file = e.target.files[0];
       const menuRef = ref(storage, `businesses/${businessId}/menus/${file.name}`);
       await uploadBytes(menuRef, file);
-      await fetchMenus();
+      onMenuUploaded(); // Notify parent to refresh menus
     } catch (err) {
       const error = err as MenuError;
       setError("Failed to upload menu." + (error.code ? ` (${error.code})` : ''));
@@ -67,7 +47,7 @@ export default function MenuUploadGate({ children }: { children: React.ReactNode
     return <Spinner />;
   }
 
-  if (menus.length === 0) {
+  if (!menus || menus.length === 0) {
     return (
       <div className="p-4 rounded shadow-md max-w-2xl">
         {error && <div className="text-red-600 mb-2">{error}</div>}

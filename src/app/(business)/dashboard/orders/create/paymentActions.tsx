@@ -99,10 +99,25 @@ export function PaymentActions({
       <div className="flex gap-2 mb-4">
         <button
           className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
-          onClick={() => setShowSolanaPay(true)}
+          onClick={() => {
+            // Check for errors before showing QR code
+            if (!merchantWallet || merchantWallet.length === 0) {
+              alert('Merchant wallet not set. Please check business settings.');
+              return;
+            }
+            if (total <= 0) {
+              alert('Total must be greater than 0.');
+              return;
+            }
+            if (!customerName || customerName.trim() === '') {
+              alert('Customer name is required.');
+              return;
+            }
+            setShowSolanaPay(true);
+          }}
           disabled={paymentStatus === 'pending' || isSubmitting || orderSubmittedRef.current}
         >
-          {isSubmitting ? 'Processing...' : 'Solana Pay'}
+          {isSubmitting ? 'Processing...' : 'Generate Solana Pay QR Code'}
         </button>
       </div>
       

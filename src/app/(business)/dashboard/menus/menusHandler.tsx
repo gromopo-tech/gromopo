@@ -108,7 +108,7 @@ export default function MenusHandler() {
   };
 
   return (
-    <MenuUploadGate>
+    <MenuUploadGate menus={menus} loading={loading} onMenuUploaded={fetchMenus}>
       <div className="flex flex-col w-full h-full p-6 space-y-6">
         <div className="p-4 rounded shadow-md max-w-2xl">
           {error && <div className="text-red-600 mb-2">{error}</div>}

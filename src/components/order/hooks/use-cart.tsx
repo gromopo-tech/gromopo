@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MenuItem, PriceType } from '@/types/menu';
+import { MenuItem } from '@/types/menu';
 import { CartItem } from '@/types/cart';
 
 export function useCart() {

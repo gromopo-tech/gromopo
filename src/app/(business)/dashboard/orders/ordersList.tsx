@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useContext } from "react";
-import MenuUploadGate from '@/components/business/dashboard/MenuUploadGate';
 import { collection, query, orderBy, onSnapshot, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { BusinessIdContext } from "@/components/business/business-id-provider";
@@ -66,9 +65,8 @@ export default function OrdersList() {
   });
 
   return (
-    <MenuUploadGate>
-      <div>
-        <div className="mb-2 flex justify-between items-center gap-2">
+    <div>
+      <div className="mb-2 flex justify-between items-center gap-2">
           <div>
             <label htmlFor="order-date" className="font-semibold">Date:</label>
             <input
@@ -173,7 +171,6 @@ export default function OrdersList() {
           </div>
         )}
       </div>
-    </MenuUploadGate>
   );
 }
 // ...existing code ends here, no stray bracket...
