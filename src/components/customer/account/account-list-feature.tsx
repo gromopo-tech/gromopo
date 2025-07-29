@@ -11,7 +11,7 @@ export default function AccountListFeature() {
 
   useEffect(() => {
     if (connected && publicKey) {
-      router.push(`/rewards/${publicKey.toBase58()}`)
+      router.push(`/transactions/${publicKey.toBase58()}`)
     }
   }, [connected, publicKey, router])
 
