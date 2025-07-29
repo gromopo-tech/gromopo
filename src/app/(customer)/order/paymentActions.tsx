@@ -6,7 +6,7 @@ import { submitOrderToFirestore } from '@/lib/order';
 import { useRouter } from 'next/navigation';
 import { CartItem } from '@/types/cart';
 import { PaymentProps } from '@/types/payment';
-import { handleSolanaPayPayment } from '@/lib/payment-solanapay';
+import { handleSolanaPayPayment } from '@/lib/solanaPay/wallet-payment';
 
 export function PaymentActions({
   total,

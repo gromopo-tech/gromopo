@@ -300,7 +300,7 @@ export default function ChatGMP() {
   }, [selectedChatHistory, loading, streamingAnswer]);
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)]">
+    <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
       <ChatHistory
         chats={chats}
         selectedChatId={selectedChatId}
