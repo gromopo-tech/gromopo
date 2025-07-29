@@ -1,10 +1,10 @@
 import Menu from '@/components/order/menu';
-import { PrivatePaymentActions } from '@/components/order/paymentActions';
+import { PaymentActions } from './paymentActions';
 
 export default function CreateOrderPage() {
   return (
       <Menu
-        PaymentActions={PrivatePaymentActions}
+        PaymentActions={PaymentActions}
       />
     );
   }
