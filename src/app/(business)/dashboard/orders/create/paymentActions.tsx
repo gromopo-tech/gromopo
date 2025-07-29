@@ -92,7 +92,7 @@ export function PaymentActions({
     if (paymentStatus === 'confirmed' && !orderSubmittedRef.current) {
       submitOrder();
     }
-  }, [paymentStatus]); // Simplified dependency array
+  }, [paymentStatus, businessId, businessName, cart, clearCart, customerName, isSubmitting, orderType, reference, total]);
 
   return (
     <div className="w-full max-w-lg">

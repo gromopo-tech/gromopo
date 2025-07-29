@@ -16,9 +16,9 @@ export default function OrderDetails({
   cart,
   total,
   customerName,
-  orderType,
+  //orderType,
   onCustomerNameChange,
-  onOrderTypeChange,
+  //onOrderTypeChange,
   onRemoveFromCart,
 }: OrderDetailsProps) {
   return (

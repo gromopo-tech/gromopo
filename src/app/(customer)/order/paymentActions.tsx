@@ -76,7 +76,7 @@ export function PaymentActions({
         return;
       }
     } catch (err) {
-      toast.error('Failed to check wallet balance. Please try again.');
+      toast.error('Failed to check wallet balance: ' + (err instanceof Error ? err.message : 'Unknown error'));
       return;
     }
 
