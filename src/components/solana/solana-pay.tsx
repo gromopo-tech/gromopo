@@ -1,6 +1,5 @@
 "use client";
 
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Keypair } from '@solana/web3.js';
 import { generateSolanaPayUrl, pollSolanaPayPayment } from '@/lib/solanaPay/config';
@@ -104,7 +103,13 @@ export function SolanaPay({
   return (
     <div className="mb-2">
       {solanaPayUrl && !qrError ? (
-        <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(solanaPayUrl)}`} alt="Solana Pay QR Code" />
+        <img 
+          src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(solanaPayUrl)}`} 
+          alt="Solana Pay QR Code" 
+          width={180}
+          height={180}
+          className="mx-auto"
+        />
       ) : (
         <div className="text-red-600 font-semibold min-h-[180px] flex items-center justify-center border border-dashed border-red-300 bg-red-50 rounded">
           {qrError || 'QR code cannot be generated.'}

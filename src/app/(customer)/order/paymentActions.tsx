@@ -112,7 +112,7 @@ export function PaymentActions({
 
   return (
     <div className="flex flex-col gap-2 mt-4">
-      <p className="text-lg font-semibold">Pay with:</p>
+      <h2 className="text-2xl font-bold mb-2">Payment</h2>
       <div className="flex gap-2">
         <button
           className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"

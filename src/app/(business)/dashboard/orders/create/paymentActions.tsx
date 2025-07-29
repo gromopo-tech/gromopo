@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useRef } from 'react';
 import { BusinessIdContext } from '@/components/business/business-id-provider';
 import { BusinessNameContext } from '@/components/business/business-name-provider';
 import { SolanaPay } from '@/components/solana/solana-pay';
@@ -22,6 +22,9 @@ export function PaymentActions({
   const [showSolanaPay, setShowSolanaPay] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Add a ref to track if order has been submitted
+  const orderSubmittedRef = useRef(false);
 
   // Fetch merchant wallet
   useEffect(() => {
@@ -56,11 +59,12 @@ export function PaymentActions({
   // Submit order to Firestore when payment is confirmed
   useEffect(() => {
     const submitOrder = async () => {
-      if (!businessId || !businessName) {
-        setOrderError('Missing business information');
+      // Prevent multiple submissions
+      if (orderSubmittedRef.current || !businessId || !businessName || isSubmitting) {
         return;
       }
       
+      orderSubmittedRef.current = true;
       setIsSubmitting(true);
       setOrderError(null);
       
@@ -75,28 +79,28 @@ export function PaymentActions({
           orderType: orderType || 'takeout',
         });
         clearCart();
-        window.location.href = '/dashboard/orders/take/confirmation';
+        window.location.href = '/dashboard/orders/create/confirmation';
       } catch (err) {
+        orderSubmittedRef.current = false; // Reset on error so user can retry
         setOrderError(err instanceof Error ? err.message : 'Failed to submit order');
       } finally {
         setIsSubmitting(false);
       }
     };
     
-    if (paymentStatus === 'confirmed') {
+    if (paymentStatus === 'confirmed' && !orderSubmittedRef.current) {
       submitOrder();
     }
-  }, [paymentStatus, reference, total, cart, businessId, businessName, customerName, orderType, clearCart]);
+  }, [paymentStatus]); // Simplified dependency array
 
   return (
     <div className="p-4 border w-full max-w-lg">
       <h2 className="text-2xl font-bold mb-2">Payment</h2>
-      <p className="text-lg font-semibold">Pay with:</p>
       <div className="flex gap-2 mb-4">
         <button
           className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
           onClick={() => setShowSolanaPay(true)}
-          disabled={paymentStatus === 'pending' || isSubmitting}
+          disabled={paymentStatus === 'pending' || isSubmitting || orderSubmittedRef.current}
         >
           {isSubmitting ? 'Processing...' : 'Solana Pay'}
         </button>
@@ -109,7 +113,7 @@ export function PaymentActions({
         </div>
       )}
       
-      {showSolanaPay && (
+      {showSolanaPay && !orderSubmittedRef.current && (
         <SolanaPay
           total={total}
           customerName={customerName || ''}

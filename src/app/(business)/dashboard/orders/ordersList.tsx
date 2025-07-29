@@ -142,7 +142,7 @@ export default function OrdersList() {
           <div className="fixed inset-0 bg-black bg-opacity-40 dark:bg-opacity-70 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-900 p-6 rounded shadow-lg max-w-lg w-full relative border border-gray-200 dark:border-gray-700">
               <button
-                className="absolute top-2 right-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
+                className="absolute top-2 right-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white cursor-pointer"
                 onClick={() => setSelectedOrder(null)}
               >
                 &times;
