@@ -107,7 +107,7 @@ export function PaymentActions({
               return;
             }
             if (total <= 0) {
-              toast.error('Total must be greater than 0.');
+              toast.error('The cart is empty.');
               return;
             }
             if (!customerName || customerName.trim() === '') {

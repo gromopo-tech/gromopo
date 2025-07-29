@@ -24,7 +24,7 @@ export default function PublicOrderPage() {
         <Menu onAddToCart={addToCart} />
       </div>
       
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <OrderDetails
           cart={cart}
           total={total}

@@ -1,6 +1,5 @@
 import { CartItem } from '@/types/cart';
 import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL, Connection } from '@solana/web3.js';
-import { toast } from 'sonner';
 
 interface SolanaPayParams {
   total: number;
@@ -29,32 +28,17 @@ export async function handleSolanaPayPayment({
   setTxSignature,
   setCartSnapshot,
 }: SolanaPayParams) {
-  if (!publicKey) {
-    toast.error('Connect your wallet to pay.');
-    return;
-  }
-  if (total <= 0) {
-    toast.error('The cart is empty.');
-    return;
-  }
   setPaymentStatus('pending');
   try {
     const lamportsAmount = Math.round(total * LAMPORTS_PER_SOL);
-    const balance = await connection.getBalance(publicKey);
-    const feeBuffer = 0.00001 * LAMPORTS_PER_SOL;
-    if (balance < lamportsAmount + feeBuffer) {
-      setPaymentStatus('idle');
-      toast.error('You don\'t have enough SOL to pay and cover the network fee.');
-      return;
-    }
     const tx = new Transaction().add(
       SystemProgram.transfer({
-        fromPubkey: publicKey,
+        fromPubkey: publicKey!,
         toPubkey: new PublicKey(businessWallet),
         lamports: lamportsAmount,
       })
     );
-    tx.feePayer = publicKey;
+    tx.feePayer = publicKey!;
     const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
     tx.recentBlockhash = blockhash;
     const signature = await sendTransaction(tx, connection);
