@@ -67,11 +67,10 @@ export function PaymentActions({
 
     // Check balance before attempting payment
     try {
-      const balance = await connection.getBalance(publicKey!);
-      const lamportsAmount = Math.round(total * 1000000000); // LAMPORTS_PER_SOL
+      const solBalance = await connection.getBalance(publicKey!);
       const feeBuffer = 0.00001 * 1000000000; // Fee buffer in lamports
-      
-      if (balance < lamportsAmount + feeBuffer) {
+
+      if (solBalance < feeBuffer) {
         toast.error('You don\'t have enough SOL to pay and cover the network fee.');
         return;
       }
@@ -152,15 +151,12 @@ export function PaymentActions({
           </button>
         )}
       </div>
-      {/* Always show payment success if paymentStatus is success and txSignature exists */}
       {paymentStatus === 'success' && txSignature && (
         <div className="mt-2 text-green-600">
           Payment made!{' '}
           <a href={`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="underline">View transaction</a>
         </div>
       )}
-      {/* Show order confirmation below payment success if confirmed (now handled by redirect) */}
-      {/* orderConfirmed && ... (removed) */}
       {orderError && (
         <div className="mt-2 text-red-600">Error saving order: {orderError}</div>
       )}

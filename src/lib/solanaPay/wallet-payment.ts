@@ -1,5 +1,7 @@
 import { CartItem } from '@/types/cart';
-import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL, Connection } from '@solana/web3.js';
+import { Transaction, PublicKey, Connection } from '@solana/web3.js';
+import { getAssociatedTokenAddress, createTransferInstruction } from '@solana/spl-token';
+import { USDC_MINT } from './config'; // Import from config
 
 interface SolanaPayParams {
   total: number;
@@ -30,24 +32,36 @@ export async function handleSolanaPayPayment({
 }: SolanaPayParams) {
   setPaymentStatus('pending');
   try {
-    const lamportsAmount = Math.round(total * LAMPORTS_PER_SOL);
+    // Convert USDC amount (6 decimals)
+    const usdcAmount = Math.round(total * 1000000);
+    
+    // Get associated token addresses
+    const fromTokenAccount = await getAssociatedTokenAddress(USDC_MINT, publicKey!);
+    const toTokenAccount = await getAssociatedTokenAddress(USDC_MINT, new PublicKey(businessWallet));
+    
+    // Create USDC transfer transaction
     const tx = new Transaction().add(
-      SystemProgram.transfer({
-        fromPubkey: publicKey!,
-        toPubkey: new PublicKey(businessWallet),
-        lamports: lamportsAmount,
-      })
+      createTransferInstruction(
+        fromTokenAccount,
+        toTokenAccount,
+        publicKey!,
+        usdcAmount
+      )
     );
+    
     tx.feePayer = publicKey!;
     const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
     tx.recentBlockhash = blockhash;
+    
     const signature = await sendTransaction(tx, connection);
     await connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature });
+    
     setTxSignature(signature);
     setCartSnapshot(cart);
     setPaymentStatus('success');
     onSuccess(signature);
-  } catch {
+  } catch (error) {
+    console.error('Payment error:', error);
     setPaymentStatus('error');
     onError();
   }

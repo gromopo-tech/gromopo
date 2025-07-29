@@ -15,6 +15,9 @@ if (process.env.NODE_ENV === 'development') {
   USDC_MINT_ADDRESS = new PublicKey(process.env.NEXT_PUBLIC_SOLANA_USDC_MINT_ADDRESS || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // Default to mainnet-beta USDC mint address
 }
 
+// Export the USDC mint address for use in other files
+export const USDC_MINT = USDC_MINT_ADDRESS;
+
 export function getSolanaConnection() {
   return { connection: new Connection(clusterApiUrl(SOLANA_NETWORK as Cluster)), mint: USDC_MINT_ADDRESS };
 }

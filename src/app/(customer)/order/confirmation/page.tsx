@@ -6,7 +6,7 @@ import { CartItem } from "@/types/cart";
 
 interface OrderConfirmation {
   orderNumber: number;
-  customerName?: string;
+  customerName: string;
   total: number;
   cart: CartItem[];
   txSignature?: string | null;
@@ -37,8 +37,8 @@ export default function OrderConfirmationPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6 mt-8 border rounded bg-green-50 text-green-900">
-      <h1 className="text-3xl font-bold mb-4 text-green-800">Order confirmed!</h1>
+    <div className="max-w-xl mx-auto p-6 mt-8 border-4 rounded">
+      <h1 className="text-3xl font-bold mb-4">Order confirmed!</h1>
       <div className="mb-2">Order number: <b>{order.orderNumber}</b></div>
       {order.customerName && <div className="mb-2">Customer: <b>{order.customerName}</b></div>}
       <div className="mb-2">Total: <b>{order.total.toFixed(2)} USDC</b></div>
@@ -64,14 +64,15 @@ export default function OrderConfirmationPage() {
           ))}
         </ul>
       </div>
+      {/* TODO: Implement order status view
       <div className="mt-8 text-center">
         <a
-          href="/customer/order"
-          className="inline-block px-4 py-2 bg-green-600 rounded hover:bg-green-700"
+          href={`/transactions`}
+          className="btn w-full border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
         >
-          Make another order
+          View order status
         </a>
-      </div>
+      </div>*/}
     </div>
   );
 }
