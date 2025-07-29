@@ -9,6 +9,7 @@ import { signOut } from 'firebase/auth';
 import { useRouter } from "next/navigation";
 import { auth } from '@/lib/firebase/config';
 import { RoleContext } from '@/components/business/role-provider'
+import { toast } from 'sonner';
 
 const customerLinks: { label: string; path: string }[] = [
   // More links...
@@ -35,7 +36,7 @@ function AuthButton({ isAuthenticated }: { isAuthenticated: boolean }) {
                   router.push("/signin");
                 } catch (error) {
                   console.error("Error signing out:", error);
-                  alert("Failed to sign out. Please try again.");
+                  toast.error("Failed to sign out. Please try again.");
                 }
               }}>
       Sign Out

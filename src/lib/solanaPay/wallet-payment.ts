@@ -1,5 +1,6 @@
 import { CartItem } from '@/types/cart';
 import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL, Connection } from '@solana/web3.js';
+import { toast } from 'sonner';
 
 interface SolanaPayParams {
   total: number;
@@ -29,11 +30,11 @@ export async function handleSolanaPayPayment({
   setCartSnapshot,
 }: SolanaPayParams) {
   if (!publicKey) {
-    alert('Connect your wallet to pay.');
+    toast.error('Connect your wallet to pay.');
     return;
   }
   if (total <= 0) {
-    alert('The cart is empty.');
+    toast.error('The cart is empty.');
     return;
   }
   setPaymentStatus('pending');
@@ -43,7 +44,7 @@ export async function handleSolanaPayPayment({
     const feeBuffer = 0.00001 * LAMPORTS_PER_SOL;
     if (balance < lamportsAmount + feeBuffer) {
       setPaymentStatus('idle');
-      alert('You don\'t have enough SOL to pay and cover the network fee.');
+      toast.error('You don\'t have enough SOL to pay and cover the network fee.');
       return;
     }
     const tx = new Transaction().add(

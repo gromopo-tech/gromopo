@@ -7,6 +7,7 @@ import { SolanaPay } from '@/components/solana/solana-pay';
 import { PaymentProps } from '@/types/payment';
 import { submitOrderToFirestore } from '@/lib/order';
 import { db } from '@/lib/firebase/config';
+import { toast } from 'sonner';
 
 export function PaymentActions({
   total,
@@ -102,15 +103,15 @@ export function PaymentActions({
           onClick={() => {
             // Check for errors before showing QR code
             if (!merchantWallet || merchantWallet.length === 0) {
-              alert('Merchant wallet not set. Please check business settings.');
+              toast.error('Merchant wallet not set. Please check business settings.');
               return;
             }
             if (total <= 0) {
-              alert('Total must be greater than 0.');
+              toast.error('Total must be greater than 0.');
               return;
             }
             if (!customerName || customerName.trim() === '') {
-              alert('Customer name is required.');
+              toast.error('Customer name is required.');
               return;
             }
             setShowSolanaPay(true);

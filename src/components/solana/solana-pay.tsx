@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Keypair } from '@solana/web3.js';
 import { generateSolanaPayUrl, pollSolanaPayPayment } from '@/lib/solanaPay/config';
+import { toast } from 'sonner';
 
 interface SolanaPayProps {
   total: number;
@@ -87,7 +88,7 @@ export function SolanaPay({
         }
         if (!stop) {
           setPaymentStatus('none');
-          alert('Payment not detected. Please ensure your wallet supports Solana Pay reference and try again.');
+          toast.error('Payment not detected. Please ensure your wallet supports Solana Pay reference and try again.');
         }
       })();
     }
