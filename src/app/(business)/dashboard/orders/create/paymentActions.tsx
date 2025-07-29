@@ -95,8 +95,8 @@ export function PaymentActions({
   }, [paymentStatus]); // Simplified dependency array
 
   return (
-    <div className="p-4 border w-full max-w-lg">
-      <h2 className="text-2xl font-bold mb-2">Payment</h2>
+    <div className="w-full max-w-lg">
+      <h2 className="text-2xl font-bold mb-2">Pay ${total.toFixed(2)} with:</h2>
       <div className="flex gap-2 mb-4">
         <button
           className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
@@ -118,7 +118,7 @@ export function PaymentActions({
           }}
           disabled={paymentStatus === 'pending' || isSubmitting || orderSubmittedRef.current}
         >
-          {isSubmitting ? 'Processing...' : 'Generate Solana Pay QR Code'}
+          {isSubmitting ? 'Processing...' : 'Solana Pay'}
         </button>
       </div>
       
@@ -138,14 +138,6 @@ export function PaymentActions({
           onConfirmed={handleConfirmed}
         />
       )}
-      <ul className="mb-2">
-        {cart.map((item, idx) => (
-          <li key={idx}><b>{item.name}</b> ({item.size}) - ${item.price}</li>
-        ))}
-        <li><b>Total:</b> {total.toFixed(4)} USDC</li>
-        <li><b>Customer:</b> {customerName}</li>
-        <li><b>Order Type:</b> {orderType}</li>
-      </ul>
     </div>
   );
 }

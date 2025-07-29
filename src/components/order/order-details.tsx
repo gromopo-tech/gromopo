@@ -23,7 +23,7 @@ export default function OrderDetails({
 }: OrderDetailsProps) {
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Order Details</h2>
+      <h2 className="text-2xl font-bold">Order Details:</h2>
       
       {/* Customer Info */}
       <div className="space-y-2">
@@ -38,7 +38,7 @@ export default function OrderDetails({
           />
         </label>
         
-        <label className="block text-sm font-medium">
+        {/*<label className="block text-sm font-medium">
           Order Type:
           <select
             value={orderType}
@@ -48,7 +48,7 @@ export default function OrderDetails({
             <option value="takeout">Takeout</option>
             <option value="dine-in">Dine-in</option>
           </select>
-        </label>
+        </label>*/}
       </div>
 
       {/* Cart */}
@@ -62,7 +62,7 @@ export default function OrderDetails({
               <li key={index} className="flex justify-between items-center p-2 border rounded">
                 <div>
                   <span className="font-medium">{item.name}</span>
-                  <span className="text-sm text-gray-600 ml-2">({item.size})</span>
+                  <span className="text-sm ml-2">({item.size})</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span>${item.price.toFixed(2)}</span>

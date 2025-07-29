@@ -98,11 +98,11 @@ export function SolanaPay({
   return (
     <div className="mb-2">
       {solanaPayUrl ? (
-        <img 
-          src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(solanaPayUrl)}`} 
+        <Image
+          src={`https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(solanaPayUrl)}`} 
           alt="Solana Pay QR Code" 
-          width={180}
-          height={180}
+          width={360}
+          height={360}
           className="mx-auto"
         />
       ) : (
