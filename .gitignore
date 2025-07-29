@@ -2,6 +2,10 @@ node_modules
 .next
 .env.local
 public/.DS_Store
+public/workbox-*.js
+public/sw.js
+public/sw.js.map
+public/workbox-*.js.map
 .DS_Store
 env.local
 .env.development
