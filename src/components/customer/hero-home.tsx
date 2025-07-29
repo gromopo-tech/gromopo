@@ -79,18 +79,19 @@ const HeroImages = () => {
 
   // Desktop view - side by side images
   return (
-    <div className="hero-images flex justify-center gap-4 mt-8 max-w-6xl mx-auto">
+    <div className="hero-images flex justify-center gap-4 mt-8 max-w-6xl mx-auto px-4">
       {images.map((image, index) => (
-        <Image
-          key={index}
-          src={image.src}
-          width={400}
-          height={300}
-          alt={image.alt}
-          className="rounded-lg object-cover w-[300px] h-[225px] md:w-[400px] md:h-[300px]"
-          style={{ width: "auto", height: "auto" }}
-          priority={true}
-        />
+        <div key={index} className="flex-1 max-w-[300px]">
+          <Image
+            src={image.src}
+            width={400}
+            height={300}
+            alt={image.alt}
+            className="rounded-lg object-cover w-full h-auto"
+            style={{ maxWidth: "100%", height: "auto" }}
+            priority={true}
+          />
+        </div>
       ))}
     </div>
   );
