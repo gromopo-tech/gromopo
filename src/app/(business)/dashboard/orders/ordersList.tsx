@@ -15,7 +15,7 @@ export default function OrdersList() {
     const today = new Date();
     return today.toISOString().slice(0, 10); // yyyy-mm-dd
   });
-  const [orderTypeFilter, setOrderTypeFilter] = useState<'all' | 'dine-in' | 'takeout'>('all');
+  const [orderTypeFilter, setOrderTypeFilter] = useState<'all' | 'dine-in' | 'takeout' | 'delivery'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Order Created' | 'Preparing' | 'Prepared'>('all');
 
   useEffect(() => {
@@ -87,7 +87,7 @@ export default function OrdersList() {
         </div>
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <label className="mr-2 font-medium">Filter by Order Type:</label>
-          {['all', 'dine-in', 'takeout'].map((type) => (
+          {['all', 'dine-in', 'takeout', 'delivery'].map((type) => (
             <button
               key={type}
               className={`mr-2 px-3 py-1 rounded ${orderTypeFilter === type ? 'dark:bg-gray-700 bg-gray-300' : 'border'}`}

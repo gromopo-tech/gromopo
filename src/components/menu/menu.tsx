@@ -15,7 +15,7 @@ export default function Menu({ onAddToCart }: MenuProps) {
     return (
       <div key={item.name} className="border p-4 rounded">
         <h3 className="font-semibold">{item.name}</h3>
-        <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+        <p className="text-sm mb-2">{item.description}</p>
         
         {isMultiSize ? (
           <div className="flex gap-2 flex-wrap">
