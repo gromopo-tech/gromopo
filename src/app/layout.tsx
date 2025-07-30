@@ -21,19 +21,29 @@ export const viewport = {
   themeColor: '#ff6600',
 }
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ 
+  children 
+}: Readonly<{ 
+  children: React.ReactNode 
+}>) {
   // Get JWT from cookies and decode role (server-side only)
   let role: string | null = null;
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get('__session');
-  const token = sessionCookie?.value;
-  if (token) {
-    const decoded = jwt.decode(token) as { role?: string } | null;
-    role = decoded?.role || null;
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session');
+    const token = sessionCookie?.value;
+    if (token) {
+      const decoded = jwt.decode(token) as { role?: string } | null;
+      role = decoded?.role || null;
+    }
+  } catch (error) {
+    // Handle cookie parsing errors gracefully
+    console.warn('Cookie parsing error:', error);
   }
+
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`antialiased`}>
+      <body className="antialiased" suppressHydrationWarning>
         <RoleProvider role={role}>
           <AppProviders>
             <AppLayout>{children}</AppLayout>
@@ -43,6 +53,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     </html>
   )
 }
+
 // Patch BigInt so we can log it using JSON.stringify without any errors
 declare global {
   interface BigInt {

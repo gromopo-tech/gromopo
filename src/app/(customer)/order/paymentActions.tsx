@@ -119,7 +119,7 @@ export function PaymentActions({
   }, [orderConfirmed]);
 
   // Redirect to confirmation page after order is confirmed
-  useEffect(() => {
+  {/* useEffect(() => {
     if (orderConfirmed && orderNumber) {
       // Save order details to sessionStorage for the confirmation page
       const orderDetails = {
@@ -134,7 +134,7 @@ export function PaymentActions({
       router.push('/order/confirmation');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderConfirmed, orderNumber]);
+  }, [orderConfirmed, orderNumber]); */}
 
   return (
     <div className="flex flex-col gap-2 mt-4">
@@ -153,7 +153,7 @@ export function PaymentActions({
       </div>
       {paymentStatus === 'success' && txSignature && (
         <div className="mt-2 text-green-600">
-          Payment made!{' '}
+          Order #{orderNumber} confirmed!{' '}
           <a href={`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="underline">View transaction</a>
         </div>
       )}
