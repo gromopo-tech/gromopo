@@ -350,7 +350,7 @@ export default function ChatGMP() {
           <input
             type="text"
             className="flex-grow shadow shadow-gray-900 dark:shadow-gray-100 bg-gray-100 dark:bg-gray-600 rounded px-3 py-2"
-            placeholder="Ask me what customer ratings/reviews are like or suggestions on how to improve business."
+            placeholder="Ask me about customer ratings/reviews or how to improve business."
             value={userQuery}
             onChange={e => setUserQuery(e.target.value)}
             onKeyDown={e => e.key === "Enter" && !loading && handleSend()}
