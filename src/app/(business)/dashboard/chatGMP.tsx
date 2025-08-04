@@ -59,7 +59,7 @@ export default function ChatGMP() {
     };
     
     fetchChats();
-  }, [businessId]); // Remove selectedChatId from dependencies
+  }, [businessId, selectedChatId]); // Remove selectedChatId from dependencies
 
   // Cleanup event source on unmount
   useEffect(() => {
@@ -209,14 +209,14 @@ export default function ChatGMP() {
               else if (data.type === 'end') {
                 // Final update to Firestore only once at the end
                 const finalAnswer = data.text || tempAnswer;
-                await updateSelectedChatHistory([...newHistory, { role: "assistant", text: finalAnswer }]);
+                updateSelectedChatHistory([...newHistory, { role: "assistant", text: finalAnswer }]);
                 setLoading(false);
                 setIsStreaming(false);
                 setStreamingAnswer(""); // Clear streaming state
                 break;
               }
               else if (data.type === 'error') {
-                await updateSelectedChatHistory([...newHistory, { role: "assistant", text: `Error: ${data.message || "Unknown error"}` }]);
+                updateSelectedChatHistory([...newHistory, { role: "assistant", text: `Error: ${data.message || "Unknown error"}` }]);
                 setLoading(false);
                 setIsStreaming(false);
                 setStreamingAnswer("");
@@ -230,47 +230,11 @@ export default function ChatGMP() {
       }
     } catch (error) {
       console.error("Error with streaming:", error);
-      await updateSelectedChatHistory([...newHistory, { role: "assistant", text: `Error: ${error instanceof Error ? error.message : "Unknown error"}` }]);
+      updateSelectedChatHistory([...newHistory, { role: "assistant", text: `Error: ${error instanceof Error ? error.message : "Unknown error"}` }]);
       setIsStreaming(false);
       setStreamingAnswer("");
     }
   };
-
-  // Original non-streaming function (as fallback)
-  async function handleSendNonStreaming() {
-    if (!userQuery.trim()) return;
-    const newHistory = [...selectedChatHistory, { role: "user", text: userQuery }];
-    await updateSelectedChatHistory(newHistory);
-    setUserQuery("");
-    setLoading(true);
-
-    const user = auth.currentUser;
-    if (!user) {
-      await updateSelectedChatHistory([...selectedChatHistory, { role: "assistant", text: "You must be signed in to use chat." }]);
-      setLoading(false);
-      return;
-    }
-    const idToken = await user.getIdToken();
-
-    const res = await fetch("/api/rag-proxy", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${idToken}`
-      },
-      body: JSON.stringify({ query: userQuery, streaming: true })
-    });
-
-    const { answer, error } = await res.json();
-    let updatedHistory;
-    if (error) {
-      updatedHistory = [...newHistory, { role: "assistant", text: error }];
-    } else {
-      updatedHistory = [...newHistory, { role: "assistant", text: answer }];
-    }
-    await updateSelectedChatHistory(updatedHistory);
-    setLoading(false);
-  }
 
   // Combined send function that uses streaming by default
   async function handleSend() {
@@ -281,8 +245,6 @@ export default function ChatGMP() {
       await handleStreamingResponse(userQuery);
     } catch (error) {
       console.error("Streaming error, falling back to non-streaming:", error);
-      // Fall back to non-streaming if there's an error
-      await handleSendNonStreaming();
     }
   }
 
