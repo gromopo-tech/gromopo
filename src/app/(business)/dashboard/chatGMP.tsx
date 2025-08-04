@@ -47,6 +47,7 @@ export default function ChatGMP() {
         
         setChats(chatDocs);
         
+        // Only set selected chat if none is selected
         if (chatDocs.length > 0 && !selectedChatId) {
           setSelectedChatId(chatDocs[0].id);
         }
@@ -58,7 +59,7 @@ export default function ChatGMP() {
     };
     
     fetchChats();
-  }, [businessId, selectedChatId]);
+  }, [businessId]); // Remove selectedChatId from dependencies
 
   // Cleanup event source on unmount
   useEffect(() => {
@@ -134,7 +135,7 @@ export default function ChatGMP() {
   const handleStreamingResponse = async (query: string) => {
     if (!userQuery.trim()) return;
     
-    // Add user message to history
+    // Add user message to history immediately
     const newHistory = [...selectedChatHistory, { role: "user", text: query }];
     await updateSelectedChatHistory(newHistory);
     setUserQuery("");
@@ -160,12 +161,10 @@ export default function ChatGMP() {
       eventSourceRef.current.close();
     }
     
-    // Initialize temporary answer for streaming updates
     let tempAnswer = "";
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let parsed_filter: Record<string, unknown> = {};
     
-    // Use fetch with streaming instead of EventSource
     try {
       const response = await fetch('/api/rag-proxy', {
         method: 'POST',
@@ -176,7 +175,6 @@ export default function ChatGMP() {
         body: JSON.stringify({ query, streaming: true })
       });
       
-      // Process the streaming response
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
@@ -185,20 +183,16 @@ export default function ChatGMP() {
         const { done, value } = await reader.read();
         if (done) break;
         
-        // Add the new chunk to our buffer and process complete lines
         buffer += decoder.decode(value, { stream: true });
-        
-        // Process SSE messages (format: "data: {...}\n\n")
         const messages = buffer.split('\n\n');
-        buffer = messages.pop() || ''; // Keep the last incomplete chunk
+        buffer = messages.pop() || '';
         
         for (const message of messages) {
           if (message.startsWith('data: ')) {
             try {
-              const jsonStr = message.slice(6); // Remove 'data: ' prefix
+              const jsonStr = message.slice(6);
               const data = JSON.parse(jsonStr);
               
-              // Handle different message types
               if (data.type === 'metadata' && data.data) {
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 parsed_filter = data.data.parsed_filter || {};
@@ -206,28 +200,27 @@ export default function ChatGMP() {
               else if (data.type === 'token' && data.text) {
                 setLoading(false);
                 tempAnswer += data.text;
-                setStreamingAnswer(tempAnswer);
+                setStreamingAnswer(tempAnswer); // Only update UI state, not Firestore
               }
               else if (data.type === 'answer' && data.text) {
                 tempAnswer = data.text;
                 setStreamingAnswer(tempAnswer);
               }
               else if (data.type === 'end') {
-                // Update history with complete answer
+                // Final update to Firestore only once at the end
                 const finalAnswer = data.text || tempAnswer;
-                updateSelectedChatHistory([...newHistory, { role: "assistant", text: finalAnswer }]);
+                await updateSelectedChatHistory([...newHistory, { role: "assistant", text: finalAnswer }]);
                 setLoading(false);
                 setIsStreaming(false);
+                setStreamingAnswer(""); // Clear streaming state
                 break;
               }
               else if (data.type === 'error') {
-                updateSelectedChatHistory([...newHistory, { role: "assistant", text: `Error: ${data.message || "Unknown error"}` }]);
+                await updateSelectedChatHistory([...newHistory, { role: "assistant", text: `Error: ${data.message || "Unknown error"}` }]);
                 setLoading(false);
                 setIsStreaming(false);
+                setStreamingAnswer("");
                 break;
-              }
-              else if (data.status === 'start') {
-                // Initial message, no action needed
               }
             } catch (error) {
               console.error("Error parsing SSE message:", error);
@@ -237,9 +230,9 @@ export default function ChatGMP() {
       }
     } catch (error) {
       console.error("Error with streaming:", error);
-      // Handle error and fallback
-      updateSelectedChatHistory([...newHistory, { role: "assistant", text: `Error: ${error instanceof Error ? error.message : "Unknown error"}` }]);
+      await updateSelectedChatHistory([...newHistory, { role: "assistant", text: `Error: ${error instanceof Error ? error.message : "Unknown error"}` }]);
       setIsStreaming(false);
+      setStreamingAnswer("");
     }
   };
 
@@ -299,6 +292,17 @@ export default function ChatGMP() {
     }
   }, [selectedChatHistory, loading, streamingAnswer]);
 
+  // Add cleanup when component unmounts or chat changes
+  useEffect(() => {
+    return () => {
+      setIsStreaming(false);
+      setStreamingAnswer("");
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, [selectedChatId]); // Reset streaming state when chat changes
+
   return (
     <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
       <ChatHistory
@@ -332,17 +336,18 @@ export default function ChatGMP() {
               )}
             </div>
           ))}
-          {/* Show streaming answer while it's coming in */}
-          {isStreaming && streamingAnswer && (
+          
+          {/* Show streaming answer as a separate message */}
+          {isStreaming && (
             <div className="mb-2 text-left">
-              <span className="inline-block px-3 py-2 rounded text-left max-w-full break-words">
+              <span className="inline-block px-3 py-2 rounded text-left max-w-full break-words border-l-4 border-blue-500">
                 <ReactMarkdown>{streamingAnswer}</ReactMarkdown>
-              </span>
-            </div>
+                {loading && (
+                  <div className="text-sm">
+                    <Spinner size="sm" />
+                  </div>
           )}
-          {loading && (
-            <div className="text-sm">
-              <Spinner size="sm" />
+              </span>
             </div>
           )}
         </div>
