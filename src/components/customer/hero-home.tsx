@@ -106,33 +106,37 @@ export default function HeroHome() {
           {/* Section header */}
           <div className="pb-12 text-center md:pb-20">
             <h1
-              className="pb-5 text-4xl font-semibold md:text-5xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 bg-clip-text text-transparent animate-gradient-x"
+              className="pb-5 text-4xl font-semibold md:text-5xl bg-gradient-to-r from-amber-500 to-emerald-500 bg-clip-text text-transparent animate-gradient-x"
               data-aos="fade-up"
             >
               Growing mom and pop shops
             </h1>
             <div className="mx-auto max-w-3xl">
               <p
-                className="mb-8 text-xl bg-gradient-to-r from-orange-400 via-rose-400 to-cyan-400 bg-clip-text text-transparent animate-gradient-x"
+                className="mb-8 text-lg text-emerald-800 dark:text-emerald-100 pt-4"
                 data-aos="fade-up"
                 data-aos-delay={200}
               >
-                Leverage AI and the network effect on-chain to grow your business from the ground up.
-                Tailored specifically for mom and pop shops in the food and beverage industry.
-                <br></br>
-                Join us today to get exclusive early access!
+                An all-in-one AI assistant and ordering platform built for mom and pop shops in the food and beverage industry. Simplify orders, cut costs, and grow your business with modern tools — without the middlemen.
               </p>
               <div className="mx-auto max-w-xs sm:flex sm:max-w-none sm:justify-center">
-                <div data-aos="fade-up" data-aos-delay={400}>
+                <div className="flex flex-col sm:flex-row gap-4" data-aos="fade-up" data-aos-delay={400}>
                   <a
-                    className="btn bg-gradient-to-r from-fuchsia-500 to-cyan-400 text-white dark:text-black hover:from-fuchsia-600 hover:to-cyan-500 px-2 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-fuchsia-400"
+                    className="btn bg-gradient-to-r from-amber-400 via-amber-500 to-emerald-500 text-white dark:text-black hover:from-amber-400 hover:to-emerald-600 px-2 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2"
                     href="signup"
                   >
                     <span className="relative inline-flex items-center">
-                      Get early access
-                      <span className="ml-1 tracking-normal transition-transform group-hover:tranneutral-x-0.5">
-                        -&gt;
-                      </span>
+                      Launch My Ordering Page
+                      <span className="ml-1 tracking-normal transition-transform">-&gt;</span>
+                    </span>
+                  </a>
+                  <a
+                    className="btn bg-gradient-to-r from-emerald-500 to-emerald-600 text-white dark:text-black px-2 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2"
+                    href="demo"
+                  >
+                    <span className="relative inline-flex items-center">
+                      Book a 10-Min Demo
+                      <span className="ml-1 tracking-normal transition-transform">-&gt;</span>
                     </span>
                   </a>
                 </div>

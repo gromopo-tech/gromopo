@@ -7,7 +7,7 @@ service cloud.firestore {
       allow read: if false; // Block public reads
     }
 
-    match /partners/{partner} {
+    match /demos/{demo} {
       allow create: if request.auth == null; // No auth needed
       allow read: if false; // Block public reads
     }
