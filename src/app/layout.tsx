@@ -7,6 +7,9 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { RoleProvider } from '@/components/business/role-provider';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'GroMoPo',
   description: '',
