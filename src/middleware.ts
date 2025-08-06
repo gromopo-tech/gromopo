@@ -7,8 +7,6 @@ export function middleware(request: NextRequest) {
   console.log('🚀 Middleware running:', { hostname, pathname });
   
   const isSandrasSubdomain = hostname.startsWith('sandras-sandwiches.');
-  const isLocalhost = hostname.startsWith('localhost') || hostname.startsWith('127.0.0.1');
-  const isDevelopment = process.env.NODE_ENV === 'development';
   
   // Handle sandras-sandwiches subdomain
   if (isSandrasSubdomain) {

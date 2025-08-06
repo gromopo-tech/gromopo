@@ -63,8 +63,6 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
     return path === '/' ? pathname === '/' : pathname.startsWith(path)
   }
 
-  const isOrder = pathname === '/order'
-
   // Conditionally add Employees link for owner/admin
   let effectiveBusinessLinks = [...businessLinks];
   if (isAuthenticated && (role === 'owner' || role === 'admin')) {
