@@ -15,3 +15,6 @@ firebase-debug.log
 playground.tsx
 test-ledger/
 pglite-debug.log
+
+# Keep our security patch
+!bigint-buffer-safe/

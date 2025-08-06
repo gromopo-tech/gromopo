@@ -63,14 +63,15 @@ export default function ChatGMP() {
 
   // Cleanup event source on unmount
   useEffect(() => {
-    // Store the current eventSource in a variable to avoid stale references in cleanup
-    const eventSource = eventSourceRef.current;
+    // Capture the current eventSource reference
+    const currentEventSource = eventSourceRef.current;
+    
     return () => {
-      if (eventSource) {
-        eventSource.close();
+      if (currentEventSource) {
+        currentEventSource.close();
       }
     };
-  }, []);
+  }, []); // Only run on mount/unmount
 
   // Get the history for the selected chat (memoized to prevent unnecessary re-renders)
   const selectedChatHistory = useMemo(() => {
@@ -162,8 +163,6 @@ export default function ChatGMP() {
     }
     
     let tempAnswer = "";
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    let parsed_filter: Record<string, unknown> = {};
     
     try {
       const response = await fetch('/api/rag-proxy', {
@@ -193,11 +192,7 @@ export default function ChatGMP() {
               const jsonStr = message.slice(6);
               const data = JSON.parse(jsonStr);
               
-              if (data.type === 'metadata' && data.data) {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                parsed_filter = data.data.parsed_filter || {};
-              }
-              else if (data.type === 'token' && data.text) {
+              if (data.type === 'token' && data.text) {
                 setLoading(false);
                 tempAnswer += data.text;
                 setStreamingAnswer(tempAnswer); // Only update UI state, not Firestore
@@ -256,11 +251,14 @@ export default function ChatGMP() {
 
   // Add cleanup when component unmounts or chat changes
   useEffect(() => {
+    // Capture the current EventSource reference
+    const currentEventSource = eventSourceRef.current;
+    
     return () => {
       setIsStreaming(false);
       setStreamingAnswer("");
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
+      if (currentEventSource) {
+        currentEventSource.close();
       }
     };
   }, [selectedChatId]); // Reset streaming state when chat changes
