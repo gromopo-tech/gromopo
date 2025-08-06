@@ -1,6 +1,6 @@
 'use client'
 import { usePathname } from 'next/navigation'
-import { useState, useContext } from 'react'
+import { useState, useContext, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Menu, X } from 'lucide-react'
@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { auth } from '@/lib/firebase/config';
 import { RoleContext } from '@/components/business/role-provider'
 import { toast } from 'sonner';
+import { getHomeUrl, isSubdomain } from '@/lib/utils';
 
 const customerLinks: { label: string; path: string }[] = [
   // More links...
@@ -47,7 +48,16 @@ function AuthButton({ isAuthenticated }: { isAuthenticated: boolean }) {
 export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
   const pathname = usePathname()
   const [showMenu, setShowMenu] = useState(false)
+  const [homeUrl, setHomeUrl] = useState('/')
+  const [isOnSubdomain, setIsOnSubdomain] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   const role = useContext(RoleContext);
+
+  useEffect(() => {
+    setIsClient(true)
+    setHomeUrl(getHomeUrl())
+    setIsOnSubdomain(isSubdomain())
+  }, [])
 
   function isActive(path: string) {
     return path === '/' ? pathname === '/' : pathname.startsWith(path)
@@ -69,7 +79,7 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
       <div className="mx-auto flex justify-between items-center">
         {/* Left: Always render the same container for hydration consistency */}
         <div className="flex items-baseline gap-4 min-w-0">
-          <Link className="text-xl hover:text-neutral-500 dark:hover:text-white whitespace-nowrap" href="/">
+          <Link className="text-xl hover:text-neutral-500 dark:hover:text-white whitespace-nowrap" href={homeUrl}>
             <span>GroMoPo</span>
           </Link>
           <div className="hidden md:flex items-center">
@@ -105,7 +115,7 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
         {/* Right: Wallet, Cluster, Theme, and Auth Buttons */}
         <div className="hidden md:flex items-center gap-4">
           <ThemeSelect />
-          <AuthButton isAuthenticated={isAuthenticated} />
+          {isClient && !isOnSubdomain && <AuthButton isAuthenticated={isAuthenticated} />}
         </div>
 
         <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setShowMenu(!showMenu)}>
@@ -130,7 +140,7 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
               </ul>
               <div className="flex flex-col gap-4">
                 <ThemeSelect />
-                <AuthButton isAuthenticated={isAuthenticated} />
+                {isClient && !isOnSubdomain && <AuthButton isAuthenticated={isAuthenticated} />}
               </div>
             </div>
           </div>
