@@ -60,8 +60,5 @@
     "tailwindcss": "^4.1.10",
     "typescript": "^5.8.3",
     "ws": "^8.18.2"
-  },
-  "overrides": {
-    "bigint-buffer": "file:./bigint-buffer-safe"
   }
 }
