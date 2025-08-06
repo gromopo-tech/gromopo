@@ -1,4 +1,4 @@
-import ChatGMP from "@/app/(business)/dashboard/chatGMP";
+import ChatGMP from "./chatGMP";
 
 export default function DashboardPage() {
   return <ChatGMP />;
