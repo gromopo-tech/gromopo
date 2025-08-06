@@ -1,29 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const hostname = request.headers.get('host') || '';
+  // Get the original hostname from various possible headers
+  const hostname = 
+    request.headers.get('x-forwarded-host') ||     // Most common
+    request.headers.get('x-original-host') ||      // Some platforms
+    request.headers.get('host') ||                 // Fallback
+    '';
+    
   const pathname = request.nextUrl.pathname;
   
-  console.log('🚀 Middleware running:', { hostname, pathname });
+  console.log('🚀 Middleware Debug:', {
+    host: request.headers.get('host'),
+    xForwardedHost: request.headers.get('x-forwarded-host'),
+    xOriginalHost: request.headers.get('x-original-host'),
+    finalHostname: hostname,
+    pathname,
+    allHeaders: Object.fromEntries(request.headers.entries())
+  });
   
   const isSandrasSubdomain = hostname.startsWith('sandras-sandwiches.');
+  const isLocalhost = hostname.startsWith('localhost') || hostname.startsWith('127.0.0.1');
+  const isDevelopment = process.env.NODE_ENV === 'development';
   
-  // Handle sandras-sandwiches subdomain
+  // If on sandras-sandwiches subdomain, rewrite to subdomain routes
   if (isSandrasSubdomain) {
-    // Rewrite all requests to the sandras-sandwiches subdomain routes
     if (!pathname.startsWith('/sandras-sandwiches')) {
-      console.log('🔄 Rewriting subdomain request:', pathname, '→', `/sandras-sandwiches${pathname}`);
-      return NextResponse.rewrite(new URL(`/sandras-sandwiches${pathname}`, request.url));
+      const rewriteUrl = `/sandras-sandwiches${pathname}`;
+      console.log('🔄 Rewriting subdomain request:', pathname, '→', rewriteUrl);
+      return NextResponse.rewrite(new URL(rewriteUrl, request.url));
     }
-  } else {
-    // Main domain - block access to subdomain routes
-    if (pathname.startsWith('/sandras-sandwiches')) {
-      console.log('❌ Blocking subdomain route access from main domain');
+  }
+  
+  // If accessing /order route from main domain
+  if (pathname.startsWith('/order')) {
+    if (!(isDevelopment && isLocalhost) && !isSandrasSubdomain) {
+      console.log('❌ Redirecting order page from main domain');
       return NextResponse.redirect(new URL('/', request.url));
     }
   }
 
-  // Protect dashboard routes (existing logic)
+  // Protect dashboard routes
   if (pathname.startsWith('/dashboard')) {
     const token = request.cookies.get('__session')?.value;
     if (!token) {
@@ -38,7 +55,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
-    '/sandras-sandwiches/:path*',
+    '/order/:path*',
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
