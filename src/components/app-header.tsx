@@ -104,13 +104,7 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
               Hello, {auth.currentUser?.displayName || 'User'}
             </span>
           </div>
-        ) : isOrder && (
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center w-full pointer-events-none">
-            <h1 className="pointer-events-auto text-2xl font-bold text-neutral-700 dark:text-neutral-200">
-              Sandra's Sandwiches
-            </h1>
-          </div>
-        )}
+        ) : null}
 
         {/* Right: Wallet, Cluster, Theme, and Auth Buttons */}
         <div className="hidden md:flex items-center gap-4">
