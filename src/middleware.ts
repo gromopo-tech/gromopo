@@ -10,15 +10,6 @@ export function middleware(request: NextRequest) {
     
   const pathname = request.nextUrl.pathname;
   
-  console.log('🚀 Middleware Debug:', {
-    host: request.headers.get('host'),
-    xForwardedHost: request.headers.get('x-forwarded-host'),
-    xOriginalHost: request.headers.get('x-original-host'),
-    finalHostname: hostname,
-    pathname,
-    allHeaders: Object.fromEntries(request.headers.entries())
-  });
-  
   const isSandrasSubdomain = hostname.startsWith('sandras-sandwiches.');
   const isLocalhost = hostname.startsWith('localhost') || hostname.startsWith('127.0.0.1');
   const isDevelopment = process.env.NODE_ENV === 'development';
