@@ -29,8 +29,9 @@ export default async function RootLayout({
 }: Readonly<{ 
   children: React.ReactNode 
 }>) {
-  // Get JWT from cookies and decode role (server-side only)
+  // Get JWT from cookies and decode role
   let role: string | null = null;
+  
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('__session');
@@ -40,7 +41,6 @@ export default async function RootLayout({
       role = decoded?.role || null;
     }
   } catch (error) {
-    // Handle cookie parsing errors gracefully
     console.warn('Cookie parsing error:', error);
   }
 
