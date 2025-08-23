@@ -3,21 +3,25 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { db } from "@/lib/firebase/config";
+import { db, auth } from "@/lib/firebase/config";
 import { collection, addDoc } from "firebase/firestore";
 import { toast } from 'sonner';
+import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth";
+import { useRouter } from 'next/navigation';
 
 // Schema for form validation
 const schema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email"),
   businessName: z.string().min(1, "Business name is required"),
   businessType: z.enum(["restaurant", "cafe", "bakery", "bar", "food-truck", "other"]),
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type FormData = z.infer<typeof schema>;
 
 export default function SignupForm() {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -32,37 +36,45 @@ export default function SignupForm() {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      /*
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        data.email,
-        "temporary-password"
-      );
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
 
-      await updateProfile(userCredential.user, {
-        displayName: data.name,
-      });
-      
-      await sendEmailVerification(userCredential.user);
-      */
-      // Store in Firestore
-      await addDoc(collection(db, "subscribers"), {
-        name: data.name,
-        email: data.email,
-        businessName: data.businessName,
+      // Create business doc
+      const businessRef = await addDoc(collection(db, "businesses"), {
+        name: data.businessName,
         businessType: data.businessType,
-        verified: false, // Will be updated once verified
+        ownerId: userCredential.user.uid,
+        verified: false,
         createdAt: new Date(),
       });
 
+      await updateProfile(userCredential.user, { displayName: data.name });
+
+      // Tell backend to set custom claims (admin SDK)
+      const res = await fetch("/api/signup-owner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: userCredential.user.uid, businessId: businessRef.id }),
+      });
+      if (!res.ok) throw new Error('Failed to set server claims');
+
+      // Optionally send email verification (still works)
+      await sendEmailVerification(userCredential.user);
+
+      // Set server-side session cookie so middleware recognizes the user
+      const idToken = await userCredential.user.getIdToken(true);
+      const cookieRes = await fetch("/api/set-session-cookie", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: idToken }),
+      });
+      if (!cookieRes.ok) throw new Error('Failed to set session cookie');
+
       setSuccess(true);
-    } catch (error) {
-      console.error(error);
-      if (error instanceof Error) {
-        toast.error("Error: " + error.message);
-      } else {
-        toast.error("An unknown error occurred.");
-      }
+      // Ensure a full reload so server-side middleware reads the new cookie
+      window.location.replace('/dashboard');
+    } catch (err) {
+      console.error(err);
+      toast.error('Signup failed.');
     } finally {
       setIsSubmitting(false);
     }
@@ -76,10 +88,46 @@ export default function SignupForm() {
       {success ? (
         <div>
           <h2>🎉 Success!</h2>
-          <p>We&apos;ll email you as soon we&apos;re ready to onboard you for early access.</p>
+          <p>Check your email to verify your address.</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium">
+              Business Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="businessName"
+              type="businessName"
+              {...register("businessName")}
+              className="form-input w-full border border-black dark:border-white rounded-lg"
+              required
+            />
+            {errors.businessName && (
+              <p className="mt-1 text-sm text-red-600">{errors.businessName.message}</p>
+            )}
+          </div>
+          <div>
+            <label htmlFor="business type" className="block text-sm font-medium">
+              Business Type 
+            </label>
+            <select
+              id="businessType"
+              {...register("businessType")}
+              className="w-full border border-black dark:border-white rounded-lg cursor-pointer"
+            >
+              <option value=""></option>
+              <option value="restaurant">Restaurant</option>
+              <option value="cafe">Cafe</option>
+              <option value="bakery">Bakery</option>
+              <option value="bar">Bar</option>
+              <option value="food-truck">Food Truck</option>
+              <option value="other">Other</option>
+            </select>
+            {errors.businessType && (
+                    <p className="mt-1 text-sm text-red-600">{errors.businessType.message}</p>
+                  )}
+          </div>
           <div>
             <label htmlFor="name" className="block text-sm font-medium">
               Name <span className="text-red-500">*</span>
@@ -112,41 +160,23 @@ export default function SignupForm() {
             )}
           </div>
           <div>
-              <label htmlFor="name" className="block text-sm font-medium">
-                Business Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="businessName"
-                type="businessName"
-                {...register("businessName")}
-                className="form-input w-full border border-black dark:border-white rounded-lg"
-                required
-              />
-              {errors.businessName && (
-                <p className="mt-1 text-sm text-red-600">{errors.businessName.message}</p>
-              )}
-            </div>
-            <div>
-              <label htmlFor="business type" className="block text-sm font-medium">
-                Business Type 
-              </label>
-              <select
-                id="businessType"
-                {...register("businessType")}
-                className="w-full border border-black dark:border-white rounded-lg cursor-pointer"
-              >
-                <option value=""></option>
-                <option value="restaurant">Restaurant</option>
-                <option value="cafe">Cafe</option>
-                <option value="bakery">Bakery</option>
-                <option value="bar">Bar</option>
-                <option value="food-truck">Food Truck</option>
-                <option value="other">Other</option>
-              </select>
-              {errors.businessType && (
-                      <p className="mt-1 text-sm text-red-600">{errors.businessType.message}</p>
-                    )}
-            </div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium"
+            >
+              Password <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="password"
+              type="password"
+              {...register("password")}
+              className="form-input w-full border border-black dark:border-white rounded-lg"
+              required
+            />
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+            )}
+          </div>
           <button
             type="submit"
             disabled={isSubmitting}
