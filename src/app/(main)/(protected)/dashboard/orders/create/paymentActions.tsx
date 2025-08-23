@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useContext, useRef } from 'react';
-import { BusinessIdContext } from '@/components/business/business-id-provider';
-import { BusinessNameContext } from '@/components/business/business-name-provider';
+import { BusinessIdContext } from '@/components/protected/business-id-provider';
+import { BusinessNameContext } from '@/components/protected/business-name-provider';
 import { SolanaPay } from '@/components/solana/solana-pay';
 import { PaymentProps } from '@/types/payment';
 import { submitOrderToFirestore } from '@/lib/order';

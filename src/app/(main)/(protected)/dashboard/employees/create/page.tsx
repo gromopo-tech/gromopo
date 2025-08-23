@@ -2,8 +2,8 @@
 
 import { useState, useContext } from 'react'
 import { toast } from 'sonner'
-import { RoleContext } from '@/components/business/role-provider'
-import { BusinessIdContext } from '@/components/business/business-id-provider'
+import { RoleContext } from '@/components/protected/role-provider'
+import { BusinessIdContext } from '@/components/protected/business-id-provider'
 import { auth } from '@/lib/firebase/config';
 
 export default function CreateEmployeePage() {

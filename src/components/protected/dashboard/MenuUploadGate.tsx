@@ -1,7 +1,7 @@
 "use client";
 
 import { useContext, useState, useRef } from "react";
-import { BusinessIdContext } from "@/components/business/business-id-provider";
+import { BusinessIdContext } from "@/components/protected/business-id-provider";
 import { storage } from "@/lib/firebase/config";
 import { ref, uploadBytes } from "firebase/storage";
 import type { MenuFile, MenuError } from '@/types/menu';

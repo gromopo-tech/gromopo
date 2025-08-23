@@ -1,6 +1,6 @@
 'use client';
 
-import { RoleContext } from '@/components/business/role-provider'
+import { RoleContext } from '@/components/protected/role-provider'
 import { useContext } from 'react'
 
 

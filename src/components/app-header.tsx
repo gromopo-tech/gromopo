@@ -8,7 +8,7 @@ import { ThemeSelect } from '@/components/theme-select'
 import { signOut } from 'firebase/auth';
 import { useRouter } from "next/navigation";
 import { auth } from '@/lib/firebase/config';
-import { RoleContext } from '@/components/business/role-provider'
+import { RoleContext } from '@/components/protected/role-provider'
 import { toast } from 'sonner';
 import { getHomeUrl, isSubdomain } from '@/lib/utils';
 

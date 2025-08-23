@@ -4,8 +4,8 @@ import React, { useState, useRef, useEffect, useContext, useMemo, useCallback } 
 import ReactMarkdown from "react-markdown";
 import { auth, db } from "@/lib/firebase/config";
 import { collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, query, orderBy, getDocs } from "firebase/firestore";
-import { BusinessIdContext } from "@/components/business/business-id-provider";
-import { RoleContext } from "@/components/business/role-provider";
+import { BusinessIdContext } from "@/components/protected/business-id-provider";
+import { RoleContext } from "@/components/protected/role-provider";
 import { Spinner } from "@/components/ui/spinner";
 
 type Chat = {

@@ -1,4 +1,4 @@
-import AccountListFeature from '@/components/customer/account/account-list-feature'
+import AccountListFeature from '@/components/marketing/account/account-list-feature'
 
 export default function Page() {
   return <AccountListFeature />

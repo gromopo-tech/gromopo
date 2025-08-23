@@ -5,7 +5,7 @@ import { AppLayout } from '@/components/app-layout'
 import React from 'react'
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
-import { RoleProvider } from '@/components/business/role-provider';
+import { RoleProvider } from '@/components/protected/role-provider';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'

@@ -3,7 +3,7 @@
 import { useEffect, useState, useContext } from "react";
 import { collection, query, orderBy, onSnapshot, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import { BusinessIdContext } from "@/components/business/business-id-provider";
+import { BusinessIdContext } from "@/components/protected/business-id-provider";
 import type { Order } from '@/types/order';
 import Link from 'next/link';
 
