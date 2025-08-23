@@ -44,13 +44,11 @@ export async function POST(req: Request) {
     const uid = userRecord.uid
 
     // Save user info in Firestore
-    await adminDb.doc(`users/${uid}`).set({
+    await adminDb.doc(`businesses/${businessId}/employees/${uid}`).set({
       lastName,
       firstName,
       email,
       role,
-      businessId,
-      createdAt: Date.now(),
     })
 
     // Add custom claims (role and businessId)
