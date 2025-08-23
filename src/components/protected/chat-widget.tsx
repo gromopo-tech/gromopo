@@ -42,9 +42,16 @@ export default function ChatWidget() {
 
   // Fetch chats on mount
   useEffect(() => {
+    // Only fetch chats when we have a businessId AND the user is an owner.
+    // This avoids permission denied errors while auth/claims are still initializing.
+    if (!businessId || role !== 'owner') {
+      setChats([]);
+      setSelectedChatId(null);
+      setIsLoadingChats(false);
+      return;
+    }
+
     const fetchChats = async () => {
-      if (!businessId) return;
-      
       setIsLoadingChats(true);
       try {
         const chatsRef = collection(db, `businesses/${businessId}/chats`);
@@ -68,7 +75,7 @@ export default function ChatWidget() {
     };
     
     fetchChats();
-  }, [businessId, selectedChatId]);
+  }, [businessId, role, selectedChatId]);
 
   // Cleanup event source on unmount
   useEffect(() => {
@@ -88,12 +95,17 @@ export default function ChatWidget() {
 
   // Update history for selected chat
   const updateSelectedChatHistory = async (newHistory: { role: string; text: string }[]) => {
-    if (!selectedChatId || !businessId) return;
+    if (!selectedChatId || !businessId || role !== 'owner') return;
     await updateDoc(doc(db, `businesses/${businessId}/chats/${selectedChatId}`), { history: newHistory });
     setChats(chats => chats.map(c => c.id === selectedChatId ? { ...c, history: newHistory } : c));
   };
 
   const handleNewChat = async () => {
+    if (!businessId || role !== 'owner') {
+      // silently ignore or show a toast if you prefer
+      return;
+    }
+
     setLoading(true);
     const chatsRef = collection(db, `businesses/${businessId}/chats`);
     const newChat = {
@@ -122,6 +134,7 @@ export default function ChatWidget() {
   };
 
   const handleEditName = async (chatId: string, newName: string) => {
+    if (!businessId || role !== 'owner') return;
     await updateDoc(doc(db, `businesses/${businessId}/chats/${chatId}`), { name: newName });
     setChats((chats) => chats.map((c) => ({
       ...c,
@@ -157,6 +170,7 @@ export default function ChatWidget() {
       return;
     }
     
+    if (!businessId || role !== 'owner') return;
     await deleteDoc(doc(db, `businesses/${businessId}/chats/${chatId}`));
     setChats((prevChats) => {
       const filtered = prevChats.filter((c: Chat) => c.id !== chatId);
