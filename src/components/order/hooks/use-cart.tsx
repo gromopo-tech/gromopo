@@ -13,21 +13,16 @@ export function useCart() {
 
   const addToCart = (item: MenuItem, size: string) => {
     let price: number | undefined;
-    
     // Handle different price structures
     if (typeof item.price === 'number') {
-      // Single price item
       price = item.price;
     } else if (typeof item.price === 'object') {
-      // Size-based pricing
       price = item.price[size];
     }
-    
     if (price === undefined) {
       console.warn(`Price not found for ${item.name} with size ${size}`);
       return;
     }
-
     const cartItem: CartItem = {
       name: item.name,
       description: item.description,
@@ -35,6 +30,13 @@ export function useCart() {
       price,
     };
     setCart([...cart, cartItem]);
+    // Show toast notification
+    if (typeof window !== 'undefined') {
+      // Import toast from 'sonner' directly
+      import('sonner').then(({ toast }) => {
+        toast.success(`${item.name} (${size}) added to cart!`);
+      });
+    }
   };
 
   const removeFromCart = (index: number) => {

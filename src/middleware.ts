@@ -18,7 +18,6 @@ export function middleware(request: NextRequest) {
   if (isSandrasSubdomain) {
     if (!pathname.startsWith('/sandras-sandwiches')) {
       const rewriteUrl = `/sandras-sandwiches${pathname}`;
-      console.log('🔄 Rewriting subdomain request:', pathname, '→', rewriteUrl);
       return NextResponse.rewrite(new URL(rewriteUrl, request.url));
     }
   }
@@ -26,7 +25,6 @@ export function middleware(request: NextRequest) {
   // If accessing /order route from main domain
   if (pathname.startsWith('/order')) {
     if (!(isDevelopment && isLocalhost) && !isSandrasSubdomain) {
-      console.log('❌ Redirecting order page from main domain');
       return NextResponse.redirect(new URL('/', request.url));
     }
   }
@@ -35,7 +33,6 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith('/dashboard')) {
     const token = request.cookies.get('__session')?.value;
     if (!token) {
-      console.log('❌ Redirecting to signin - no auth token');
       return NextResponse.redirect(new URL('/signin', request.url));
     }
   }

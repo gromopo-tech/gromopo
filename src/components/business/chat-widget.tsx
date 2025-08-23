@@ -16,6 +16,8 @@ type Chat = {
 };
 
 export default function ChatWidget() {
+  // Ref for chat history menu
+  const chatHistoryMenuRef = useRef<HTMLDivElement>(null);
   const businessId = useContext(BusinessIdContext);
   const role = useContext(RoleContext);
   const [isOpen, setIsOpen] = useState(true); // Changed to true - open by default
@@ -368,6 +370,11 @@ export default function ChatWidget() {
               minWidth: '300px',
               minHeight: '250px'
             }}
+            onMouseDown={e => {
+              if (showHistory && chatHistoryMenuRef.current && !chatHistoryMenuRef.current.contains(e.target as Node)) {
+                setShowHistory(false);
+              }
+            }}
           >
             {/* Resize Handle - Top Left Corner */}
             <div
@@ -428,7 +435,7 @@ export default function ChatWidget() {
                     </svg>
                   </button>
                   {showHistory && (
-                    <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg py-1 w-48 z-10">
+                    <div ref={chatHistoryMenuRef} className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg py-1 w-48 z-10">
                       <button
                         onClick={handleNewChat}
                         className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
@@ -549,12 +556,15 @@ export default function ChatWidget() {
           </div>
         )}
       </div>
-      
-      {/* Backdrop to close menu when clicking outside */}
+      {/* Backdrop to close menu when clicking outside the chat widget */}
       {showHistory && !isResizing && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setShowHistory(false)}
+        <div
+          className="fixed inset-0 z-30"
+          onMouseDown={e => {
+            if (chatRef.current && !chatRef.current.contains(e.target as Node)) {
+              setShowHistory(false);
+            }
+          }}
         />
       )}
     </>
