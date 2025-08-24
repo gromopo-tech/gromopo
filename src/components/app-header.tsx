@@ -63,14 +63,17 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
     return path === '/' ? pathname === '/' : pathname.startsWith(path)
   }
 
-  // Conditionally add Employees link for owner/admin
   let effectiveBusinessLinks = [...businessLinks];
-  if (isAuthenticated && (role === 'owner' || role === 'admin')) {
+
+  // Conditionally add Employees link for owner/admin. Employees disabled for now
+  {/*if (isAuthenticated && (role === 'owner' || role === 'admin')) {
     effectiveBusinessLinks = [
       { label: 'Employees', path: '/dashboard/employees' },
       ...businessLinks
     ];
-  }
+  }}*/}
+
+
 
   return (
     <header className="sticky top-0 z-50 px-4 py-2 bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 shadow-sm">

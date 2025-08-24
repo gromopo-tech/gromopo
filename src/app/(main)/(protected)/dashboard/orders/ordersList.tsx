@@ -2,13 +2,15 @@
 
 import { useEffect, useState, useContext } from "react";
 import { collection, query, orderBy, onSnapshot, where } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { db, storage } from "@/lib/firebase/config";
 import { BusinessIdContext } from "@/components/protected/business-id-provider";
 import type { Order } from '@/types/order';
 import Link from 'next/link';
+import { ref, listAll } from 'firebase/storage';
 
 export default function OrdersList() {
   const businessId = useContext(BusinessIdContext);
+  const [hasMenus, setHasMenus] = useState<boolean | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -18,9 +20,10 @@ export default function OrdersList() {
   const [orderTypeFilter, setOrderTypeFilter] = useState<'all' | 'dine-in' | 'takeout' | 'delivery'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Order Created' | 'Preparing' | 'Prepared'>('all');
 
+  // Subscribe to orders only when we know menus exist
   useEffect(() => {
     let unsub: (() => void) | undefined;
-    if (businessId && selectedDate) {
+    if (businessId && selectedDate && hasMenus) {
       // Calculate start and end of selected day in local time (not UTC)
       const [year, month, day] = selectedDate.split('-').map(Number);
       const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0).toISOString();
@@ -37,12 +40,37 @@ export default function OrdersList() {
         );
       });
     } else {
-      setOrders([]); // Clear orders if not authenticated or no businessId
+      setOrders([]); // Clear orders if not authenticated or no businessId or no menus
     }
     return () => {
       if (unsub) unsub();
     };
-  }, [businessId, selectedDate]);
+  }, [businessId, selectedDate, hasMenus]);
+
+  // Client-side check for menu files in storage
+  useEffect(() => {
+    let mounted = true;
+    const checkMenus = async () => {
+      if (!businessId) {
+        if (mounted) setHasMenus(null);
+        return;
+      }
+      try {
+        const menusRef = ref(storage, `businesses/${businessId}/menus/`);
+  const res = await listAll(menusRef);
+  if (!mounted) return;
+  const hasFiles = Array.isArray(res.items) && res.items.length > 0;
+  const hasPrefixes = Array.isArray((res as any).prefixes) && (res as any).prefixes.length > 0;
+  setHasMenus(hasFiles || hasPrefixes);
+      } catch (err) {
+        console.error('Error checking menus (client):', err);
+        if (!mounted) return;
+        setHasMenus(false);
+      }
+    };
+    checkMenus();
+    return () => { mounted = false };
+  }, [businessId]);
 
   const getAsOf = (order: Order) => {
     switch (order.status) {
@@ -64,6 +92,28 @@ export default function OrdersList() {
     return typeMatch && statusMatch;
   });
 
+  if (hasMenus === null) {
+    // still checking
+    return (
+      <div className="p-6">Loading…</div>
+    );
+  }
+
+  if (hasMenus === false) {
+    return (
+      <div>
+        <h2 className="text-lg font-semibold mb-2">Upload a menu to get started</h2>
+        <p className="mb-4">We couldn't find any menu files for your business. Upload a menu first to start creating orders.</p>
+        <Link
+          href="/dashboard/menus"
+          className="btn border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded"
+        >
+          Go to Menus
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-2 flex justify-between items-center gap-2">
@@ -78,12 +128,12 @@ export default function OrdersList() {
               max={new Date().toISOString().slice(0, 10)}
             />
           </div>
-          <Link
+          {/* <Link
             href="/dashboard/orders/create"
             className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
           >
             + New Order
-          </Link>
+          </Link> */}
         </div>
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <label className="mr-2 font-medium">Filter by Order Type:</label>
