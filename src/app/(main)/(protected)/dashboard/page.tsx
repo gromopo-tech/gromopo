@@ -21,9 +21,6 @@ export default function DashboardPage() {
             <a href="/dashboard/menus" className="block text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
               Manage Menus
             </a>
-            <a href="/dashboard/employees" className="block text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-              Manage Employees
-            </a>
           </div>
         </div>
         
