@@ -1,9 +1,11 @@
 "use client";
 
-import { useContext, useState, useRef } from "react";
+import { useContext, useState, useRef, useEffect } from "react";
 import { BusinessIdContext } from "@/components/protected/business-id-provider";
 import { storage } from "@/lib/firebase/config";
 import { ref, uploadBytes } from "firebase/storage";
+import { db } from '@/lib/firebase/config';
+import { doc, updateDoc } from 'firebase/firestore';
 import type { MenuFile, MenuError } from '@/types/menu';
 import { Spinner } from "@/components/ui/spinner";
 
@@ -24,6 +26,25 @@ export default function MenuUploadGate({
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Keep business doc's menuUploaded flag in sync with presence of menu files in storage
+  useEffect(() => {
+    let mounted = true;
+    const syncFlag = async () => {
+      if (!businessId || !mounted) return;
+      try {
+        const businessRef = doc(db, 'businesses', businessId);
+        const hasMenus = Array.isArray(menus) && menus.length > 0;
+        // Update only the menuUploaded field to avoid overwriting other fields
+        await updateDoc(businessRef, { menuUploaded: hasMenus });
+      } catch (err) {
+        // Non-fatal: log for debugging but don't block UI
+        console.error('Failed to sync menuUploaded flag:', err instanceof Error ? err.message : String(err));
+      }
+    };
+    syncFlag();
+    return () => { mounted = false };
+  }, [businessId, menus]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!businessId || !e.target.files?.length) return;

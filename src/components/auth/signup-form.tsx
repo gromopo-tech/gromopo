@@ -44,6 +44,9 @@ export default function SignupForm() {
         businessType: data.businessType,
         ownerId: userCredential.user.uid,
         verified: false,
+        menuUploaded: false,
+        menuIntegrated: false,
+        hasWallet: false,
         createdAt: new Date(),
       });
 
