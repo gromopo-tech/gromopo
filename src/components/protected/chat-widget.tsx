@@ -20,6 +20,7 @@ export default function ChatWidget() {
   const chatHistoryMenuRef = useRef<HTMLDivElement>(null);
   const businessId = useContext(BusinessIdContext);
   const role = useContext(RoleContext);
+  const [hasSubdomain, setHasSubdomain] = useState<boolean | null>(null);
   const [isOpen, setIsOpen] = useState(true); // Changed to true - open by default
   const [showHistory, setShowHistory] = useState(false);
   const [chats, setChats] = useState<Chat[]>([]);
@@ -42,9 +43,10 @@ export default function ChatWidget() {
 
   // Fetch chats on mount
   useEffect(() => {
-    // Only fetch chats when we have a businessId AND the user is an owner.
-    // This avoids permission denied errors while auth/claims are still initializing.
-    if (!businessId || role !== 'owner') {
+  // Only fetch chats when we have a businessId, the business has a subdomain, AND the user is an owner.
+  // This avoids permission denied errors while auth/claims are still initializing and avoids fetching chats
+  // when the business hasn't launched its ordering page (no subdomain).
+  if (!businessId || role !== 'owner' || hasSubdomain !== true) {
       setChats([]);
       setSelectedChatId(null);
       setIsLoadingChats(false);
@@ -76,6 +78,34 @@ export default function ChatWidget() {
     
     fetchChats();
   }, [businessId, role, selectedChatId]);
+
+  // Load business subdomain flag and only show chat when non-empty
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      if (!businessId) {
+        if (mounted) setHasSubdomain(null);
+        return;
+      }
+      try {
+        const snap = await getDoc(doc(db, 'businesses', businessId));
+        if (!mounted) return;
+        if (snap.exists()) {
+          const data = snap.data() as Record<string, any>;
+          const sd = typeof data.subdomain === 'string' ? data.subdomain : '';
+          setHasSubdomain(sd !== '');
+        } else {
+          setHasSubdomain(false);
+        }
+      } catch (err) {
+        console.error('Error loading business subdomain for chat widget:', err);
+        if (!mounted) return;
+        setHasSubdomain(false);
+      }
+    };
+    load();
+    return () => { mounted = false };
+  }, [businessId]);
 
   // Cleanup event source on unmount
   useEffect(() => {
@@ -352,8 +382,8 @@ export default function ChatWidget() {
     }
   }, [isResizing, handleMouseMove, handleMouseUp]);
 
-  // Only show chat widget for owners - check this after all hooks
-  if (role !== 'owner') {
+  // Only show chat widget for owners AND only when the business has a subdomain
+  if (role !== 'owner' || hasSubdomain !== true) {
     return null;
   }
 

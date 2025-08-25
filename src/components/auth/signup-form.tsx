@@ -41,6 +41,7 @@ export default function SignupForm() {
       // Create business doc
       const businessRef = await addDoc(collection(db, "businesses"), {
         name: data.businessName,
+        subdomain: '', // to be set up later
         businessType: data.businessType,
         ownerId: userCredential.user.uid,
         verified: false,
