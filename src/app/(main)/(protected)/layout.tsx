@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { ContextProviders } from '@/components/business/context-providers';
+import { ContextProviders } from '@/components/protected/context-providers';
 import { JwtPayload } from '@/types/jwt-payload';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';

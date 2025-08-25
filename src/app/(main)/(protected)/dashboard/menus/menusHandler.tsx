@@ -1,7 +1,7 @@
 "use client";
 
 import { useContext, useEffect, useState, useRef } from "react";
-import { BusinessIdContext } from "@/components/business/business-id-provider";
+import { BusinessIdContext } from "@/components/protected/business-id-provider";
 import { storage } from "@/lib/firebase/config";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -12,7 +12,7 @@ import {
   deleteObject,
 } from "firebase/storage";
 
-import MenuUploadGate from '@/components/business/dashboard/MenuUploadGate';
+import MenuUploadGate from '@/components/protected/dashboard/MenuUploadGate';
 import type { MenuFile, MenuError } from '@/types/menu';
 
 export default function MenusHandler() {

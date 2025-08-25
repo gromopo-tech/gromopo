@@ -4,8 +4,8 @@ import React, { useState, useRef, useEffect, useContext, useMemo, useCallback } 
 import ReactMarkdown from "react-markdown";
 import { auth, db } from "@/lib/firebase/config";
 import { collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, query, orderBy, getDocs } from "firebase/firestore";
-import { BusinessIdContext } from "@/components/business/business-id-provider";
-import { RoleContext } from "@/components/business/role-provider";
+import { BusinessIdContext } from "@/components/protected/business-id-provider";
+import { RoleContext } from "@/components/protected/role-provider";
 import { Spinner } from "@/components/ui/spinner";
 
 type Chat = {
@@ -20,6 +20,7 @@ export default function ChatWidget() {
   const chatHistoryMenuRef = useRef<HTMLDivElement>(null);
   const businessId = useContext(BusinessIdContext);
   const role = useContext(RoleContext);
+  const [hasSubdomain, setHasSubdomain] = useState<boolean | null>(null);
   const [isOpen, setIsOpen] = useState(true); // Changed to true - open by default
   const [showHistory, setShowHistory] = useState(false);
   const [chats, setChats] = useState<Chat[]>([]);
@@ -42,9 +43,17 @@ export default function ChatWidget() {
 
   // Fetch chats on mount
   useEffect(() => {
+  // Only fetch chats when we have a businessId, the business has a subdomain, AND the user is an owner.
+  // This avoids permission denied errors while auth/claims are still initializing and avoids fetching chats
+  // when the business hasn't launched its ordering page (no subdomain).
+  if (!businessId || role !== 'owner' || hasSubdomain !== true) {
+      setChats([]);
+      setSelectedChatId(null);
+      setIsLoadingChats(false);
+      return;
+    }
+
     const fetchChats = async () => {
-      if (!businessId) return;
-      
       setIsLoadingChats(true);
       try {
         const chatsRef = collection(db, `businesses/${businessId}/chats`);
@@ -68,7 +77,35 @@ export default function ChatWidget() {
     };
     
     fetchChats();
-  }, [businessId, selectedChatId]);
+  }, [businessId, role, selectedChatId, hasSubdomain]);
+
+  // Load business subdomain flag and only show chat when non-empty
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      if (!businessId) {
+        if (mounted) setHasSubdomain(null);
+        return;
+      }
+      try {
+        const snap = await getDoc(doc(db, 'businesses', businessId));
+        if (!mounted) return;
+        if (snap.exists()) {
+          const data = snap.data() as Record<string, unknown>;
+          const sd = typeof data.subdomain === 'string' ? data.subdomain : '';
+          setHasSubdomain(sd !== '');
+        } else {
+          setHasSubdomain(false);
+        }
+      } catch (err) {
+        console.error('Error loading business subdomain for chat widget:', err);
+        if (!mounted) return;
+        setHasSubdomain(false);
+      }
+    };
+    load();
+    return () => { mounted = false };
+  }, [businessId]);
 
   // Cleanup event source on unmount
   useEffect(() => {
@@ -88,12 +125,17 @@ export default function ChatWidget() {
 
   // Update history for selected chat
   const updateSelectedChatHistory = async (newHistory: { role: string; text: string }[]) => {
-    if (!selectedChatId || !businessId) return;
+    if (!selectedChatId || !businessId || role !== 'owner') return;
     await updateDoc(doc(db, `businesses/${businessId}/chats/${selectedChatId}`), { history: newHistory });
     setChats(chats => chats.map(c => c.id === selectedChatId ? { ...c, history: newHistory } : c));
   };
 
   const handleNewChat = async () => {
+    if (!businessId || role !== 'owner') {
+      // silently ignore or show a toast if you prefer
+      return;
+    }
+
     setLoading(true);
     const chatsRef = collection(db, `businesses/${businessId}/chats`);
     const newChat = {
@@ -122,6 +164,7 @@ export default function ChatWidget() {
   };
 
   const handleEditName = async (chatId: string, newName: string) => {
+    if (!businessId || role !== 'owner') return;
     await updateDoc(doc(db, `businesses/${businessId}/chats/${chatId}`), { name: newName });
     setChats((chats) => chats.map((c) => ({
       ...c,
@@ -157,6 +200,7 @@ export default function ChatWidget() {
       return;
     }
     
+    if (!businessId || role !== 'owner') return;
     await deleteDoc(doc(db, `businesses/${businessId}/chats/${chatId}`));
     setChats((prevChats) => {
       const filtered = prevChats.filter((c: Chat) => c.id !== chatId);
@@ -338,8 +382,8 @@ export default function ChatWidget() {
     }
   }, [isResizing, handleMouseMove, handleMouseUp]);
 
-  // Only show chat widget for owners - check this after all hooks
-  if (role !== 'owner') {
+  // Only show chat widget for owners AND only when the business has a subdomain
+  if (role !== 'owner' || hasSubdomain !== true) {
     return null;
   }
 

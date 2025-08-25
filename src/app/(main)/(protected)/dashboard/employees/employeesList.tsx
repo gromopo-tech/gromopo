@@ -6,7 +6,7 @@ import { doc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
 import { toast } from 'sonner'
 import type { Employee } from '@/types/employee'
-import { RoleContext } from '@/components/business/role-provider'
+import { RoleContext } from '@/components/protected/role-provider'
 
 export default function EmployeesList({ employees }: { employees: Employee[] }) {
   const [filter, setFilter] = useState<'all' | 'admin' | 'taker' | 'maker'>('all')

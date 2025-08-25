@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState, useContext } from "react";
-import { collection, query, orderBy, onSnapshot, where } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, where, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import { BusinessIdContext } from "@/components/business/business-id-provider";
+import { BusinessIdContext } from "@/components/protected/business-id-provider";
 import type { Order } from '@/types/order';
 import Link from 'next/link';
 
 export default function OrdersList() {
   const businessId = useContext(BusinessIdContext);
+  const [menuIntegrated, setMenuIntegrated] = useState<boolean | null>(null);
+  const [menuUploaded, setMenuUploaded] = useState<boolean | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -18,15 +20,16 @@ export default function OrdersList() {
   const [orderTypeFilter, setOrderTypeFilter] = useState<'all' | 'dine-in' | 'takeout' | 'delivery'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Order Created' | 'Preparing' | 'Prepared'>('all');
 
+  // Subscribe to orders only when we know a menu is integrated (menu data exists in Firestore)
   useEffect(() => {
     let unsub: (() => void) | undefined;
-    if (businessId && selectedDate) {
+    if (businessId && selectedDate && menuIntegrated) {
       // Calculate start and end of selected day in local time (not UTC)
       const [year, month, day] = selectedDate.split('-').map(Number);
       const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0).toISOString();
       const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999).toISOString();
       const q = query(
-        collection(db, `businesses/${businessId}/orders`),
+        collection(db, 'businesses', businessId, 'orders'),
         where("createdAt", ">=", startOfDay),
         where("createdAt", "<=", endOfDay),
         orderBy("createdAt", "desc")
@@ -37,12 +40,47 @@ export default function OrdersList() {
         );
       });
     } else {
-      setOrders([]); // Clear orders if not authenticated or no businessId
+      setOrders([]); // Clear orders if not authenticated or no businessId or no menus
     }
     return () => {
       if (unsub) unsub();
     };
-  }, [businessId, selectedDate]);
+  }, [businessId, selectedDate, menuIntegrated]);
+
+  // Client-side check: read business doc's menu flags
+  useEffect(() => {
+    let mounted = true;
+    const check = async () => {
+      if (!businessId) {
+        if (mounted) {
+          setMenuIntegrated(null);
+          setMenuUploaded(null);
+        }
+        return;
+      }
+
+      try {
+        const businessRef = doc(db, 'businesses', businessId);
+        const snap = await getDoc(businessRef);
+        if (!mounted) return;
+        if (snap.exists()) {
+          const data = snap.data() as Record<string, unknown>;
+          setMenuIntegrated(Boolean(data.menuIntegrated));
+          setMenuUploaded(Boolean(data.menuUploaded));
+        } else {
+          setMenuIntegrated(false);
+          setMenuUploaded(false);
+        }
+      } catch (err) {
+        console.error('Error checking menus (client, business doc):', err instanceof Error ? err.message : String(err));
+        if (!mounted) return;
+        setMenuIntegrated(false);
+        setMenuUploaded(false);
+      }
+    };
+    check();
+    return () => { mounted = false };
+  }, [businessId]);
 
   const getAsOf = (order: Order) => {
     switch (order.status) {
@@ -63,6 +101,37 @@ export default function OrdersList() {
     const statusMatch = statusFilter === 'all' || order.status === statusFilter;
     return typeMatch && statusMatch;
   });
+  // While either check is still pending show loading
+  if (menuIntegrated === null || menuUploaded === null) {
+    return <div className="p-6">Loading…</div>;
+  }
+
+  // If storage has a menu file but Firestore doesn't (uploaded but not integrated), show waiting message
+  if (menuUploaded && !menuIntegrated) {
+    return (
+      <div className="rounded p-6 border bg-amber-50 dark:bg-amber-950">
+        <h2 className="text-lg font-semibold mb-2">We'll let you know as soon as your ordering page is ready</h2>
+        <p className="mb-4">We found a menu file in storage but your menu data isn't available yet. 
+          We'll notify you as soon as the ordering page is ready.</p>
+      </div>
+    );
+  }
+
+  // If neither uploaded nor integrated, prompt upload
+  if (!menuUploaded && !menuIntegrated) {
+    return (
+      <div>
+        <h2 className="text-lg font-semibold mb-2">Upload a menu to get started</h2>
+        <p className="mb-4">We couldn't find any menu files for your business. Upload a menu first to get started.</p>
+        <Link
+          href="/dashboard/menus"
+          className="btn border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded"
+        >
+          Go to Menus
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -78,12 +147,12 @@ export default function OrdersList() {
               max={new Date().toISOString().slice(0, 10)}
             />
           </div>
-          <Link
+          {/* <Link
             href="/dashboard/orders/create"
             className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
           >
             + New Order
-          </Link>
+          </Link> */}
         </div>
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <label className="mr-2 font-medium">Filter by Order Type:</label>
