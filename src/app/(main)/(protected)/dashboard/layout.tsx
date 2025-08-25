@@ -1,4 +1,4 @@
-import ChatWidget from '@/components/business/chat-widget';
+import ChatWidget from '@/components/protected/chat-widget';
 
 export default function DashboardLayout({
   children,

@@ -1,11 +1,6 @@
 export default function Features() {
   const features = [
     {
-
-      title: 'AI Assistant for Smarter Business Decisions',
-      description: 'Get personalized suggestions based on customer feedback and order trends. Know what’s working, what needs fixing, and how to stock smarter — powered by real-time data.',
-    },
-    {
       title: 'Streamlined Online Ordering',
       description: 'Accept orders via QR code or link — no app required. Simple for your customers, efficient for you.',
     },
@@ -18,12 +13,17 @@ export default function Features() {
       description: 'Whether you run a café, food truck, or corner restaurant — our tools are designed for you.',
     },
     {
-      title: 'Built-in Loyalty Features (Coming Soon)',
-      description: 'Encourage repeat visits with simple, automated rewards — no punch cards required.',
+      title: 'Instant Setup — No Coding Required (Coming Soon)',
+      description: 'Launch your ordering page in minutes. Our platform works out of the box so you can focus on food.',
     },
     {
-      title: 'Instant Setup — No Coding Required',
-      description: 'Launch your ordering page in minutes. Our platform works out of the box so you can focus on food.',
+
+      title: 'AI Assistant for Smarter Business Decisions (Coming Soon)',
+      description: 'Get personalized suggestions based on customer feedback and order trends. Know what’s working, what needs fixing, and how to stock smarter — powered by real-time data.',
+    },
+    {
+      title: 'Built-in Loyalty Features (Coming Soon)',
+      description: 'Encourage repeat visits with simple, automated rewards — no punch cards required.',
     },
   ];
 

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     await adminAuth.setCustomUserClaims(uid, { ...currentClaims, role, businessId });
 
     // Optionally update Firestore user doc for display
-    await adminDb.collection('users').doc(uid).update({ role });
+    await adminDb.collection(`businesses/${businessId}/employees`).doc(uid).update({ role });
 
     return NextResponse.json({ success: true });
   } catch (err) {
