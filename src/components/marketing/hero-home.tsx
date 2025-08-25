@@ -106,7 +106,7 @@ export default function HeroHome() {
           {/* Section header */}
           <div className="pb-12 text-center md:pb-20">
             <h1
-              className="pb-5 text-4xl font-semibold md:text-5xl bg-gradient-to-r from-amber-500 to-emerald-500 bg-clip-text text-transparent animate-gradient-x"
+              className="pb-5 text-4xl font-semibold md:text-5xl bg-gradient-to-r from-emerald-500 to-amber-500 bg-clip-text text-transparent animate-gradient-x"
               data-aos="fade-up"
             >
               Growing mom and pop shops
@@ -122,21 +122,21 @@ export default function HeroHome() {
               <div className="mx-auto max-w-xs sm:flex sm:max-w-none sm:justify-center">
                 <div className="flex flex-col sm:flex-row gap-4" data-aos="fade-up" data-aos-delay={400}>
                   <a
-                    className="btn bg-gradient-to-r from-amber-400 via-amber-500 to-emerald-500 text-white dark:text-black hover:from-amber-400 hover:to-emerald-600 px-2 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2"
+                    className="btn group bg-gradient-to-r from-emerald-500 to-emerald-400 text-white dark:text-black hover:from-emerald-400 hover:to-emerald-300 px-2 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2"
                     href="signup"
                   >
                     <span className="relative inline-flex items-center">
-                      Launch My Ordering Page
-                      <span className="ml-1 tracking-normal transition-transform">-&gt;</span>
+                      Start growing
+                      <span className="ml-1 tracking-normal transform transition-transform group-hover:translate-x-1">-&gt;</span>
                     </span>
                   </a>
                   <a
-                    className="btn bg-gradient-to-r from-emerald-500 to-emerald-600 text-white dark:text-black px-2 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2"
+                    className="btn group bg-gradient-to-r from-amber-500 to-amber-400 text-white dark:text-black hover:from-amber-400 hover:to-amber-300 px-2 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2"
                     href="demo"
                   >
                     <span className="relative inline-flex items-center">
-                      Book a 10-Min Demo
-                      <span className="ml-1 tracking-normal transition-transform">-&gt;</span>
+                      Schedule Demo
+                      <span className="ml-1 tracking-normal transform transition-transform group-hover:translate-x-1">-&gt;</span>
                     </span>
                   </a>
                 </div>
