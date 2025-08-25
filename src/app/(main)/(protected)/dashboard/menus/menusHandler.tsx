@@ -20,9 +20,7 @@ export default function MenusHandler() {
   const [menus, setMenus] = useState<MenuFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [replacingId, setReplacingId] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
 
   const fetchMenus = async () => {
@@ -58,23 +56,7 @@ export default function MenusHandler() {
     // eslint-disable-next-line
   }, [businessId]);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!businessId || !e.target.files?.length) return;
-    setUploading(true);
-    setError(null);
-    try {
-      const file = e.target.files[0];
-      const menuRef = ref(storage, `businesses/${businessId}/menus/${file.name}`);
-      await uploadBytes(menuRef, file);
-      await fetchMenus();
-    } catch (err) {
-      const error = err as MenuError;
-      setError("Failed to upload menu." + (error.code ? ` (${error.code})` : ''));
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
+  // Uploads are handled inside MenuUploadGate; the upload input here is unused.
 
   const handleReplace = async (menu: MenuFile, e: React.ChangeEvent<HTMLInputElement>) => {
     if (!businessId || !e.target.files?.length) return;
@@ -118,20 +100,6 @@ export default function MenusHandler() {
             </div>
           ) : menus.length === 0 ? null : (
             <div>
-              <div className="mb-4 flex items-center gap-2">
-                <label className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer">
-                  Upload menu
-                  <input
-                    type="file"
-                    accept="application/pdf,image/*"
-                    onChange={handleUpload}
-                    ref={fileInputRef}
-                    disabled={uploading}
-                    className="hidden"
-                  />
-                </label>
-                {uploading && <Spinner size="xs" className="ml-2" />}
-              </div>
               <table className="w-full border text-left border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
                 <thead>
                   <tr className="bg-gray-100 dark:bg-gray-800">

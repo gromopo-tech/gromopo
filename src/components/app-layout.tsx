@@ -22,7 +22,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsAuthenticated(!!user);
+      // Consider user authenticated only when signed in AND email is verified.
+      const verified = !!user && !!(user.emailVerified);
+      setIsAuthenticated(verified);
       setAuthLoading(false); // Auth check complete
       if (!user && pathname.startsWith('/dashboard')) {
         router.replace('/signin');
@@ -35,7 +37,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const refresh = async () => {
       const user = auth.currentUser;
-      if (user) {
+      // Only refresh server session cookie for verified users.
+      if (user && user.emailVerified) {
         const idToken = await user.getIdToken(true);
         await fetch('/api/set-session-cookie', {
           method: 'POST',

@@ -63,18 +63,10 @@ export default function SignupForm() {
       // Optionally send email verification (still works)
       await sendEmailVerification(userCredential.user);
 
-      // Set server-side session cookie so middleware recognizes the user
-      const idToken = await userCredential.user.getIdToken(true);
-      const cookieRes = await fetch("/api/set-session-cookie", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: idToken }),
-      });
-      if (!cookieRes.ok) throw new Error('Failed to set session cookie');
-
+      // Send verification and show success UI.  Do NOT set the session cookie or redirect here.
+      // We'll let the user verify their email first, then they can click "Continue" which will
+      // reload the user, check emailVerified and set the session cookie + redirect.
       setSuccess(true);
-      // Ensure a full reload so server-side middleware reads the new cookie
-      window.location.replace('/dashboard');
     } catch (err) {
       console.error(err);
       toast.error('Signup failed.');
@@ -83,15 +75,80 @@ export default function SignupForm() {
     }
   };
 
+  // Resend verification email
+  const resendVerification = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        toast.error('No user available to resend verification.');
+        return;
+      }
+      await sendEmailVerification(user);
+      toast.success('Verification email sent.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to resend verification email.');
+    }
+  };
+
+  // Continue: reload user, check emailVerified, then set session cookie + redirect
+  const continueAfterVerification = async () => {
+    setIsSubmitting(true);
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        toast.error('No user available.');
+        return;
+      }
+      await user.reload();
+      if (!user.emailVerified) {
+        toast.error('Email not verified yet. Please check your inbox.');
+        return;
+      }
+
+      const idToken = await user.getIdToken(true);
+      const cookieRes = await fetch("/api/set-session-cookie", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: idToken }),
+      });
+      if (!cookieRes.ok) throw new Error('Failed to set session cookie');
+
+      // Redirect so middleware picks up the new session cookie
+      window.location.replace('/dashboard');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to continue to dashboard.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6">
       <h1 className="pb-5 text-4xl font-semibold md:text-5xl bg-gradient-to-r from-amber-500 to-emerald-500 bg-clip-text text-transparent animate-gradient-x">
-      Create an account
+        Create an account
       </h1>
       {success ? (
         <div>
           <h2>🎉 Success!</h2>
           <p>Check your email to verify your address.</p>
+          <div className="mt-4 flex gap-2">
+            <button
+              type="button"
+              onClick={resendVerification}
+              className="btn border bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded"
+            >
+              Resend verification email
+            </button>
+            <button
+              type="button"
+              onClick={continueAfterVerification}
+              className="btn bg-emerald-500 text-white px-3 py-1 rounded"
+            >
+              I'm verified — Continue
+            </button>
+          </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
