@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useContext } from "react";
 import { collection, query, orderBy, onSnapshot, where, doc, getDoc } from "firebase/firestore";
-import { db, storage } from "@/lib/firebase/config";
+import { db } from "@/lib/firebase/config";
 import { BusinessIdContext } from "@/components/protected/business-id-provider";
 import type { Order } from '@/types/order';
 import Link from 'next/link';
@@ -64,7 +64,7 @@ export default function OrdersList() {
         const snap = await getDoc(businessRef);
         if (!mounted) return;
         if (snap.exists()) {
-          const data = snap.data() as Record<string, any>;
+          const data = snap.data() as Record<string, unknown>;
           setMenuIntegrated(Boolean(data.menuIntegrated));
           setMenuUploaded(Boolean(data.menuUploaded));
         } else {

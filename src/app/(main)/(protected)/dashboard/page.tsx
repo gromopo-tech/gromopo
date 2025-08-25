@@ -28,7 +28,7 @@ export default function DashboardPage() {
         const snap = await getDoc(ref);
         if (!mounted) return;
         if (snap.exists()) {
-          const data = snap.data() as Record<string, any>;
+          const data = snap.data() as Record<string, unknown>;
           setSubdomain(typeof data.subdomain === 'string' ? data.subdomain : null);
           setMenuUploaded(typeof data.menuUploaded === 'boolean' ? data.menuUploaded : null);
         } else {

@@ -77,7 +77,7 @@ export default function ChatWidget() {
     };
     
     fetchChats();
-  }, [businessId, role, selectedChatId]);
+  }, [businessId, role, selectedChatId, hasSubdomain]);
 
   // Load business subdomain flag and only show chat when non-empty
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function ChatWidget() {
         const snap = await getDoc(doc(db, 'businesses', businessId));
         if (!mounted) return;
         if (snap.exists()) {
-          const data = snap.data() as Record<string, any>;
+          const data = snap.data() as Record<string, unknown>;
           const sd = typeof data.subdomain === 'string' ? data.subdomain : '';
           setHasSubdomain(sd !== '');
         } else {

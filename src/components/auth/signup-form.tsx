@@ -7,7 +7,7 @@ import { db, auth } from "@/lib/firebase/config";
 import { collection, addDoc } from "firebase/firestore";
 import { toast } from 'sonner';
 import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth";
-import { useRouter } from 'next/navigation';
+
 
 // Schema for form validation
 const schema = z.object({
@@ -21,7 +21,6 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function SignupForm() {
-  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 

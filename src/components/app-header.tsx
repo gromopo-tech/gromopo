@@ -1,6 +1,6 @@
 'use client'
 import { usePathname } from 'next/navigation'
-import { useState, useContext, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Menu, X } from 'lucide-react'
@@ -8,7 +8,6 @@ import { ThemeSelect } from '@/components/theme-select'
 import { signOut } from 'firebase/auth';
 import { useRouter } from "next/navigation";
 import { auth } from '@/lib/firebase/config';
-import { RoleContext } from '@/components/protected/role-provider'
 import { toast } from 'sonner';
 import { getHomeUrl, isSubdomain } from '@/lib/utils';
 
@@ -51,7 +50,6 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
   const [homeUrl, setHomeUrl] = useState('/')
   const [isOnSubdomain, setIsOnSubdomain] = useState(false)
   const [isClient, setIsClient] = useState(false)
-  const role = useContext(RoleContext);
 
   useEffect(() => {
     setIsClient(true)
@@ -63,7 +61,7 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
     return path === '/' ? pathname === '/' : pathname.startsWith(path)
   }
 
-  let effectiveBusinessLinks = [...businessLinks];
+  const effectiveBusinessLinks = [...businessLinks];
 
   // Conditionally add Employees link for owner/admin. Employees disabled for now
   {/*if (isAuthenticated && (role === 'owner' || role === 'admin')) {
