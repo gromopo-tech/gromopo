@@ -11,8 +11,6 @@ import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } 
 
 // Schema for form validation
 const schema = z.object({
-  businessName: z.string().min(1, "Business name is required"),
-  businessType: z.enum(["restaurant", "cafe", "bakery", "bar", "food-truck", "other"]),
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -23,6 +21,7 @@ type FormData = z.infer<typeof schema>;
 export default function SignupForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -38,10 +37,11 @@ export default function SignupForm() {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
 
       // Create business doc
+      // Note: businessName and businessType are not collected at signup. Use sensible defaults.
       const businessRef = await addDoc(collection(db, "businesses"), {
-        name: data.businessName,
+        name: '',
         subdomain: '', // to be set up later
-        businessType: data.businessType,
+        businessType: 'other',
         ownerId: userCredential.user.uid,
         verified: false,
         menuUploaded: false,
@@ -86,7 +86,7 @@ export default function SignupForm() {
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6">
       <h1 className="pb-5 text-4xl font-semibold md:text-5xl bg-gradient-to-r from-amber-500 to-emerald-500 bg-clip-text text-transparent animate-gradient-x">
-      Signup for early access
+      Create an account
       </h1>
       {success ? (
         <div>
@@ -95,42 +95,7 @@ export default function SignupForm() {
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium">
-              Business Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="businessName"
-              type="businessName"
-              {...register("businessName")}
-              className="form-input w-full border border-black dark:border-white rounded-lg"
-              required
-            />
-            {errors.businessName && (
-              <p className="mt-1 text-sm text-red-600">{errors.businessName.message}</p>
-            )}
-          </div>
-          <div>
-            <label htmlFor="business type" className="block text-sm font-medium">
-              Business Type 
-            </label>
-            <select
-              id="businessType"
-              {...register("businessType")}
-              className="w-full border border-black dark:border-white rounded-lg cursor-pointer"
-            >
-              <option value=""></option>
-              <option value="restaurant">Restaurant</option>
-              <option value="cafe">Cafe</option>
-              <option value="bakery">Bakery</option>
-              <option value="bar">Bar</option>
-              <option value="food-truck">Food Truck</option>
-              <option value="other">Other</option>
-            </select>
-            {errors.businessType && (
-                    <p className="mt-1 text-sm text-red-600">{errors.businessType.message}</p>
-                  )}
-          </div>
+          {/* Business name/type removed from signup form per request */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium">
               Name <span className="text-red-500">*</span>
@@ -169,13 +134,32 @@ export default function SignupForm() {
             >
               Password <span className="text-red-500">*</span>
             </label>
-            <input
-              id="password"
-              type="password"
-              {...register("password")}
-              className="form-input w-full border border-black dark:border-white rounded-lg"
-              required
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                {...register("password")}
+                className="form-input w-full border border-black dark:border-white rounded-lg pr-10"
+                required
+              />
+              <button
+                type="button"
+                onMouseDown={() => setShowPassword(true)}
+                onMouseUp={() => setShowPassword(false)}
+                onMouseLeave={() => setShowPassword(false)}
+                onTouchStart={() => setShowPassword(true)}
+                onTouchEnd={() => setShowPassword(false)}
+                onTouchCancel={() => setShowPassword(false)}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600 dark:text-gray-300"
+                aria-label="Hold to show password"
+              >
+                {/* Eye icon (static) - visible while holding via input type change */}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12a5 5 0 110-10 5 5 0 010 10z" />
+                  <path d="M12 9a3 3 0 100 6 3 3 0 000-6z" />
+                </svg>
+              </button>
+            </div>
             {errors.password && (
               <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
             )}
@@ -185,7 +169,7 @@ export default function SignupForm() {
             disabled={isSubmitting}
             className="btn w-full max-w-2xl bg-gradient-to-r from-amber-500 to-emerald-500 text-white dark:text-black hover:from-amber-500 hover:to-emerald-500 px-2 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-fuchsia-400 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
           >
-            {isSubmitting ? "Sending..." : "Get Early Access"}
+            {isSubmitting ? "Sending..." : "Register"}
           </button>
         </form>
       )}
