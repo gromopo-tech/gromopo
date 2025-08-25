@@ -9,7 +9,10 @@ export function HomeRedirectIfAuthenticated({ children }: { children: React.Reac
   const [checked, setChecked] = useState(false);
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
+      // Redirect only if the user exists and their email is verified.
+      // If user is signed in but not verified, keep showing the marketing page so they
+      // can complete verification flow.
+      if (user && user.emailVerified) {
         router.replace("/dashboard");
       } else {
         setChecked(true);
