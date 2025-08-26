@@ -87,7 +87,7 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
           if (mounted) setHasSubdomain(cached !== '')
           return
         }
-      } catch (err) {
+      } catch {
         // ignore sessionStorage errors
       }
       try {
