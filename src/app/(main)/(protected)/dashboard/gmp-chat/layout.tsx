@@ -16,8 +16,8 @@ export default async function GMPChatLayout({ children }: { children: React.Reac
 
   let decoded: { role?: string; businessId?: string } | null = null
   try {
-    decoded = jwt.decode(token as string) as any
-  } catch (err) {
+    decoded = jwt.decode(token as string) as { role?: string; businessId?: string } | null
+  } catch {
     console.warn('Invalid session token for GMPchat layout')
     redirect('/dashboard')
   }
