@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { AppProviders } from '@/components/app-providers'
 import { AppLayout } from '@/components/app-layout'
+import { BusinessIdProvider } from '@/components/protected/business-id-provider'
 import React from 'react'
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
@@ -29,18 +30,20 @@ export default async function RootLayout({
 }: Readonly<{ 
   children: React.ReactNode 
 }>) {
-  // Get JWT from cookies and decode role
+  // Get JWT from cookies and decode role and businessId (server-side only)
   let role: string | null = null;
-  
+  let businessId: string | null = null;
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('__session');
     const token = sessionCookie?.value;
     if (token) {
-      const decoded = jwt.decode(token) as { role?: string } | null;
+      const decoded = jwt.decode(token) as { role?: string; businessId?: string } | null;
       role = decoded?.role || null;
+      businessId = decoded?.businessId || null;
     }
   } catch (error) {
+    // Handle cookie parsing errors gracefully
     console.warn('Cookie parsing error:', error);
   }
 
@@ -49,7 +52,9 @@ export default async function RootLayout({
       <body className="antialiased" suppressHydrationWarning>
         <RoleProvider role={role}>
           <AppProviders>
-            <AppLayout>{children}</AppLayout>
+            <BusinessIdProvider businessId={businessId}>
+              <AppLayout>{children}</AppLayout>
+            </BusinessIdProvider>
           </AppProviders>
         </RoleProvider>
       </body>

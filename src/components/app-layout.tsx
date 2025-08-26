@@ -51,7 +51,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, []);
 
-  const isDashboardRoot = mounted && pathname === "/dashboard";
+  const isDashboardRoute = mounted && pathname?.startsWith("/dashboard");
 
   // Show loading only while checking authentication
   if (!mounted || authLoading) {
@@ -72,7 +72,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <div className="flex flex-col min-h-screen">
         <AppHeader isAuthenticated={isAuthenticated} />
-        <main className={isDashboardRoot ? "flex-grow" : "flex-grow container mx-auto p-4"}>
+  <main className={isDashboardRoute ? "flex-grow" : "flex-grow container mx-auto p-4"}>
           {children}
         </main>
         {isAuthenticated ? null : <AppFooter isAuthenticated={isAuthenticated}/>}

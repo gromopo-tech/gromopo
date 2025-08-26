@@ -40,10 +40,9 @@ export default function SignupForm() {
       // Note: businessName and businessType are not collected at signup. Use sensible defaults.
       const businessRef = await addDoc(collection(db, "businesses"), {
         name: '',
-        subdomain: '', // to be set up later
+        subdomain: '',
         businessType: 'other',
         ownerId: userCredential.user.uid,
-        verified: false,
         menuUploaded: false,
         menuIntegrated: false,
         hasWallet: false,
@@ -137,14 +136,14 @@ export default function SignupForm() {
             <button
               type="button"
               onClick={resendVerification}
-              className="btn border bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded"
+              className="btn border bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded cursor-pointer"
             >
               Resend verification email
             </button>
             <button
               type="button"
               onClick={continueAfterVerification}
-              className="btn bg-emerald-500 text-white px-3 py-1 rounded"
+              className="btn bg-emerald-500 text-white px-3 py-1 rounded cursor-pointer"
             >
               I'm verified — Continue
             </button>
