@@ -12,15 +12,6 @@ import { RoleProvider } from '@/components/protected/role-provider';
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = {
-  title: 'GroMoPo',
-  description: '',
-  // leave manifest out here; generate it per-request below
-  icons: [
-    { rel: 'icon', url: '/images/logo.png' },
-    { rel: 'apple-touch-icon', url: '/images/logo.png' }
-  ],
-};
 
 // add this server-side generator so the manifest uses the current origin (works for subdomains)
 export async function generateMetadata(): Promise<Metadata> {
