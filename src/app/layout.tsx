@@ -5,6 +5,7 @@ import { AppLayout } from '@/components/app-layout'
 import { BusinessIdProvider } from '@/components/protected/business-id-provider'
 import React from 'react'
 import { cookies } from 'next/headers';
+import { headers } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { RoleProvider } from '@/components/protected/role-provider';
 
@@ -14,12 +15,31 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'GroMoPo',
   description: '',
-  manifest: '/manifest.json',
+  // leave manifest out here; generate it per-request below
   icons: [
     { rel: 'icon', url: '/images/logo.png' },
     { rel: 'apple-touch-icon', url: '/images/logo.png' }
   ],
 };
+
+// add this server-side generator so the manifest uses the current origin (works for subdomains)
+export async function generateMetadata(): Promise<Metadata> {
+  const hdr = await headers();
+  const host = hdr.get('host') || 'localhost:3000';
+  // Prefer forwarded proto if present (Vercel/Proxies); fall back to https in prod
+  const proto = hdr.get('x-forwarded-proto') || (process.env.NODE_ENV === 'development' ? 'http' : 'https');
+  const origin = `${proto}://${host}`;
+
+  return {
+    title: 'GroMoPo',
+    description: '',
+    manifest: `${origin}/manifest.json`,
+    icons: [
+      { rel: 'icon', url: '/images/logo.png' },
+      { rel: 'apple-touch-icon', url: '/images/logo.png' }
+    ],
+  };
+}
 
 export const viewport = {
   themeColor: '#ff6600',

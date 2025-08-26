@@ -85,7 +85,7 @@ export default function DashboardPage() {
         
         {role === 'owner' ? (
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">ChatGMP Assistant</h2>
+            <h2 className="text-xl font-semibold mb-4">GMPchat Assistant</h2>
             {subdomain === '' ? (
               <p className="text-gray-600 dark:text-gray-300 mb-4">
                 Launch your ordering page to unlock the AI assistant and get instant help with your business operations.
@@ -93,10 +93,7 @@ export default function DashboardPage() {
             ) : (
               <>
                 <p className="text-gray-600 dark:text-gray-300 mb-4">
-                  Get instant help with your business operations using our AI assistant.
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Click the chat icon in the bottom right corner to get started!
+                  Check out GMPchat in the menu above to get instant help with your business operations using our AI assistant.
                 </p>
               </>
             )}

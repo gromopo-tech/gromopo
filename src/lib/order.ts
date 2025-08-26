@@ -9,7 +9,7 @@ export interface SubmitOrderParams {
   businessId: string;
   businessName: string;
   txSignature?: string | null;
-  orderType: 'takeout' | 'dine-in' | 'delivery';
+  orderType: 'pick-up' | 'delivery';
 }
 
 export async function submitOrderToFirestore({
