@@ -6,9 +6,9 @@ interface OrderDetailsProps {
   cart: CartItem[];
   total: number;
   customerName: string;
-  orderType: 'takeout' | 'dine-in' | 'delivery';
+  orderType: 'pick-up' | 'delivery';
   onCustomerNameChange: (name: string) => void;
-  onOrderTypeChange: (type: 'takeout' | 'dine-in' | 'delivery') => void;
+  onOrderTypeChange: (type: 'pick-up' | 'delivery') => void;
   onRemoveFromCart: (index: number) => void;
 }
 
@@ -42,11 +42,10 @@ export default function OrderDetails({
           Order Type:
           <select
             value={orderType}
-            onChange={(e) => onOrderTypeChange(e.target.value as 'takeout' | 'dine-in' | 'delivery')}
+            onChange={(e) => onOrderTypeChange(e.target.value as 'pick-up' | 'delivery')}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
           >
-            <option value="takeout">Takeout</option>
-            <option value="dine-in">Dine-in</option>
+            <option value="pick-up">Pick-up</option>
             <option value="delivery">Delivery</option>
           </select>
         </label>
