@@ -16,11 +16,15 @@ export function BusinessNameProvider({ businessId, children }: { businessId: str
       } else {
         getDoc(doc(db, 'businesses', businessId)).then((snap) => {
           if (isMounted && snap.exists()) {
-            // Try both 'name' and 'businessName' fields for compatibility
-            const name = snap.data().name || '';
-            setBusinessName(name);
-            sessionStorage.setItem(`businessName-${businessId}`, name);
-          }
+              // Try both 'name' and 'businessName' fields for compatibility
+              const data = snap.data() as Record<string, any>;
+              const name = data.name || '';
+              setBusinessName(name);
+              sessionStorage.setItem(`businessName-${businessId}`, name);
+              // Also cache subdomain for quick header checks
+              const sd = typeof data.subdomain === 'string' ? data.subdomain : '';
+              sessionStorage.setItem(`businessSubdomain-${businessId}`, sd);
+            }
         });
       }
     } else {

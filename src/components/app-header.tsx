@@ -10,6 +10,11 @@ import { useRouter } from "next/navigation";
 import { auth } from '@/lib/firebase/config';
 import { toast } from 'sonner';
 import { getHomeUrl, isSubdomain } from '@/lib/utils';
+import { useContext } from 'react'
+import { RoleContext } from './protected/role-provider'
+import { BusinessIdContext } from '@/components/protected/business-id-provider'
+import { getDoc, doc } from 'firebase/firestore'
+import { db } from '@/lib/firebase/config'
 
 const customerLinks: { label: string; path: string }[] = [
   // More links...
@@ -61,15 +66,56 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
     return path === '/' ? pathname === '/' : pathname.startsWith(path)
   }
 
-  const effectiveBusinessLinks = [...businessLinks];
+  let effectiveBusinessLinks = [...businessLinks];
 
-  // Conditionally add Employees link for owner/admin. Employees disabled for now
-  {/*if (isAuthenticated && (role === 'owner' || role === 'admin')) {
+  const role = useContext(RoleContext)
+  const businessId = useContext(BusinessIdContext)
+  const [hasSubdomain, setHasSubdomain] = useState<boolean | null>(null)
+  // Conditionally add GMPchat link for owner only when the business doc has a non-empty `subdomain`
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      // If not owner or not authenticated or no businessId, don't show link
+      if (!isAuthenticated || role !== 'owner' || !businessId) {
+        if (mounted) setHasSubdomain(false)
+        return
+      }
+      // Fast path: check sessionStorage cache set by BusinessNameProvider
+      try {
+        const cached = sessionStorage.getItem(`businessSubdomain-${businessId}`)
+        if (typeof cached === 'string') {
+          if (mounted) setHasSubdomain(cached !== '')
+          return
+        }
+      } catch (err) {
+        // ignore sessionStorage errors
+      }
+      try {
+        const snap = await getDoc(doc(db, 'businesses', businessId))
+        if (!mounted) return
+        if (snap.exists()) {
+          const data = snap.data() as Record<string, unknown>
+          const sd = typeof data.subdomain === 'string' ? data.subdomain : ''
+          setHasSubdomain(sd !== '')
+        } else {
+          setHasSubdomain(false)
+        }
+      } catch (err) {
+        console.error('Error loading business subdomain for header:', err)
+        if (!mounted) return
+        setHasSubdomain(false)
+      }
+    }
+  load()
+    return () => { mounted = false }
+  }, [businessId, isAuthenticated, role])
+
+  if (isAuthenticated && role === 'owner' && hasSubdomain === true) {
     effectiveBusinessLinks = [
-      { label: 'Employees', path: '/dashboard/employees' },
+      { label: 'GMPchat', path: '/dashboard/gmp-chat' },
       ...businessLinks
-    ];
-  }}*/}
+    ]
+  }
 
 
 

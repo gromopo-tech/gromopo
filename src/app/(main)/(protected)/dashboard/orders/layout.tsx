@@ -1,10 +1,9 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
-import { ContextProviders } from '@/components/protected/context-providers';
 import { JwtPayload } from '@/types/jwt-payload';
 
-export default async function ProtectedLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
@@ -18,11 +17,9 @@ export default async function ProtectedLayout({
   // Decode JWT to get custom claims
   const decoded = jwt.decode(token) as JwtPayload | null;
   const role: string | null = decoded?.role || null;
-  const businessId: string | null = decoded?.businessId || null;
+  if (!role) {
+    redirect('/signin');
+  }
 
-  return (
-    <ContextProviders role={role} businessId={businessId}>
-      {children}
-    </ContextProviders>
-  );
+  return <>{children}</>;
 }
