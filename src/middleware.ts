@@ -13,11 +13,6 @@ export function middleware(request: NextRequest) {
   const isSandrasSubdomain = hostname.startsWith('sandras-sandwiches.');
   const isLocalhost = hostname.startsWith('localhost') || hostname.startsWith('127.0.0.1');
   const isDevelopment = process.env.NODE_ENV === 'development';
-  
-  // Disable internal ordering for now. Return 404
-  if (pathname.startsWith('/dashboard/orders/create')) {
-    return new NextResponse('Not Found', { status: 404 });
-  }
 
   // Disable employees routes for now. Return 404
   if (pathname.startsWith('/dashboard/employees')) {
