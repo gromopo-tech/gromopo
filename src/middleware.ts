@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSubdomain } from '@/lib/utils';
 
 export function middleware(request: NextRequest) {
   // Get the original hostname from various possible headers
@@ -9,9 +10,6 @@ export function middleware(request: NextRequest) {
     '';
     
   const pathname = request.nextUrl.pathname;
-  
-  const isSandrasSubdomain = hostname.startsWith('sandras-sandwiches.');
-  const isLocalhost = hostname.startsWith('localhost') || hostname.startsWith('127.0.0.1');
   const isDevelopment = process.env.NODE_ENV === 'development';
 
   // Disable employees routes for now. Return 404
@@ -19,17 +17,23 @@ export function middleware(request: NextRequest) {
     return new NextResponse('Not Found', { status: 404 });
   }
 
-  // If on sandras-sandwiches subdomain, rewrite to subdomain routes
-  if (isSandrasSubdomain) {
-    if (!pathname.startsWith('/sandras-sandwiches')) {
-      const rewriteUrl = `/sandras-sandwiches${pathname}`;
+  // Extract subdomain using utility function
+  const subdomain = getSubdomain(hostname);
+
+  // If we have a subdomain, rewrite to dynamic subdomain routes
+  if (subdomain) {
+    // Don't rewrite if already in the correct subdomain path
+    if (!pathname.startsWith(`/${subdomain}`) && !pathname.startsWith('/api') && !pathname.startsWith('/_next')) {
+      const rewriteUrl = `/${subdomain}${pathname}`;
+      console.log(`[Middleware] Rewriting ${pathname} to ${rewriteUrl} for subdomain ${subdomain}`);
       return NextResponse.rewrite(new URL(rewriteUrl, request.url));
     }
   }
   
-  // If accessing /order route from main domain
-  if (pathname.startsWith('/order')) {
-    if (!(isDevelopment && isLocalhost) && !isSandrasSubdomain) {
+  // If accessing /order route from main domain without subdomain
+  if (pathname.startsWith('/order') && !subdomain) {
+    const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1');
+    if (!(isDevelopment && isLocalhost)) {
       return NextResponse.redirect(new URL('/', request.url));
     }
   }

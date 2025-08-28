@@ -29,13 +29,36 @@ export function getHomeUrl() {
   return '/';
 }
 
-export function isSubdomain() {
-  if (typeof window === 'undefined') return false;
+export function isSubdomain(hostname?: string) {
+  // Use provided hostname or get from window if in browser
+  const host = hostname || (typeof window !== 'undefined' ? window.location.hostname : '');
   
-  const hostname = window.location.hostname;
-  console.log('Current hostname:', hostname);
-  return hostname.includes('.') && 
-         !hostname.startsWith('localhost') && 
-         !hostname.startsWith('127.0.0.1') &&
-         hostname !== 'gromopo.com';
+  if (!host) return false;
+  
+  console.log('Current hostname:', host);
+  return host.includes('.') && 
+         !host.startsWith('localhost') && 
+         !host.startsWith('127.0.0.1') &&
+         host !== 'gromopo.com';
+}
+
+export function getSubdomain(hostname?: string): string {
+  const host = hostname || (typeof window !== 'undefined' ? window.location.hostname : '');
+  
+  if (!host) return '';
+  
+  const parts = host.split('.');
+  
+  // For localhost development (e.g., sandras-sandwiches.localhost:5002)
+  if (host.includes('localhost') || host.includes('127.0.0.1')) {
+    if (parts.length >= 2 && parts[0] !== 'localhost' && parts[0] !== '127') {
+      return parts[0];
+    }
+  } 
+  // For production (e.g., sandras-sandwiches.yourdomain.com)
+  else if (parts.length > 2) {
+    return parts[0];
+  }
+  
+  return '';
 }

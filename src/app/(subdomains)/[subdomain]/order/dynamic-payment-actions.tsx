@@ -5,21 +5,33 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { submitOrderToFirestore } from '@/lib/order';
 import { useRouter } from 'next/navigation';
 import { CartItem } from '@/types/cart';
-import { PaymentProps } from '@/types/payment';
 import { handleSolanaPayPayment } from '@/lib/solana/wallet-payment';
 import { toast } from 'sonner';
 import { WalletButton } from '@/components/solana/solana-provider';
 
-export function PaymentActions({
+interface DynamicPaymentActionsProps {
+  total: number;
+  cart: CartItem[];
+  customerName: string;
+  businessId: string;
+  businessName: string;
+  subdomain: string;
+  clearCart: () => void;
+  onSuccess?: (signature: string) => void;
+  onError?: () => void;
+}
+
+export function DynamicPaymentActions({
   total,
   cart = [],
   customerName = 'Test Customer',
-  businessId = 'kQKIuVShyepX9h8OqxdG',
-  businessName = 'Sandra\'s Sandwiches',
+  businessId,
+  businessName,
+  subdomain,
   onSuccess,
   onError,
   clearCart,
-}: PaymentProps) {
+}: DynamicPaymentActionsProps) {
   const router = useRouter();
   const { publicKey, sendTransaction, connected } = useWallet();
   const { connection } = useConnection();
@@ -128,10 +140,10 @@ export function PaymentActions({
         txSignature,
       };
       sessionStorage.setItem('orderConfirmation', JSON.stringify(orderDetails));
-      router.push('/order/confirmation');
+      router.push(`/${subdomain}/order/confirmation`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderConfirmed, orderNumber]);
+  }, [orderConfirmed, orderNumber, subdomain]);
 
   return (
     <div className="flex flex-col gap-2 mt-4">

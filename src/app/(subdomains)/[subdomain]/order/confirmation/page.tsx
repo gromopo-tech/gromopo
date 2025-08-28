@@ -12,19 +12,31 @@ interface OrderConfirmation {
   txSignature?: string | null;
 }
 
-export default function OrderConfirmationPage() {
+interface ConfirmationPageProps {
+  params: Promise<{
+    subdomain: string;
+  }>;
+}
+
+export default function OrderConfirmationPage({ params }: ConfirmationPageProps) {
   const [order, setOrder] = useState<OrderConfirmation | null>(null);
+  const [subdomain, setSubdomain] = useState<string>('');
   const router = useRouter();
 
   useEffect(() => {
-    const data = sessionStorage.getItem("orderConfirmation");
-    if (data) {
-      setOrder(JSON.parse(data));
-      // Do NOT remove from sessionStorage here, so the page can reload or stay visible
-    } else {
-      // If no order, redirect to home or order page
-      router.replace("/customer/order");
-    }
+    // Get subdomain from params
+    params.then(({ subdomain: sub }) => {
+      setSubdomain(sub);
+      
+      const data = sessionStorage.getItem("orderConfirmation");
+      if (data) {
+        setOrder(JSON.parse(data));
+        // Do NOT remove from sessionStorage here, so the page can reload or stay visible
+      } else {
+        // If no order, redirect to subdomain order page
+        router.replace(`/${sub}/order`);
+      }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -64,15 +76,14 @@ export default function OrderConfirmationPage() {
           ))}
         </ul>
       </div>
-      {/* TODO: Implement order status view
       <div className="mt-8 text-center">
-        <a
-          href={`/transactions`}
+        <button
+          onClick={() => router.push(`/${subdomain}/order`)}
           className="btn w-full border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
         >
-          View order status
-        </a>
-      </div>*/}
+          Place Another Order
+        </button>
+      </div>
     </div>
   );
 }
