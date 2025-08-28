@@ -1,6 +1,7 @@
  'use client'
  import { usePathname } from 'next/navigation'
  import { useState, useEffect } from 'react'
+ import { onAuthStateChanged } from 'firebase/auth'
  import Link from 'next/link'
  import { Button } from '@/components/ui/button'
  import { Menu, X } from 'lucide-react'
@@ -54,10 +55,25 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
   const [showMenu, setShowMenu] = useState(false)
   const [homeUrl, setHomeUrl] = useState('/')
   const [isClient, setIsClient] = useState(false)
+  // client-side auth state so header updates immediately on sign-in/out
+  const [clientAuth, setClientAuth] = useState<boolean>(isAuthenticated)
+
   useEffect(() => {
     setIsClient(true)
     setHomeUrl(getHomeUrl())
   }, [])
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setClientAuth(!!user)
+    })
+    return () => unsub()
+  }, [])
+
+  // close mobile menu when the user signs out
+  useEffect(() => {
+    if (clientAuth === false) setShowMenu(false)
+  }, [clientAuth])
 
   function isActive(path: string) {
     return path === '/' ? pathname === '/' : pathname.startsWith(path)
@@ -73,7 +89,7 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
     let mounted = true
     const load = async () => {
       // If not owner or not authenticated or no businessId, don't show link
-      if (!isAuthenticated || role !== 'owner' || !businessId) {
+      if (!clientAuth || role !== 'owner' || !businessId) {
         if (mounted) setHasSubdomain(false)
         return
       }
@@ -107,7 +123,7 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
     return () => { mounted = false }
   }, [businessId, isAuthenticated, role])
 
-  if (isAuthenticated && role === 'owner' && hasSubdomain === true) {
+  if (clientAuth && role === 'owner' && hasSubdomain === true) {
     effectiveBusinessLinks = [
       { label: 'GMPchat', path: '/dashboard/gmp-chat' },
       ...businessLinks
@@ -125,7 +141,7 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
           </Link>
           <div className="hidden md:flex items-center">
             <ul className="flex gap-4 flex-nowrap items-center">
-              {(isAuthenticated ? effectiveBusinessLinks : customerLinks).map(({ label, path }) => (
+      {(clientAuth ? effectiveBusinessLinks : customerLinks).map(({ label, path }) => (
                 <li key={path}>
                   <Link
                     className={`hover:text-neutral-500 dark:hover:text-white ${isActive(path) ? 'text-neutral-500 dark:text-white' : ''}`}
@@ -144,7 +160,7 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
           )}
         </div>
 
-        {isAuthenticated ? (
+    {clientAuth ? (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center w-full pointer-events-none">
             <span className="pointer-events-auto font-semibold text-lg text-neutral-700 dark:text-neutral-200 px-4 py-1 rounded">
               Hello, {auth.currentUser?.displayName || 'User'}
@@ -154,7 +170,7 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
 
         {/* Right: Theme and Auth Buttons for main site */}
         <div className="flex flex gap-4">
-          {isClient && <AuthButton isAuthenticated={isAuthenticated} />}
+          {isClient && <AuthButton isAuthenticated={clientAuth} />}
           <ThemeSelect />
         </div>
 
@@ -162,7 +178,7 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
           <div className="md:hidden fixed inset-x-0 top-[52px] bottom-0 bg-neutral-100/95 dark:bg-neutral-900/95 backdrop-blur-sm">
             <div className="flex flex-col p-4 gap-4 border-t dark:border-neutral-800">
               <ul className="flex flex-col gap-4">
-                {(isAuthenticated ? effectiveBusinessLinks : customerLinks).map(({ label, path }) => (
+                {(clientAuth ? effectiveBusinessLinks : customerLinks).map(({ label, path }) => (
                   <li key={path}>
                     <Link
                       className={`hover:text-neutral-500 dark:hover:text-white block text-lg py-2  ${isActive(path) ? 'text-neutral-500 dark:text-white' : ''} `}
