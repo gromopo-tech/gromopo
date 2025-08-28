@@ -6,7 +6,7 @@ import { submitOrderToFirestore } from '@/lib/order';
 import { useRouter } from 'next/navigation';
 import { CartItem } from '@/types/cart';
 import { PaymentProps } from '@/types/payment';
-import { handleSolanaPayPayment } from '@/lib/solanaPay/wallet-payment';
+import { handleSolanaPayPayment } from '@/lib/solana/wallet-payment';
 import { toast } from 'sonner';
 import { WalletButton } from '@/components/solana/solana-provider';
 
@@ -16,7 +16,6 @@ export function PaymentActions({
   customerName = 'Test Customer',
   businessId = 'kQKIuVShyepX9h8OqxdG',
   businessName = 'Sandra\'s Sandwiches',
-  orderType = 'pick-up',
   onSuccess,
   onError,
   clearCart,
@@ -44,7 +43,6 @@ export function PaymentActions({
         businessId,
         businessName,
         txSignature,
-        orderType,
       });
       setOrderNumber(orderData.orderNumber);
       setOrderConfirmed(true);
@@ -128,7 +126,6 @@ export function PaymentActions({
         total,
         cart: cartSnapshot.length > 0 ? cartSnapshot : cart,
         txSignature,
-        orderType,
       };
       sessionStorage.setItem('orderConfirmation', JSON.stringify(orderDetails));
       router.push('/order/confirmation');

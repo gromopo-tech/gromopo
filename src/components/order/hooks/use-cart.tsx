@@ -6,7 +6,6 @@ import { CartItem } from '@/types/cart';
 
 export function useCart() {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [orderType, setOrderType] = useState<'pick-up' | 'delivery'>('pick-up');
   const [customerName, setCustomerName] = useState('');
   
   const total = cart.reduce((sum, item) => sum + item.price, 0);
@@ -50,8 +49,6 @@ export function useCart() {
   return {
     cart,
     total,
-    orderType,
-    setOrderType,
     customerName,
     setCustomerName,
     addToCart,

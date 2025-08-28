@@ -33,6 +33,7 @@ export function isSubdomain() {
   if (typeof window === 'undefined') return false;
   
   const hostname = window.location.hostname;
+  console.log('Current hostname:', hostname);
   return hostname.includes('.') && 
          !hostname.startsWith('localhost') && 
          !hostname.startsWith('127.0.0.1') &&

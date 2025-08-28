@@ -6,9 +6,7 @@ interface OrderDetailsProps {
   cart: CartItem[];
   total: number;
   customerName: string;
-  orderType: 'pick-up' | 'delivery';
   onCustomerNameChange: (name: string) => void;
-  onOrderTypeChange: (type: 'pick-up' | 'delivery') => void;
   onRemoveFromCart: (index: number) => void;
 }
 
@@ -16,9 +14,7 @@ export default function OrderDetails({
   cart,
   total,
   customerName,
-  orderType,
   onCustomerNameChange,
-  onOrderTypeChange,
   onRemoveFromCart,
 }: OrderDetailsProps) {
   return (
@@ -36,18 +32,6 @@ export default function OrderDetails({
             placeholder="Enter your name"
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
           />
-        </label>
-        
-        <label className="block text-sm font-medium">
-          Order Type:
-          <select
-            value={orderType}
-            onChange={(e) => onOrderTypeChange(e.target.value as 'pick-up' | 'delivery')}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-          >
-            <option value="pick-up">Pick-up</option>
-            <option value="delivery">Delivery</option>
-          </select>
         </label>
       </div>
 

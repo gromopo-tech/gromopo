@@ -1,20 +1,20 @@
-'use client'
-import { usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Menu, X } from 'lucide-react'
-import { ThemeSelect } from '@/components/theme-select'
-import { signOut } from 'firebase/auth';
-import { useRouter } from "next/navigation";
-import { auth } from '@/lib/firebase/config';
-import { toast } from 'sonner';
-import { getHomeUrl, isSubdomain } from '@/lib/utils';
-import { useContext } from 'react'
-import { RoleContext } from './protected/role-provider'
-import { BusinessIdContext } from '@/components/protected/business-id-provider'
-import { getDoc, doc } from 'firebase/firestore'
-import { db } from '@/lib/firebase/config'
+ 'use client'
+ import { usePathname } from 'next/navigation'
+ import { useState, useEffect } from 'react'
+ import Link from 'next/link'
+ import { Button } from '@/components/ui/button'
+ import { Menu, X } from 'lucide-react'
+ import { ThemeSelect } from '@/components/theme-select'
+ import { signOut } from 'firebase/auth';
+ import { useRouter } from 'next/navigation';
+ import { auth } from '@/lib/firebase/config';
+ import { toast } from 'sonner';
+ import { getHomeUrl } from '@/lib/utils';
+ import { useContext } from 'react'
+ import { RoleContext } from './protected/role-provider'
+ import { BusinessIdContext } from '@/components/protected/business-id-provider'
+ import { getDoc, doc } from 'firebase/firestore'
+ import { db } from '@/lib/firebase/config'
 
 const customerLinks: { label: string; path: string }[] = [
   // More links...
@@ -49,17 +49,14 @@ function AuthButton({ isAuthenticated }: { isAuthenticated: boolean }) {
   );
 }
 
-export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
+export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean }) {
   const pathname = usePathname()
   const [showMenu, setShowMenu] = useState(false)
   const [homeUrl, setHomeUrl] = useState('/')
-  const [isOnSubdomain, setIsOnSubdomain] = useState(false)
   const [isClient, setIsClient] = useState(false)
-
   useEffect(() => {
     setIsClient(true)
     setHomeUrl(getHomeUrl())
-    setIsOnSubdomain(isSubdomain())
   }, [])
 
   function isActive(path: string) {
@@ -118,7 +115,6 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
   }
 
 
-
   return (
     <header className="sticky top-0 z-50 px-4 py-2 bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 shadow-sm">
       <div className="mx-auto flex justify-between items-center">
@@ -141,6 +137,11 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
               ))}
             </ul>
           </div>
+          {isAuthenticated && (
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setShowMenu(!showMenu)}>
+              {showMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          )}
         </div>
 
         {isAuthenticated ? (
@@ -151,15 +152,11 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
           </div>
         ) : null}
 
-        {/* Right: Wallet, Cluster, Theme, and Auth Buttons */}
-        <div className="hidden md:flex items-center gap-4">
+        {/* Right: Theme and Auth Buttons for main site */}
+        <div className="flex flex gap-4">
+          {isClient && <AuthButton isAuthenticated={isAuthenticated} />}
           <ThemeSelect />
-          {isClient && !isOnSubdomain && <AuthButton isAuthenticated={isAuthenticated} />}
         </div>
-
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setShowMenu(!showMenu)}>
-          {showMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </Button>
 
         {showMenu && (
           <div className="md:hidden fixed inset-x-0 top-[52px] bottom-0 bg-neutral-100/95 dark:bg-neutral-900/95 backdrop-blur-sm">
@@ -177,10 +174,6 @@ export function AppHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
                   </li>
                 ))}
               </ul>
-              <div className="flex flex-col gap-4">
-                <ThemeSelect />
-                {isClient && !isOnSubdomain && <AuthButton isAuthenticated={isAuthenticated} />}
-              </div>
             </div>
           </div>
         )}
