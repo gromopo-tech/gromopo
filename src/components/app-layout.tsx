@@ -6,7 +6,7 @@ import { auth } from "@/lib/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
 import { ThemeProvider } from './theme-provider'
 import { Toaster } from './ui/sonner'
-import { AppHeader } from '@/components/app-header'
+// Header rendering moved to route-group layouts (app/(main) and app/(subdomains)).
 import React from 'react'
 import { AppFooter } from '@/components/app-footer'
 import { Spinner } from './ui/spinner'
@@ -53,12 +53,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const isDashboardRoute = mounted && pathname?.startsWith("/dashboard");
 
-  // Show loading only while checking authentication
+  // Show loading only while checking authentication. Note: headers are provided by
+  // route-group layouts (app/(main) and app/(subdomains)).
   if (!mounted || authLoading) {
     return (
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <div className="flex flex-col min-h-screen">
-          <AppHeader isAuthenticated={false} />
           <div className="flex-grow flex items-center justify-center">
             <Spinner size="md" className="text-base" />
           </div>
@@ -71,11 +71,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <div className="flex flex-col min-h-screen">
-        <AppHeader isAuthenticated={isAuthenticated} />
   <main className={isDashboardRoute ? "flex-grow" : "flex-grow container mx-auto p-4"}>
           {children}
         </main>
-        {isAuthenticated ? null : <AppFooter isAuthenticated={isAuthenticated}/>}
+        {isAuthenticated ? null : <AppFooter isAuthenticated={isAuthenticated}/>} 
       </div>
       <Toaster position="top-right" />
     </ThemeProvider>

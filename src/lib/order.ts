@@ -9,7 +9,6 @@ export interface SubmitOrderParams {
   businessId: string;
   businessName: string;
   txSignature?: string | null;
-  orderType: 'pick-up' | 'delivery';
 }
 
 export async function submitOrderToFirestore({
@@ -19,7 +18,6 @@ export async function submitOrderToFirestore({
   businessId,
   businessName,
   txSignature,
-  orderType,
 }: SubmitOrderParams) {
   if (!businessId) throw new Error('No businessId found');
   const now = new Date();
@@ -45,7 +43,6 @@ export async function submitOrderToFirestore({
     customerName,
     businessName,
     txSignature,
-    orderType,
   };
   await setDoc(doc(db, `businesses/${businessId}/orders`, `${dateStr}-${nextOrderNumber}`), orderData);
   return orderData;

@@ -17,7 +17,6 @@ export default function OrdersList() {
     const today = new Date();
     return today.toISOString().slice(0, 10); // yyyy-mm-dd
   });
-  const [orderTypeFilter, setOrderTypeFilter] = useState<'all' | 'pick-up' | 'delivery'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Order Created' | 'Preparing' | 'Prepared'>('all');
 
   // Subscribe to orders only when we know a menu is integrated (menu data exists in Firestore)
@@ -97,9 +96,8 @@ export default function OrdersList() {
 
   // Filtered orders
   const filteredOrders = orders.filter(order => {
-    const typeMatch = orderTypeFilter === 'all' || order.orderType === orderTypeFilter;
     const statusMatch = statusFilter === 'all' || order.status === statusFilter;
-    return typeMatch && statusMatch;
+    return statusMatch;
   });
   // While either check is still pending show loading
   if (menuIntegrated === null || menuUploaded === null) {
@@ -149,16 +147,6 @@ export default function OrdersList() {
           </div>
         </div>
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <label className="mr-2 font-medium">Filter by Order Type:</label>
-          {['all', 'pick-up', 'delivery'].map((type) => (
-            <button
-              key={type}
-              className={`mr-2 px-3 py-1 rounded ${orderTypeFilter === type ? 'dark:bg-gray-700 bg-gray-300' : 'border'}`}
-              onClick={() => setOrderTypeFilter(type as typeof orderTypeFilter)}
-            >
-              {type}
-            </button>
-          ))}
           <label className="mr-2 font-medium">Filter by Status:</label>
           {['all', 'Order Created', 'Preparing', 'Prepared'].map((status) => (
             <button

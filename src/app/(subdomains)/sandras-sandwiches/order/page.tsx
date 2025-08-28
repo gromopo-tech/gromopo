@@ -9,8 +9,6 @@ export default function PublicOrderPage() {
   const {
     cart,
     total,
-    orderType,
-    setOrderType,
     customerName,
     setCustomerName,
     addToCart,
@@ -29,9 +27,7 @@ export default function PublicOrderPage() {
           cart={cart}
           total={total}
           customerName={customerName}
-          orderType={orderType}
           onCustomerNameChange={setCustomerName}
-          onOrderTypeChange={setOrderType}
           onRemoveFromCart={removeFromCart}
         />
         
@@ -39,7 +35,6 @@ export default function PublicOrderPage() {
           total={total}
           cart={cart}
           customerName={customerName}
-          orderType={orderType}
           clearCart={clearCart}
         />
       </div>
