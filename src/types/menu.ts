@@ -7,7 +7,6 @@ export interface MenuItem {
   description: string;
   price: PriceType;
   category?: string;
-  availableSizes?: string[];
 }
 
 export interface MenuFile {

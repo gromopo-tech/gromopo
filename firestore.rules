@@ -16,11 +16,35 @@ service cloud.firestore {
       // Anyone can signup and create their own business
       allow create: if true;
       
-      // Allow read/write/update only to users associated with the business
-      allow read, write, update: if request.auth.token.businessId == businessId;
+      // Allow read for public access (needed for subdomain lookup)
+      allow read: if true;
+      
+      // Allow list for public access (needed for subdomain lookup)
+      allow list: if true;
+      
+      // Allow write/update only to users associated with the business
+      allow write, update: if request.auth.token.businessId == businessId;
 
       // Disallow deletes unless you implement business deletion logic
       allow delete: if false;
+
+      match /menu/{menuId} {
+        // Allow public read access to menu data
+        allow read, list: if true;
+        
+        // Allow write/update only to business owners
+        allow write, update: if request.auth.token.businessId == businessId;
+        allow delete: if false;
+        
+        match /items/{itemId} {
+          // Allow public read access to menu items
+          allow read, list: if true;
+          
+          // Allow write/update only to business owners
+          allow write, update: if request.auth.token.businessId == businessId;
+          allow delete: if false;
+        }
+      }
 
       match /chats/{chatId} {
         allow read, write, update, list: if request.auth.token.businessId == businessId 
