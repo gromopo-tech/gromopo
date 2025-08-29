@@ -6,14 +6,6 @@
   "storage": {
     "rules": "storage.rules"
   },
-  "apphosting": {
-    "build": {
-      "command": "NODE_ENV=production npm ci --quiet --no-fund --no-audit && npm run build"
-    },
-    "serve": {
-      "command": "npm start"
-    }
-  },
   "emulators": {
     "apphosting": {
       "port": 5002,
