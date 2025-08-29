@@ -6,6 +6,14 @@
   "storage": {
     "rules": "storage.rules"
   },
+  "apphosting": {
+    "build": {
+      "command": "npm ci --quiet --no-fund --no-audit && npm run build"
+    },
+    "serve": {
+      "command": "npm start"
+    }
+  },
   "emulators": {
     "apphosting": {
       "port": 5002,
