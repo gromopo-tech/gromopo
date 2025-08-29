@@ -6,6 +6,7 @@ import { BusinessIdContext } from '@/components/protected/business-id-provider'
 import { db, auth } from '@/lib/firebase/config'
 import { doc, getDoc } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
+import Link from 'next/link'
 
 export default function DashboardPage() {
   const role = useContext(RoleContext);
@@ -67,18 +68,18 @@ export default function DashboardPage() {
           {menuUploaded === false ? (
             <div>
               <p className="mb-4">Upload a menu to get started.</p>
-              <a href="/dashboard/menus" className="btn border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded">
+              <Link href="/dashboard/menus" className="btn border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded">
                 Go to Menus
-              </a>
+              </Link>
             </div>
           ) : (
             <div className="space-y-2">
-              <a href="/dashboard/orders" className="block text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+              <Link href="/dashboard/orders" className="block text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
                 View Orders
-              </a>
-              <a href="/dashboard/menus" className="block text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+              </Link>
+              <Link href="/dashboard/menus" className="block text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
                 Manage Menus
-              </a>
+              </Link>
             </div>
           )}
         </div>
