@@ -1,7 +1,7 @@
 import React from 'react';
 import { getBusinessBySubdomain, getBusinessMenu } from '@/lib/firebase/business';
 import { notFound } from 'next/navigation';
-import DynamicOrderPage from './dynamic-order-page';
+import DynamicOrderPage from './order';
 
 interface OrderPageProps {
   params: Promise<{
