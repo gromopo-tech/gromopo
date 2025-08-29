@@ -121,7 +121,7 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
     }
   load()
     return () => { mounted = false }
-  }, [businessId, isAuthenticated, role])
+  }, [businessId, isAuthenticated, role, clientAuth])
 
   if (clientAuth && role === 'owner' && hasSubdomain === true) {
     effectiveBusinessLinks = [
