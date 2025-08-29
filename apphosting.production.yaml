@@ -23,3 +23,6 @@ env:
 
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
+scripts:
+  buildCommand: NODE_ENV=production npm ci --quiet --no-fund --no-audit && NODE_ENV=production npm run build
+  runCommand: npm start
