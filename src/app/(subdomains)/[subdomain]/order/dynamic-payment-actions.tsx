@@ -15,7 +15,6 @@ interface DynamicPaymentActionsProps {
   customerName: string;
   businessId: string;
   businessName: string;
-  subdomain: string;
   clearCart: () => void;
   onSuccess?: (signature: string) => void;
   onError?: () => void;
@@ -27,7 +26,6 @@ export function DynamicPaymentActions({
   customerName = 'Test Customer',
   businessId,
   businessName,
-  subdomain,
   onSuccess,
   onError,
   clearCart,
@@ -140,10 +138,10 @@ export function DynamicPaymentActions({
         txSignature,
       };
       sessionStorage.setItem('orderConfirmation', JSON.stringify(orderDetails));
-      router.push(`/${subdomain}/order/confirmation`);
+      router.push(`/order/confirmation`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderConfirmed, orderNumber, subdomain]);
+  }, [orderConfirmed, orderNumber]);
 
   return (
     <div className="flex flex-col gap-2 mt-4">

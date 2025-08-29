@@ -16,5 +16,5 @@ export default async function SubdomainPage({ params }: SubdomainPageProps) {
   }
 
   // Redirect to the order page with the correct subdomain path
-  redirect(`/${subdomain}/order`);
+  redirect(`/order`);
 }

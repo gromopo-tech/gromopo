@@ -23,7 +23,6 @@ export default async function OrderPage({ params }: OrderPageProps) {
     <DynamicOrderPage 
       business={business}
       menuData={menuData}
-      subdomain={subdomain}
     />
   );
 }

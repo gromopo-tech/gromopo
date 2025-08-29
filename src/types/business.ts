@@ -21,7 +21,6 @@ export interface MenuItem {
   name: string;
   description: string;
   price: Record<string, number> | number;
-  availableSizes?: string[];
 }
 
 export interface MenuData {

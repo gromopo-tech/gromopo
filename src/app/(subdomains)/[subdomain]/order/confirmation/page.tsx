@@ -12,31 +12,19 @@ interface OrderConfirmation {
   txSignature?: string | null;
 }
 
-interface ConfirmationPageProps {
-  params: Promise<{
-    subdomain: string;
-  }>;
-}
-
-export default function OrderConfirmationPage({ params }: ConfirmationPageProps) {
+export default function OrderConfirmationPage() {
   const [order, setOrder] = useState<OrderConfirmation | null>(null);
-  const [subdomain, setSubdomain] = useState<string>('');
   const router = useRouter();
 
   useEffect(() => {
-    // Get subdomain from params
-    params.then(({ subdomain: sub }) => {
-      setSubdomain(sub);
-      
-      const data = sessionStorage.getItem("orderConfirmation");
-      if (data) {
-        setOrder(JSON.parse(data));
-        // Do NOT remove from sessionStorage here, so the page can reload or stay visible
-      } else {
-        // If no order, redirect to subdomain order page
-        router.replace(`/${sub}/order`);
-      }
-    });
+    const data = sessionStorage.getItem("orderConfirmation");
+    if (data) {
+      setOrder(JSON.parse(data));
+      // Do NOT remove from sessionStorage here, so the page can reload or stay visible
+    } else {
+      // If no order, redirect to subdomain order page
+      router.replace(`/order`);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -50,7 +38,7 @@ export default function OrderConfirmationPage({ params }: ConfirmationPageProps)
 
   return (
     <div className="max-w-xl mx-auto p-6 mt-8 border-4 rounded">
-      <h1 className="text-3xl font-bold mb-4">Order confirmed!</h1>
+      <h1 className="text-3xl font-bold mb-4">Order confirmed, we'll call your name when it's ready!</h1>
       <div className="mb-2">Order number: <b>{order.orderNumber}</b></div>
       {order.customerName && <div className="mb-2">Customer: <b>{order.customerName}</b></div>}
       <div className="mb-2">Total: <b>{order.total.toFixed(2)} USDC</b></div>
@@ -78,7 +66,7 @@ export default function OrderConfirmationPage({ params }: ConfirmationPageProps)
       </div>
       <div className="mt-8 text-center">
         <button
-          onClick={() => router.push(`/${subdomain}/order`)}
+          onClick={() => router.push(`/order`)}
           className="btn w-full border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
         >
           Place Another Order

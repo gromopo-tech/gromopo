@@ -9,10 +9,9 @@ import { BusinessData, MenuData, MenuItem } from '@/types/business';
 interface DynamicOrderPageProps {
   business: BusinessData;
   menuData: MenuData;
-  subdomain: string;
 }
 
-export default function DynamicOrderPage({ business, menuData, subdomain }: DynamicOrderPageProps) {
+export default function DynamicOrderPage({ business, menuData }: DynamicOrderPageProps) {
   const {
     cart,
     total,
@@ -29,7 +28,6 @@ export default function DynamicOrderPage({ business, menuData, subdomain }: Dyna
       name: item.name,
       description: item.description,
       price: item.price,
-      availableSizes: item.availableSizes,
       category: item.category,
     };
     
@@ -38,14 +36,6 @@ export default function DynamicOrderPage({ business, menuData, subdomain }: Dyna
 
   return (
     <div className="p-4 max-w-6xl mx-auto">
-      {/* Debug information */}
-      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
-        <h3 className="font-semibold text-blue-800">🚀 Dynamic System Active</h3>
-        <p className="text-blue-600 text-sm">
-          Business: {business.name} | Categories: {menuData.categories.length}
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 gap-8">
         <div>
           {menuData.categories.length > 0 ? (
@@ -78,7 +68,6 @@ export default function DynamicOrderPage({ business, menuData, subdomain }: Dyna
             customerName={customerName}
             businessId={business.id}
             businessName={business.name}
-            subdomain={subdomain}
             clearCart={clearCart}
           />
         </div>

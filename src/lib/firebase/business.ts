@@ -52,7 +52,6 @@ export async function getBusinessMenu(businessId: string): Promise<MenuData> {
         name: itemDoc.data().name || 'Unnamed Item',
         description: itemDoc.data().description || 'No description available',
         price: itemDoc.data().price || { REGULAR: 0 },
-        availableSizes: itemDoc.data().availableSizes,
       }));
       
       categories.push({ ...category, items });

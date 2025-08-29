@@ -25,7 +25,6 @@ export function middleware(request: NextRequest) {
     // Don't rewrite if already in the correct subdomain path
     if (!pathname.startsWith(`/${subdomain}`) && !pathname.startsWith('/api') && !pathname.startsWith('/_next')) {
       const rewriteUrl = `/${subdomain}${pathname}`;
-      console.log(`[Middleware] Rewriting ${pathname} to ${rewriteUrl} for subdomain ${subdomain}`);
       return NextResponse.rewrite(new URL(rewriteUrl, request.url));
     }
   }

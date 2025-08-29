@@ -25,20 +25,17 @@ const sampleMenuData = [
       {
         name: 'The Duckling',
         description: 'Smoked duck breast, roasted turkey breast, cream cheese, cranberry relish & spring mix on cranberry walnut country bread',
-        price: { FULL: 13.99, MINI: 7.99 },
-        availableSizes: ["Mini", "Full"]
+        price: { FULL: 13.99, MINI: 7.99 }
       },
       {
         name: 'The BTC',
         description: 'Dried cured smoked ham, tomato, Swiss cheese, lettuce, mayo and spicy brown mustard',
-        price: { FULL: 14.99, MINI: 8.59 },
-        availableSizes: ["Mini", "Full"]
+        price: { FULL: 14.99, MINI: 8.59 }
       },
       {
         name: 'Vermont Treat',
         description: 'Honey glazed ham, pine nuts, spinach, sliced apples, Duck and Decanter\'s famous cheddar cheese spread on multigrain bread',
-        price: { FULL: 12.99, MINI: 6.99 },
-        availableSizes: ["Mini", "Full"]
+        price: { FULL: 12.99, MINI: 6.99 }
       }
     ]
   },

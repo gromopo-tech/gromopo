@@ -29,19 +29,6 @@ export function getHomeUrl() {
   return '/';
 }
 
-export function isSubdomain(hostname?: string) {
-  // Use provided hostname or get from window if in browser
-  const host = hostname || (typeof window !== 'undefined' ? window.location.hostname : '');
-  
-  if (!host) return false;
-  
-  console.log('Current hostname:', host);
-  return host.includes('.') && 
-         !host.startsWith('localhost') && 
-         !host.startsWith('127.0.0.1') &&
-         host !== 'gromopo.com';
-}
-
 export function getSubdomain(hostname?: string): string {
   const host = hostname || (typeof window !== 'undefined' ? window.location.hostname : '');
   
