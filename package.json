@@ -9,8 +9,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "next lint",
-    "start": "next start",
-    "preinstall": "export NODE_ENV=production"
+    "start": "next start"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
