@@ -1,5 +1,8 @@
-import { db } from '@/lib/firebase/config';
-import { collection, doc, setDoc } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase/adminConfig';
+
+{/*
+  Run with: curl -X POST -H "Content-Type: application/json" http://localhost:5002/api/seed-data
+  */}
 
 // Sample data based on your static files
 const sampleBusinessData = {
@@ -68,14 +71,14 @@ export async function seedFirestoreData() {
     console.log('Seeding Firestore with sample data...');
     
     // Create business document
-    const businessRef = doc(collection(db, 'businesses'));
-    await setDoc(businessRef, sampleBusinessData);
+    const businessRef = adminDb.collection('businesses').doc();
+    await businessRef.set(sampleBusinessData);
     console.log('✅ Business created with ID:', businessRef.id);
     
     // Create menu categories and items
     for (const menuCategory of sampleMenuData) {
-      const menuRef = doc(collection(db, `businesses/${businessRef.id}/menu`));
-      await setDoc(menuRef, {
+      const menuRef = adminDb.collection(`businesses/${businessRef.id}/menu`).doc();
+      await menuRef.set({
         category: menuCategory.category,
         order: menuCategory.order
       });
@@ -83,8 +86,8 @@ export async function seedFirestoreData() {
       
       // Add items to this category
       for (const item of menuCategory.items) {
-        const itemRef = doc(collection(db, `businesses/${businessRef.id}/menu/${menuRef.id}/items`));
-        await setDoc(itemRef, item);
+        const itemRef = adminDb.collection(`businesses/${businessRef.id}/menu/${menuRef.id}/items`).doc();
+        await itemRef.set(item);
         console.log(`   ✅ Item added: ${item.name}`);
       }
     }
