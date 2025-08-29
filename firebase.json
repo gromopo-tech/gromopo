@@ -8,7 +8,7 @@
   },
   "apphosting": {
     "build": {
-      "command": "npm ci --quiet --no-fund --no-audit && npm run build"
+      "command": "NODE_ENV=production npm ci --quiet --no-fund --no-audit && npm run build"
     },
     "serve": {
       "command": "npm start"
