@@ -2,7 +2,7 @@
 
 import { MenuItem as MenuItemType } from '@/types/business';
 
-interface DynamicMenuProps {
+interface MenuProps {
   categories: Array<{
     id: string;
     category: string;
@@ -11,7 +11,7 @@ interface DynamicMenuProps {
   onAddToCart: (item: MenuItemType & { category: string }, size: string) => void;
 }
 
-export default function DynamicMenu({ categories, onAddToCart }: DynamicMenuProps) {
+export default function Menu({ categories, onAddToCart }: MenuProps) {
   const renderMenuItem = (item: MenuItemType, categoryName: string) => {
     const isMultiSize = typeof item.price === 'object' && item.price !== null;
     

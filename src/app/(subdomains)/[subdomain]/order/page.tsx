@@ -1,7 +1,7 @@
 import React from 'react';
 import { getBusinessBySubdomain, getBusinessMenu } from '@/lib/firebase/business';
 import { notFound } from 'next/navigation';
-import DynamicOrderPage from './order';
+import Order from './order';
 
 interface OrderPageProps {
   params: Promise<{
@@ -20,7 +20,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
   const menuData = await getBusinessMenu(business.id);
 
   return (
-    <DynamicOrderPage 
+    <Order 
       business={business}
       menuData={menuData}
     />

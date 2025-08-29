@@ -1,6 +1,6 @@
 'use client';
 
-import DynamicMenu from '@/components/menu/dynamic-menu';
+import Menu from '@/components/menu/menu';
 import OrderDetails from '@/components/order/order-details';
 import { Payments } from './payments';
 import { useCart } from '@/components/order/hooks/use-cart';
@@ -39,7 +39,7 @@ export default function Order({ business, menuData }: OrderProps) {
       <div className="grid grid-cols-1 gap-8">
         <div>
           {menuData.categories.length > 0 ? (
-            <DynamicMenu 
+            <Menu 
               categories={menuData.categories} 
               onAddToCart={handleAddToCart} 
             />
