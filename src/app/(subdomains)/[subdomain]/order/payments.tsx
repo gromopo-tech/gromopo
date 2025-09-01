@@ -9,7 +9,7 @@ import { handleSolanaPayPayment } from '@/lib/solana/wallet-payment';
 import { toast } from 'sonner';
 import { WalletButton } from '@/components/solana/solana-provider';
 
-interface DynamicPaymentActionsProps {
+interface PaymentsProps {
   total: number;
   cart: CartItem[];
   customerName: string;
@@ -20,7 +20,7 @@ interface DynamicPaymentActionsProps {
   onError?: () => void;
 }
 
-export function DynamicPaymentActions({
+export function Payments({
   total,
   cart = [],
   customerName = 'Test Customer',
@@ -29,7 +29,7 @@ export function DynamicPaymentActions({
   onSuccess,
   onError,
   clearCart,
-}: DynamicPaymentActionsProps) {
+}: PaymentsProps) {
   const router = useRouter();
   const { publicKey, sendTransaction, connected } = useWallet();
   const { connection } = useConnection();
