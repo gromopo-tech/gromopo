@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MenuItem as MenuItemType } from '@/types/business';
 
 interface MenuProps {
@@ -19,15 +19,14 @@ export default function Menu({ categories, onAddToCart }: MenuProps) {
     categories.length > 0 ? categories[0].id : null
   );
 
-  // Keep refs for each category section for IntersectionObserver
-  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
-
   // If categories include an 'order' field, prefer that ordering, otherwise use the received order.
   const sortedCategories = [...categories].sort((a, b) => {
-    const ao = (a as any).order;
-    const bo = (b as any).order;
-    if (typeof ao === 'number' && typeof bo === 'number') return ao - bo;
-    return 0; // preserve incoming order when order field missing
+    const ao = Number((a as unknown as { order?: number }).order);
+    const bo = Number((b as unknown as { order?: number }).order);
+    if (!Number.isNaN(ao) && !Number.isNaN(bo)) return ao - bo;
+    if (!Number.isNaN(ao) && Number.isNaN(bo)) return -1;
+    if (Number.isNaN(ao) && !Number.isNaN(bo)) return 1;
+    return 0; // preserve incoming order when order field missing on both
   });
 
   useEffect(() => {
