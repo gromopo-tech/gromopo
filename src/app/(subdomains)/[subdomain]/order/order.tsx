@@ -1,17 +1,17 @@
 'use client';
 
-import DynamicMenu from '@/components/menu/dynamic-menu';
+import Menu from '@/components/menu/menu';
 import OrderDetails from '@/components/order/order-details';
-import { DynamicPaymentActions } from './dynamic-payment-actions';
+import { Payments } from './payments';
 import { useCart } from '@/components/order/hooks/use-cart';
 import { BusinessData, MenuData, MenuItem } from '@/types/business';
 
-interface DynamicOrderPageProps {
+interface OrderProps {
   business: BusinessData;
   menuData: MenuData;
 }
 
-export default function DynamicOrderPage({ business, menuData }: DynamicOrderPageProps) {
+export default function Order({ business, menuData }: OrderProps) {
   const {
     cart,
     total,
@@ -39,7 +39,7 @@ export default function DynamicOrderPage({ business, menuData }: DynamicOrderPag
       <div className="grid grid-cols-1 gap-8">
         <div>
           {menuData.categories.length > 0 ? (
-            <DynamicMenu 
+            <Menu 
               categories={menuData.categories} 
               onAddToCart={handleAddToCart} 
             />
@@ -62,7 +62,7 @@ export default function DynamicOrderPage({ business, menuData }: DynamicOrderPag
             onRemoveFromCart={removeFromCart}
           />
           
-          <DynamicPaymentActions
+          <Payments
             total={total}
             cart={cart}
             customerName={customerName}

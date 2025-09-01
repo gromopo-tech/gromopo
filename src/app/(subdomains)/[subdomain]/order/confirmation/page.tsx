@@ -42,18 +42,6 @@ export default function OrderConfirmationPage() {
       <div className="mb-2">Order number: <b>{order.orderNumber}</b></div>
       {order.customerName && <div className="mb-2">Customer: <b>{order.customerName}</b></div>}
       <div className="mb-2">Total: <b>{order.total.toFixed(2)} USDC</b></div>
-      {order.txSignature && (
-        <div className="mb-2">
-          <a
-            href={`https://explorer.solana.com/tx/${order.txSignature}?cluster=devnet`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline hover:text-blue-800"
-          >
-            See transaction on Solana Explorer
-          </a>
-        </div>
-      )}
       <div className="mt-4">
         <b>Order details:</b>
         <ul className="list-disc ml-6 mt-2">
@@ -65,12 +53,23 @@ export default function OrderConfirmationPage() {
         </ul>
       </div>
       <div className="mt-8 text-center">
-        <button
-          onClick={() => router.push(`/order`)}
-          className="btn w-full border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
-        >
-          Place Another Order
-        </button>
+        {order.txSignature ? (
+          <a
+            href={`https://explorer.solana.com/tx/${order.txSignature}?cluster=devnet`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn w-full border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer inline-block text-center"
+          >
+            View transaction
+          </a>
+        ) : (
+          <button
+            onClick={() => router.push(`/order`)}
+            className="btn w-full border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
+          >
+            Place Another Order
+          </button>
+        )}
       </div>
     </div>
   );
