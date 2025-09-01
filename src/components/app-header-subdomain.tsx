@@ -27,7 +27,11 @@ export function AppHeaderSubdomain() {
   }, [connected])
 
   return (
-    <header className="sticky top-0 z-50 px-4 py-2 bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 shadow-sm">
+    // expose header height via CSS variable so pages can position sticky elements below it
+    <header
+      className="sticky top-0 z-50 px-4 py-2 bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 shadow-sm"
+      style={{ ['--header-height' as any]: '3.25rem' } as React.CSSProperties}
+    >
       <div className="mx-auto flex justify-between items-center">
         {/* Left: Always render the same container for hydration consistency */}
         <div className="flex items-baseline gap-4 min-w-0">
