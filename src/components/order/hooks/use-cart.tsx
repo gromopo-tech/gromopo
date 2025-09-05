@@ -1,39 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { MenuItem } from '@/types/menu';
 import { CartItem } from '@/types/cart';
 
 export function useCart() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState('');
   
-  const total = cart.reduce((sum, item) => sum + item.price, 0);
+  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  const addToCart = (item: MenuItem, size: string) => {
-    let price: number | undefined;
-    // Handle different price structures
-    if (typeof item.price === 'number') {
-      price = item.price;
-    } else if (typeof item.price === 'object') {
-      price = item.price[size];
-    }
-    if (price === undefined) {
-      console.warn(`Price not found for ${item.name} with size ${size}`);
-      return;
-    }
-    const cartItem: CartItem = {
-      name: item.name,
-      description: item.description,
-      size,
-      price,
-    };
+  const addToCart = (cartItem: CartItem) => {
     setCart([...cart, cartItem]);
     // Show toast notification
     if (typeof window !== 'undefined') {
       // Import toast from 'sonner' directly
       import('sonner').then(({ toast }) => {
-        toast.success(`${item.name} (${size}) added to cart!`);
+        toast.success(`${cartItem.name} (${cartItem.size}) added to cart!`);
       });
     }
   };

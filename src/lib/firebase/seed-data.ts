@@ -6,9 +6,12 @@ import { adminDb } from '@/lib/firebase/adminConfig';
 
 // Sample data based on your static files
 const sampleBusinessData = {
-  name: "Sandra's Sandwiches",
-  subdomain: "sandras-sandwiches",
+  name: "Duck and Decanter",
   description: "Fresh sandwiches made to order",
+  normalizedName: "duckanddecanter",
+  menuUploaded: true,
+  menuIntegrated: true,
+  hasWallet: false,
   theme: {
     primaryColor: "yellow",
     secondaryColor: "yellow",
@@ -68,13 +71,13 @@ export async function seedFirestoreData() {
     console.log('Seeding Firestore with sample data...');
     
     // Create business document
-    const businessRef = adminDb.collection('businesses').doc();
+    const businessRef = adminDb.doc(`businesses/duck-and-decanter`);
     await businessRef.set(sampleBusinessData);
-    console.log('✅ Business created with ID:', businessRef.id);
+    console.log('✅ Business created with ID:', 'duck-and-decanter');
     
     // Create menu categories and items
     for (const menuCategory of sampleMenuData) {
-      const menuRef = adminDb.collection(`businesses/${businessRef.id}/menu`).doc();
+      const menuRef = adminDb.collection(`businesses/duck-and-decanter/menu`).doc();
       await menuRef.set({
         category: menuCategory.category,
         order: menuCategory.order
@@ -83,16 +86,16 @@ export async function seedFirestoreData() {
       
       // Add items to this category
       for (const item of menuCategory.items) {
-        const itemRef = adminDb.collection(`businesses/${businessRef.id}/menu/${menuRef.id}/items`).doc();
+        const itemRef = adminDb.collection(`businesses/duck-and-decanter/menu/${menuRef.id}/items`).doc();
         await itemRef.set(item);
         console.log(`   ✅ Item added: ${item.name}`);
       }
     }
     
     console.log('🎉 Firestore seeding completed!');
-    console.log('Business ID:', businessRef.id);
-    return businessRef.id;
-    
+    console.log('Business ID:', 'duck-and-decanter');
+    return 'duck-and-decanter';
+
   } catch (error) {
     console.error('❌ Error seeding Firestore:', error);
     throw error;

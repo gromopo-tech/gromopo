@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/firebase/adminConfig';
-import { getFirestore } from 'firebase-admin/firestore';
+import { adminAuth, adminDb } from '@/lib/firebase/adminConfig';
 
 export async function POST(req: Request) {
   try {
@@ -26,11 +25,9 @@ export async function POST(req: Request) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const userUid = decodedToken.uid;
 
-    const db = getFirestore();
-
-    // Check if normalized name already exists (prevents punctuation variations)
-    const normalizedQuery = db.collection('businesses').where('normalizedName', '==', normalizedName);
-    const normalizedSnapshot = await normalizedQuery.get();
+  // Check if normalized name already exists (prevents punctuation variations)
+  const normalizedQuery = adminDb.collection('businesses').where('normalizedName', '==', normalizedName);
+  const normalizedSnapshot = await normalizedQuery.get();
     
     if (!normalizedSnapshot.empty) {
       return NextResponse.json({ 
@@ -39,7 +36,7 @@ export async function POST(req: Request) {
     }
 
     // Use subdomain as document ID for guaranteed uniqueness
-    const businessDocRef = db.doc(`businesses/${subdomain}`);
+    const businessDocRef = adminDb.doc(`businesses/${subdomain}`);
 
     try {
       // Atomic create - fails if document already exists

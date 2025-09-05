@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { MenuItem as MenuItemType } from '@/types/business';
+import ItemModal from './item-modal';
 
 interface MenuProps {
   categories: Array<{
@@ -11,13 +12,15 @@ interface MenuProps {
     // optional order field may be present from Firestore
     order?: number;
   }>;
-  onAddToCart: (item: MenuItemType & { category: string }, size: string) => void;
+  onAddToCart: (item: MenuItemType & { category: string }, size: string, quantity: number, specialInstructions: string) => void;
 }
 
 export default function Menu({ categories, onAddToCart }: MenuProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(
     categories.length > 0 ? categories[0].id : null
   );
+  const [selectedItem, setSelectedItem] = useState<(MenuItemType & { category: string }) | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // If categories include an 'order' field, prefer that ordering, otherwise use the received order.
   const sortedCategories = [...categories].sort((a, b) => {
@@ -28,6 +31,20 @@ export default function Menu({ categories, onAddToCart }: MenuProps) {
     if (Number.isNaN(ao) && !Number.isNaN(bo)) return 1;
     return 0; // preserve incoming order when order field missing on both
   });
+
+  const openModal = (item: MenuItemType, categoryName: string) => {
+    setSelectedItem({ ...item, category: categoryName });
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedItem(null);
+  };
+
+  const handleAddToCart = (item: MenuItemType & { category: string }, size: string, quantity: number, specialInstructions: string) => {
+    onAddToCart(item, size, quantity, specialInstructions);
+  };
 
   useEffect(() => {
     // Observe which category is currently at the top of viewport (after scroll-margin)
@@ -66,32 +83,27 @@ export default function Menu({ categories, onAddToCart }: MenuProps) {
 
   const renderMenuItem = (item: MenuItemType, categoryName: string) => {
     const isMultiSize = typeof item.price === 'object' && item.price !== null;
+    
+    // Get the lowest price to display
+    let lowestPrice: number;
+    if (isMultiSize) {
+      const prices = Object.values(item.price as Record<string, number>);
+      lowestPrice = Math.min(...prices);
+    } else {
+      lowestPrice = item.price as number;
+    }
 
     return (
-      <div key={item.id} className="border p-4 rounded">
+      <div 
+        key={item.id} 
+        className="border p-4 rounded cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all"
+        onClick={() => openModal(item, categoryName)}
+      >
         <h3 className="font-semibold">{item.name}</h3>
-        <p className="text-sm mb-2">{item.description}</p>
-
-        {isMultiSize ? (
-          <div className="flex gap-2 flex-wrap">
-            {Object.entries(item.price as Record<string, number>).map(([sizeName, price]) => (
-              <button
-                key={sizeName}
-                onClick={() => onAddToCart({ ...item, category: categoryName }, sizeName)}
-                className="btn btn-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-              >
-                {sizeName}: ${price.toFixed(2)}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <button
-            onClick={() => onAddToCart({ ...item, category: categoryName }, 'Regular')}
-            className="btn btn-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-          >
-            ${((item.price as number)).toFixed(2)}
-          </button>
-        )}
+        <p className="text-sm font-medium text-green-600 mb-2">
+          {isMultiSize ? `From $${lowestPrice.toFixed(2)}` : `$${lowestPrice.toFixed(2)}`}
+        </p>
+        <p className="text-sm">{item.description}</p>
       </div>
     );
   };
@@ -142,6 +154,16 @@ export default function Menu({ categories, onAddToCart }: MenuProps) {
           </section>
         ))}
       </div>
+
+      {/* Item Modal */}
+      {selectedItem && (
+        <ItemModal
+          item={selectedItem}
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onAddToCart={handleAddToCart}
+        />
+      )}
     </div>
   );
 }

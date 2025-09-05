@@ -43,13 +43,21 @@ export default function OrderDetails({
         ) : (
           <ul className="space-y-2">
             {cart.map((item, index) => (
-              <li key={index} className="flex justify-between items-center p-2 border rounded">
-                <div>
-                  <span className="font-medium">{item.name}</span>
-                  <span className="text-sm ml-2">({item.size})</span>
+              <li key={index} className="flex justify-between items-start p-3 border rounded">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{item.name}</span>
+                    <span className="text-sm text-gray-600">({item.size})</span>
+                    <span className="text-sm text-gray-600">× {item.quantity}</span>
+                  </div>
+                  {item.specialInstructions && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      Special instructions: {item.specialInstructions}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span>${item.price.toFixed(2)}</span>
+                  <span>${(item.price * item.quantity).toFixed(2)}</span>
                   <button
                     onClick={() => onRemoveFromCart(index)}
                     className="text-red-600 hover:text-red-800 text-sm"

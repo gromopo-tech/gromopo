@@ -22,16 +22,27 @@ export default function Order({ business, menuData }: OrderProps) {
     clearCart,
   } = useCart();
 
-  const handleAddToCart = (item: MenuItem & { category: string }, size: string) => {
+  const handleAddToCart = (item: MenuItem & { category: string }, size: string, quantity: number, specialInstructions: string) => {
+    // Get the price for the selected size
+    let price: number;
+    if (typeof item.price === 'object' && item.price !== null) {
+      price = (item.price as Record<string, number>)[size] || 0;
+    } else {
+      price = item.price as number;
+    }
+
     // Convert the dynamic menu item to the format expected by useCart
     const cartItem = {
       name: item.name,
       description: item.description,
-      price: item.price,
+      size,
+      price,
+      quantity,
+      specialInstructions,
       category: item.category,
     };
     
-    addToCart(cartItem, size);
+    addToCart(cartItem);
   };
 
   return (
