@@ -1,23 +1,22 @@
 import { db } from '@/lib/firebase/config';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import { BusinessData, MenuCategory, MenuItem, MenuData } from '@/types/business';
 
 export async function getBusinessBySubdomain(subdomain: string): Promise<BusinessData | null> {
   try {
-    const businessesRef = collection(db, 'businesses');
-    const businessesSnapshot = await getDocs(businessesRef);
+    // Since subdomain is now the document ID, we can fetch directly
+    const businessRef = doc(db, 'businesses', subdomain);
+    const businessSnap = await getDoc(businessRef);
     
-    for (const businessDoc of businessesSnapshot.docs) {
-      const businessData = businessDoc.data();
-      if (businessData.subdomain === subdomain) {
-        return {
-          id: businessDoc.id,
-          name: businessData.name || 'Unknown Business',
-          subdomain: businessData.subdomain,
-          description: businessData.description || 'Fresh food made to order',
-          theme: businessData.theme,
-        };
-      }
+    if (businessSnap.exists()) {
+      const businessData = businessSnap.data();
+      return {
+        id: businessSnap.id, // This is the subdomain
+        name: businessData.name || 'Unknown Business',
+        subdomain: businessSnap.id, // Use document ID as subdomain
+        description: businessData.description || 'Fresh food made to order',
+        theme: businessData.theme,
+      };
     }
     
     return null;

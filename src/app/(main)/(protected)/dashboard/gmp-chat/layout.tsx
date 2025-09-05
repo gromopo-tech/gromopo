@@ -34,9 +34,9 @@ export default async function GMPChatLayout({ children }: { children: React.Reac
     if (!snap.exists) {
       redirect('/dashboard')
     }
-    const data = snap.data() as Record<string, unknown>
-    const sd = typeof data.subdomain === 'string' ? data.subdomain : ''
-    if (!sd) {
+    // Since businessId is now the subdomain, we can use it directly
+    const subdomain = businessId
+    if (!subdomain) {
       redirect('/dashboard')
     }
   } catch (err) {
