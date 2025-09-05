@@ -48,7 +48,7 @@ export async function POST(req: Request) {
         ownerId: userUid,
         menuUploaded: false,
         menuIntegrated: false,
-        hasWallet: false,
+        merchantWallet: '<merchant-wallet-address>',
         createdAt: new Date(),
       });
 
