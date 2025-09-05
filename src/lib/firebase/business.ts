@@ -2,6 +2,14 @@ import { db } from '@/lib/firebase/config';
 import { collection, getDocs, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import { BusinessData, MenuCategory, MenuItem, MenuData } from '@/types/business';
 
+// Helper function to convert kebab-case to display name
+function kebabToDisplayName(kebabCase: string): string {
+  return kebabCase
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 export async function getBusinessBySubdomain(subdomain: string): Promise<BusinessData | null> {
   try {
     // Since subdomain is now the document ID, we can fetch directly
@@ -38,7 +46,7 @@ export async function getBusinessMenu(businessId: string): Promise<MenuData> {
       const categoryData = categoryDoc.data();
       const category: MenuCategory = {
         id: categoryDoc.id,
-        category: categoryData.category || 'Untitled Category',
+        category: kebabToDisplayName(categoryDoc.id), // Convert kebab-case to display name
         order: categoryData.order || 0,
       };
       
@@ -48,7 +56,7 @@ export async function getBusinessMenu(businessId: string): Promise<MenuData> {
       
       const items: MenuItem[] = itemsSnapshot.docs.map(itemDoc => ({
         id: itemDoc.id,
-        name: itemDoc.data().name || 'Unnamed Item',
+        name: kebabToDisplayName(itemDoc.id), // Convert kebab-case to display name
         description: itemDoc.data().description || 'No description available',
         price: itemDoc.data().price || { REGULAR: 0 },
       }));
