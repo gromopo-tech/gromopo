@@ -47,11 +47,11 @@ export default function OrderDetails({
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{item.name}</span>
-                    <span className="text-sm text-gray-600">({item.size})</span>
-                    <span className="text-sm text-gray-600">× {item.quantity}</span>
+                    <span className="text-sm">({item.size})</span>
+                    <span className="text-sm">× {item.quantity}</span>
                   </div>
                   {item.specialInstructions && (
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm mt-1">
                       Special instructions: {item.specialInstructions}
                     </p>
                   )}
