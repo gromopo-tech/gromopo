@@ -12,6 +12,17 @@ export function ellipsify(str = '', len = 4, delimiter = '..') {
   return strLen >= limit ? str.substring(0, len) + delimiter + str.substring(strLen - len, strLen) : str
 }
 
+export function isSubdomain() {
+  if (typeof window === 'undefined') return false;
+  
+  const hostname = window.location.hostname;
+  console.log('Current hostname:', hostname);
+  return hostname.includes('.') && 
+         !hostname.startsWith('localhost') && 
+         !hostname.startsWith('127.0.0.1') &&
+         hostname !== 'gromopo.com';
+}
+
 // src/lib/utils/navigation.ts
 export function getHomeUrl() {
   if (typeof window === 'undefined') return '/';
@@ -20,9 +31,10 @@ export function getHomeUrl() {
   const port = window.location.port;
   const protocol = window.location.protocol;
 
-  if (hostname.startsWith('sandras-sandwiches.')) {
+  if (isSubdomain()) {
     // Remove the subdomain and redirect to main domain
-    const mainDomain = hostname.replace('sandras-sandwiches.', '');
+    const subdomain = getSubdomain(hostname);
+    const mainDomain = hostname.replace(`${subdomain}.`, '');
     return `${protocol}//${mainDomain}${port ? `:${port}` : ''}`;
   }
 

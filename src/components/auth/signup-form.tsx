@@ -4,13 +4,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { db, auth } from "@/lib/firebase/config";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { toast } from 'sonner';
 import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth";
 
 
 // Schema for form validation
 const schema = z.object({
+  businessName: z.string().min(1, "Business name is required"),
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -31,33 +32,91 @@ export default function SignupForm() {
     resolver: zodResolver(schema),
   });
 
+  // Normalize business name to a DNS-safe subdomain
+  const toSubdomain = (name: string) => {
+    const slug = name
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "") // strip diacritics
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")     // non-alnum -> hyphen
+      .replace(/^-+|-+$/g, "")         // trim hyphens
+      .replace(/-+/g, "-")             // collapse multiple hyphens
+      .slice(0, 63);                   // DNS label max length
+    return slug;
+  };
+
+  // Create a normalized version for uniqueness checking (strips all punctuation/spaces)
+  const toNormalizedKey = (name: string) => {
+    return name
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "") // strip diacritics
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");      // remove all non-alphanumeric
+  };
+
+  // Reserved subdomains that should not be allowed
+  const RESERVED = new Set([
+    "www", "admin", "api", "app", "static", "assets", "dashboard", "order", "orders", "auth", "login", "signup"
+  ]);
+
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
+      // Generate and validate subdomain first (cheap client-side UX)
+      const subdomain = toSubdomain(data.businessName);
+      const normalizedKey = toNormalizedKey(data.businessName);
+      
+      if (!subdomain) {
+        toast.error("Business name results in an invalid subdomain.");
+        setIsSubmitting(false);
+        return;
+      }
+      if (RESERVED.has(subdomain)) {
+        toast.error("That subdomain is reserved. Please choose another name.");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Check if normalized business name is already taken (ignores punctuation/spacing)
+      const q = query(collection(db, "businesses"), where("normalizedName", "==", normalizedKey));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        toast.error("That business name is already taken (ignoring punctuation and spacing).");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Create user account first
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-
-      // Create business doc
-      // Note: businessName and businessType are not collected at signup. Use sensible defaults.
-      const businessRef = await addDoc(collection(db, "businesses"), {
-        name: '',
-        subdomain: '',
-        businessType: 'other',
-        ownerId: userCredential.user.uid,
-        menuUploaded: false,
-        menuIntegrated: false,
-        hasWallet: false,
-        createdAt: new Date(),
-      });
-
       await updateProfile(userCredential.user, { displayName: data.name });
 
-      // Tell backend to set custom claims (admin SDK)
+      // Get ID token to authenticate with server
+      const idToken = await userCredential.user.getIdToken();
+
+      // Create business via server route (enforces uniqueness atomically)
       const res = await fetch("/api/signup-owner", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid: userCredential.user.uid, businessId: businessRef.id }),
+        body: JSON.stringify({ 
+          idToken, 
+          businessName: data.businessName,
+          subdomain,
+          normalizedName: normalizedKey
+        }),
       });
-      if (!res.ok) throw new Error('Failed to set server claims');
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        if (res.status === 409) {
+          toast.error("That subdomain is already taken.");
+        } else {
+          toast.error(errorData.error || 'Failed to create business.');
+        }
+        // Delete the user account since business creation failed
+        await userCredential.user.delete();
+        setIsSubmitting(false);
+        return;
+      }
 
       // Optionally send email verification (still works)
       await sendEmailVerification(userCredential.user);
@@ -151,7 +210,21 @@ export default function SignupForm() {
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Business name/type removed from signup form per request */}
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium">
+              Business Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="business-name"
+              type="text"
+              {...register("businessName")}
+              className="form-input w-full border border-black dark:border-white rounded-lg"
+              required
+            />
+            {errors.businessName && (
+              <p className="mt-1 text-sm text-red-600">{errors.businessName.message}</p>
+            )}
+          </div>
           <div>
             <label htmlFor="name" className="block text-sm font-medium">
               Name <span className="text-red-500">*</span>

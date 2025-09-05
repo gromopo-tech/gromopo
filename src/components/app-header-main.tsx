@@ -14,8 +14,6 @@
  import { useContext } from 'react'
  import { RoleContext } from './protected/role-provider'
  import { BusinessIdContext } from '@/components/protected/business-id-provider'
- import { getDoc, doc } from 'firebase/firestore'
- import { db } from '@/lib/firebase/config'
 
 const customerLinks: { label: string; path: string }[] = [
   // More links...
@@ -86,41 +84,19 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
   const [hasSubdomain, setHasSubdomain] = useState<boolean | null>(null)
   // Conditionally add GMPchat link for owner only when the business doc has a non-empty `subdomain`
   useEffect(() => {
-    let mounted = true
     const load = async () => {
-      // If not owner or not authenticated or no businessId, don't show link
-      if (!clientAuth || role !== 'owner' || !businessId) {
-        if (mounted) setHasSubdomain(false)
+            if (!clientAuth || role !== 'owner' || !businessId) {
+        setHasSubdomain(false)
         return
       }
-      // Fast path: check sessionStorage cache set by BusinessNameProvider
-      try {
-        const cached = sessionStorage.getItem(`businessSubdomain-${businessId}`)
-        if (typeof cached === 'string') {
-          if (mounted) setHasSubdomain(cached !== '')
-          return
-        }
-      } catch {
-        // ignore sessionStorage errors
-      }
-      try {
-        const snap = await getDoc(doc(db, 'businesses', businessId))
-        if (!mounted) return
-        if (snap.exists()) {
-          const data = snap.data() as Record<string, unknown>
-          const sd = typeof data.subdomain === 'string' ? data.subdomain : ''
-          setHasSubdomain(sd !== '')
-        } else {
-          setHasSubdomain(false)
-        }
-      } catch (err) {
-        console.error('Error loading business subdomain for header:', err)
-        if (!mounted) return
-        setHasSubdomain(false)
+
+      if (typeof businessId === 'string') {
+        // Since businessId is now the subdomain, we can use it directly
+        setHasSubdomain(Boolean(businessId))
+        sessionStorage.setItem(`businessSubdomain-${businessId}`, businessId)
       }
     }
-  load()
-    return () => { mounted = false }
+    load()
   }, [businessId, isAuthenticated, role, clientAuth])
 
   if (clientAuth && role === 'owner' && hasSubdomain === true) {

@@ -12,15 +12,15 @@ export default function DashboardPage() {
   const role = useContext(RoleContext);
   const businessId = useContext(BusinessIdContext);
   const [verified, setVerified] = useState<boolean | null>(null);
-  const [subdomain, setSubdomain] = useState<string | null>(null);
   const [menuUploaded, setMenuUploaded] = useState<boolean | null>(null);
+  const [hasWallet, setHasWallet] = useState<boolean | null>(null);
 
-  // Fetch subdomain and menuUploaded from business doc
   useEffect(() => {
     let mounted = true;
     const fetch = async () => {
       if (!businessId) {
-        if (mounted) setSubdomain(null);
+        setMenuUploaded(null);
+        setHasWallet(null);
         return;
       }
       try {
@@ -29,17 +29,21 @@ export default function DashboardPage() {
         if (!mounted) return;
         if (snap.exists()) {
           const data = snap.data() as Record<string, unknown>;
-          setSubdomain(typeof data.subdomain === 'string' ? data.subdomain : null);
           setMenuUploaded(typeof data.menuUploaded === 'boolean' ? data.menuUploaded : null);
+          setHasWallet(typeof data.hasWallet === 'boolean' ? data.hasWallet : null);
+          // Since businessId is now the subdomain, we can use it directly
+          // Removed subdomain handling as businessId is used directly
         } else {
-          setSubdomain(null);
           setMenuUploaded(null);
+          // Removed subdomain handling
+          setHasWallet(null);
         }
       } catch (err) {
         console.error('Error loading business flags:', err instanceof Error ? err.message : String(err));
         if (!mounted) return;
-        setSubdomain(null);
         setMenuUploaded(null);
+  // Removed subdomain handling
+        setHasWallet(null);
       }
     };
     fetch();
@@ -87,7 +91,7 @@ export default function DashboardPage() {
         {role === 'owner' ? (
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">GMPchat Assistant</h2>
-            {subdomain === '' ? (
+            {!hasWallet ? (
               <p className="text-gray-600 dark:text-gray-300 mb-4">
                 Launch your ordering page to unlock the AI assistant and get instant help with your business operations.
               </p>
