@@ -8,6 +8,7 @@ import { CartItem } from '@/types/cart';
 import { handleSolanaPayPayment } from '@/lib/solana/wallet-payment';
 import { toast } from 'sonner';
 import { WalletButton } from '@/components/solana/solana-provider';
+import TipModal from '@/components/order/tip-modal';
 
 interface PaymentsProps {
   total: number;
@@ -39,6 +40,8 @@ export function Payments({
   const [orderNumber, setOrderNumber] = useState<number | null>(null);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [cartSnapshot, setCartSnapshot] = useState<CartItem[]>([]);
+  const [isTipModalOpen, setIsTipModalOpen] = useState(false);
+  const [finalTotal, setFinalTotal] = useState(total);
 
   // Hardcoded destination wallet for demo (replace with your business wallet)
   const businessWallet = 'Gd5DD65JrQXUALt839cUyr8h42aLUCdveJhLfdMmFLTa';
@@ -48,7 +51,7 @@ export function Payments({
     try {
       const orderData = await submitOrderToFirestore({
         cart,
-        total: total ?? 0,
+        total: finalTotal ?? 0,
         customerName,
         businessId,
         businessName,
@@ -62,8 +65,8 @@ export function Payments({
     }
   };
 
-  const handlePay = async () => {
-    // Check for errors before processing payment
+  const handleSolanaPayClick = () => {
+    // Check for errors before showing tip modal
     if (total <= 0) {
       toast.error('The cart is empty.');
       return;
@@ -72,7 +75,19 @@ export function Payments({
       toast.error('Customer name is required.');
       return;
     }
+    
+    // Open tip modal
+    setIsTipModalOpen(true);
+  };
 
+  const handleTipConfirm = (selectedTipAmount: number) => {
+    setFinalTotal(total + selectedTipAmount);
+    setIsTipModalOpen(false);
+    // Proceed with payment
+    handlePayWithTip(total + selectedTipAmount);
+  };
+
+  const handlePayWithTip = async (totalWithTip: number) => {
     // Check balance before attempting payment
     try {
       const solBalance = await connection.getBalance(publicKey!);
@@ -88,7 +103,7 @@ export function Payments({
     }
 
     await handleSolanaPayPayment({
-      total,
+      total: totalWithTip,
       cart,
       businessWallet,
       publicKey,
@@ -133,7 +148,7 @@ export function Payments({
       const orderDetails = {
         orderNumber,
         customerName: customerName || 'Test Customer',
-        total,
+        total: finalTotal,
         cart: cartSnapshot.length > 0 ? cartSnapshot : cart,
         txSignature,
       };
@@ -152,12 +167,20 @@ export function Payments({
         ) : (
           <button
             className="btn border mb-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 cursor-pointer"
-            onClick={handlePay}
+            onClick={handleSolanaPayClick}
           >
             {paymentStatus === 'pending' ? 'Paying...' : 'Solana Pay'}
           </button>
         )}
       </div>
+      
+      <TipModal
+        isOpen={isTipModalOpen}
+        onClose={() => setIsTipModalOpen(false)}
+        subtotal={total}
+        onConfirm={handleTipConfirm}
+      />
+      
       {orderError && (
         <div className="mt-2 text-red-600">Error saving order: {orderError}</div>
       )}
