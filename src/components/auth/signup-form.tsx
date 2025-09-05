@@ -38,10 +38,12 @@ export default function SignupForm() {
       .normalize("NFKD")
       .replace(/[\u0300-\u036f]/g, "") // strip diacritics
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")     // non-alnum -> hyphen
-      .replace(/^-+|-+$/g, "")         // trim hyphens
-      .replace(/-+/g, "-")             // collapse multiple hyphens
-      .slice(0, 63);                   // DNS label max length
+  .replace(/[^a-z0-9\s-]/g, "")    // remove punctuation but keep spaces and hyphens
+  .trim()
+  .replace(/\s+/g, "-")            // spaces -> hyphen
+  .replace(/^-+|-+$/g, "")         // trim hyphens
+  .replace(/-+/g, "-")             // collapse multiple hyphens
+  .slice(0, 63);                     // DNS label max length
     return slug;
   };
 
