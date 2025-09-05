@@ -11,7 +11,7 @@ const sampleBusinessData = {
   normalizedName: "duckanddecanter",
   menuUploaded: true,
   menuIntegrated: true,
-  hasWallet: false,
+  merchantWallet: '<merchant-wallet-address>',
   theme: {
     primaryColor: "yellow",
     secondaryColor: "yellow",

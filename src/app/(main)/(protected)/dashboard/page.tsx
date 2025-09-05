@@ -30,7 +30,7 @@ export default function DashboardPage() {
         if (snap.exists()) {
           const data = snap.data() as Record<string, unknown>;
           setMenuUploaded(typeof data.menuUploaded === 'boolean' ? data.menuUploaded : null);
-          setHasWallet(typeof data.hasWallet === 'boolean' ? data.hasWallet : null);
+          setHasWallet(data.merchantWallet !== '<merchant-wallet-address>' ? true : false);
           // Since businessId is now the subdomain, we can use it directly
           // Removed subdomain handling as businessId is used directly
         } else {
