@@ -8,6 +8,7 @@ import { db } from '@/lib/firebase/config';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import type { MenuFile, MenuError } from '@/types/menu';
 import { Spinner } from "@/components/ui/spinner";
+import Link from "next/link";
 
 interface MenuUploadGateProps {
   children: React.ReactNode;
@@ -53,7 +54,6 @@ export default function MenuUploadGate({
   }, [businessId]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Prevent uploads when business has already marked menuUploaded = true
     if (businessMenuUploaded) return;
     if (!businessId || !e.target.files?.length) return;
     setUploading(true);
@@ -62,9 +62,7 @@ export default function MenuUploadGate({
       const file = e.target.files[0];
       const menuRef = ref(storage, `businesses/${businessId}/menus/${file.name}`);
       await uploadBytes(menuRef, file);
-      onMenuUploaded(); // Notify parent to refresh menus
-      // After a successful upload we leave the business doc alone until user clicks Continue
-      // But mark local submitted state so the Continue button becomes available
+      onMenuUploaded();
       setSubmitted(true);
     } catch (err) {
       const error = err as MenuError;
@@ -75,7 +73,6 @@ export default function MenuUploadGate({
     }
   };
 
-  // User clicks Continue to mark the business doc's menuUploaded flag as true
   const handleContinue = async () => {
     if (!businessId) return;
     setUploading(true);
@@ -103,7 +100,10 @@ export default function MenuUploadGate({
     return (
       <div className="p-4 rounded shadow-md max-w-2xl">
         <h3 className="font-semibold">Menu submitted</h3>
-        <p className="mb-2">Your menu(s) are being reviewed. We'll notify you as soon as your order page is ready.</p>
+        <p className="mb-2">Your menu(s) are being reviewed. We'll notify you as soon as your order page is ready. In the meantime, you can add a Solana wallet address where you will receive customer payments in the settings.</p>
+        <Link href="/dashboard/settings" className="btn border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded">
+          Go to Settings
+        </Link>
       </div>
     );
   }

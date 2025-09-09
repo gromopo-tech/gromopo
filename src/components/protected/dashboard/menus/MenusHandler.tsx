@@ -12,7 +12,7 @@ import {
   deleteObject,
 } from "firebase/storage";
 
-import MenuUploadGate from '@/components/protected/dashboard/MenuUploadGate';
+import MenuUploadGate from '@/components/protected/dashboard/menus/MenuUploadGate';
 import type { MenuFile, MenuError } from '@/types/menu';
 
 export default function MenusHandler() {
@@ -55,8 +55,6 @@ export default function MenusHandler() {
     fetchMenus();
     // eslint-disable-next-line
   }, [businessId]);
-
-  // Uploads are handled inside MenuUploadGate; the upload input here is unused.
 
   const handleReplace = async (menu: MenuFile, e: React.ChangeEvent<HTMLInputElement>) => {
     if (!businessId || !e.target.files?.length) return;
@@ -144,5 +142,4 @@ export default function MenusHandler() {
       </div>
     </MenuUploadGate>
   );
-// ...existing code ends here, no stray bracket...
 }

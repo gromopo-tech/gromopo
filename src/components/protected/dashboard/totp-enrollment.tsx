@@ -71,15 +71,6 @@ export function TotpEnrollment({ onComplete, onCancel }: TotpEnrollmentProps) {
       return;
     }
 
-    // Debug information
-    console.log('Attempting TOTP verification with:', {
-      codeLength: verificationCode.length,
-      code: verificationCode,
-      secretKey: totpSecret.secretKey,
-      currentTime: new Date().toISOString(),
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-    });
-
     setLoading(true);
     try {
       const { TotpMultiFactorGenerator } = await import('firebase/auth');
