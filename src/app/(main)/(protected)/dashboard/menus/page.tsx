@@ -1,6 +1,6 @@
 "use client";
 
-import MenusHandler from "./menusHandler";
+import MenusHandler from "../../../../../components/protected/dashboard/menus/MenusHandler";
 
 export default function MenusPage() {
   return (

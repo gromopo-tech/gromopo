@@ -6,11 +6,6 @@ import { useContext } from 'react';
 import { redirect } from 'next/navigation';
 import { WalletSettings } from '@/components/protected/dashboard/wallet-settings';
 
-// Import dev helpers in development
-if (process.env.NODE_ENV === 'development') {
-  import('@/lib/dev-helpers');
-}
-
 export default function SettingsPage() {
   const role = useContext(RoleContext);
   const businessId = useContext(BusinessIdContext);
