@@ -17,7 +17,7 @@ export function TotpEnrollment({ onComplete, onCancel }: TotpEnrollmentProps) {
   const [secretKey, setSecretKey] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [session, setSession] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [totpSecret, setTotpSecret] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
 
   const startEnrollment = async () => {
     const user = auth.currentUser;
@@ -32,11 +32,11 @@ export function TotpEnrollment({ onComplete, onCancel }: TotpEnrollmentProps) {
       
       // Get MFA session
       const mfaSession = await multiFactor(user).getSession();
-      setSession(mfaSession);
       
       // Generate TOTP secret
-      const totpSecret = await TotpMultiFactorGenerator.generateSecret(mfaSession);
-      const secret = totpSecret.secretKey;
+      const totpSecretObj = await TotpMultiFactorGenerator.generateSecret(mfaSession);
+      setTotpSecret(totpSecretObj);
+      const secret = totpSecretObj.secretKey;
       setSecretKey(secret);
       
       // Generate QR code URL for authenticator apps
@@ -48,24 +48,43 @@ export function TotpEnrollment({ onComplete, onCancel }: TotpEnrollmentProps) {
       setStep('show-qr');
     } catch (error) {
       console.error('TOTP enrollment error:', error);
-      toast.error('Failed to start TOTP enrollment');
+      if (error instanceof Error) {
+        const firebaseError = error as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+        if (firebaseError.code === 'auth/invalid-argument' && error.message.includes('phoneEnrollmentInfo')) {
+          toast.error('Multi-factor authentication is not properly enabled. Please check Firebase Console settings.');
+        } else if (firebaseError.code === 'auth/operation-not-allowed') {
+          toast.error('TOTP multi-factor authentication is not enabled in Firebase Console.');
+        } else {
+          toast.error(`Failed to start TOTP enrollment: ${error.message}`);
+        }
+      } else {
+        toast.error('Failed to start TOTP enrollment');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const verifyAndEnroll = async () => {
-    if (!session || !verificationCode) {
-      toast.error('Please enter the verification code');
+    if (!totpSecret || !verificationCode) {
+      toast.error('Missing verification code or setup data');
       return;
     }
+
+    // Debug information
+    console.log('Attempting TOTP verification with:', {
+      codeLength: verificationCode.length,
+      code: verificationCode,
+      secretKey: totpSecret.secretKey,
+      currentTime: new Date().toISOString(),
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    });
 
     setLoading(true);
     try {
       const { TotpMultiFactorGenerator } = await import('firebase/auth');
       
-      // Create assertion for the TOTP code
-      const totpSecret = await TotpMultiFactorGenerator.generateSecret(session);
+      // Create assertion using the stored totpSecret
       const multiFactorAssertion = TotpMultiFactorGenerator.assertionForEnrollment(
         totpSecret,
         verificationCode
@@ -78,10 +97,37 @@ export function TotpEnrollment({ onComplete, onCancel }: TotpEnrollmentProps) {
       onComplete();
     } catch (error) {
       console.error('TOTP verification error:', error);
-      toast.error('Invalid verification code. Please try again.');
+      console.error('Full error details:', JSON.stringify(error, null, 2));
+      
+      if (error instanceof Error) {
+        const firebaseError = error as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+        if (error.message.includes('invalid-verification-code') || firebaseError.code === 'auth/invalid-verification-code') {
+          toast.error('Invalid verification code. Please check your authenticator app and ensure your device time is synchronized.');
+        } else if (error.message.includes('too-many-requests') || firebaseError.code === 'auth/too-many-requests') {
+          toast.error('Too many attempts. Please wait a moment and try again.');
+        } else if (error.message.includes('session-expired')) {
+          toast.error('Session expired. Please start the setup process again.');
+          setStep('start');
+          setTotpSecret(null);
+          setSecretKey('');
+          setQrCodeUrl('');
+        } else {
+          toast.error(`Enrollment failed: ${error.message}`);
+        }
+      } else {
+        toast.error('Invalid verification code. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetSetup = () => {
+    setStep('start');
+    setTotpSecret(null);
+    setSecretKey('');
+    setQrCodeUrl('');
+    setVerificationCode('');
   };
 
   const generateQRCode = () => {
@@ -112,6 +158,7 @@ export function TotpEnrollment({ onComplete, onCancel }: TotpEnrollmentProps) {
             <ul className="text-sm text-gray-600 dark:text-gray-400 list-disc pl-5 space-y-1">
               <li>An authenticator app (Google Authenticator, Authy, etc.)</li>
               <li>Your phone or device with the app installed</li>
+              <li>Ensure your device time is synchronized</li>
             </ul>
           </div>
           
@@ -175,12 +222,21 @@ export function TotpEnrollment({ onComplete, onCancel }: TotpEnrollmentProps) {
             <code className="text-xs break-all">{secretKey}</code>
           </div>
           
-          <button
-            onClick={() => setStep('verify')}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            I've Added the Account
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => setStep('verify')}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              I've Added the Account
+            </button>
+            
+            <button
+              onClick={resetSetup}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            >
+              Start Over
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -195,6 +251,12 @@ export function TotpEnrollment({ onComplete, onCancel }: TotpEnrollmentProps) {
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Enter the 6-digit code from your authenticator app to complete setup:
           </p>
+          
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3 rounded">
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              💡 Tip: Wait for a fresh code (codes change every 30 seconds) and enter it immediately for best results.
+            </p>
+          </div>
           
           <div>
             <input
@@ -222,6 +284,13 @@ export function TotpEnrollment({ onComplete, onCancel }: TotpEnrollmentProps) {
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
             >
               Back to QR Code
+            </button>
+            
+            <button
+              onClick={resetSetup}
+              className="px-4 py-2 border border-red-300 dark:border-red-600 text-red-700 dark:text-red-300 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            >
+              Start Over
             </button>
           </div>
         </div>
