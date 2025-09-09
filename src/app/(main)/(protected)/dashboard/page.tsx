@@ -105,6 +105,18 @@ export default function DashboardPage() {
           </div>
         ) : null}
 
+        {role === 'owner' ? (
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <h2 className="text-xl font-semibold mb-4">Account Settings</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              Manage your business settings and payment configurations.
+            </p>
+            <Link href="/dashboard/settings" className="btn border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded">
+              Manage Settings
+            </Link>
+          </div>
+        ) : null}
+
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
           <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
           {verified === false ? (
