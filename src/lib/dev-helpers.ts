@@ -102,7 +102,13 @@ export const devHelpers = {
 };
 
 // Make available in development console
+declare global {
+  interface Window {
+    devHelpers?: typeof devHelpers;
+  }
+}
+
 if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-  (window as any).devHelpers = devHelpers;
+  window.devHelpers = devHelpers;
   console.log('Dev helpers available at window.devHelpers');
 }
