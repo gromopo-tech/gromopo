@@ -13,7 +13,7 @@ export default function Features() {
       description: 'Whether you run a café, food truck, or corner restaurant — our tools are designed for you.',
     },
     {
-      title: 'Instant Setup — No Coding Required (Coming Soon)',
+      title: 'Instant Setup',
       description: 'Launch your ordering page in minutes. Our platform works out of the box so you can focus on food.',
     },
     {

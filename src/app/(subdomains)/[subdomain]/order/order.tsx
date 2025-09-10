@@ -58,7 +58,7 @@ export default function Order({ business, menuData }: OrderProps) {
             <div className="p-8 text-center bg-yellow-50 border border-yellow-200 rounded">
               <h3 className="text-lg font-semibold text-yellow-800 mb-2">No Menu Items Found</h3>
               <p className="text-yellow-600">
-                The menu for {business.name} hasn't been set up in Firestore yet.
+                The menu for {business.name} hasn't been set up yet.
               </p>
             </div>
           )}
