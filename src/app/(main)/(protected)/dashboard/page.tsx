@@ -2,53 +2,16 @@
 
 import { RoleContext } from '@/components/protected/role-provider'
 import { useContext, useEffect, useState } from 'react'
-import { BusinessIdContext } from '@/components/protected/business-id-provider'
-import { db, auth } from '@/lib/firebase/config'
-import { doc, getDoc } from 'firebase/firestore'
+import { auth } from '@/lib/firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
 import Link from 'next/link'
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus'
+import { OnboardingPrompt } from '@/components/protected/dashboard/onboarding-prompt'
 
 export default function DashboardPage() {
   const role = useContext(RoleContext);
-  const businessId = useContext(BusinessIdContext);
   const [verified, setVerified] = useState<boolean | null>(null);
-  const [menuUploaded, setMenuUploaded] = useState<boolean | null>(null);
-  const [hasWallet, setHasWallet] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    const fetch = async () => {
-      if (!businessId) {
-        setMenuUploaded(null);
-        setHasWallet(null);
-        return;
-      }
-      try {
-        const ref = doc(db, 'businesses', businessId);
-        const snap = await getDoc(ref);
-        if (!mounted) return;
-        if (snap.exists()) {
-          const data = snap.data() as Record<string, unknown>;
-          setMenuUploaded(typeof data.menuUploaded === 'boolean' ? data.menuUploaded : null);
-          setHasWallet(data.merchantWallet !== '<merchant-wallet-address>' ? true : false);
-          // Since businessId is now the subdomain, we can use it directly
-          // Removed subdomain handling as businessId is used directly
-        } else {
-          setMenuUploaded(null);
-          // Removed subdomain handling
-          setHasWallet(null);
-        }
-      } catch (err) {
-        console.error('Error loading business flags:', err instanceof Error ? err.message : String(err));
-        if (!mounted) return;
-        setMenuUploaded(null);
-  // Removed subdomain handling
-        setHasWallet(null);
-      }
-    };
-    fetch();
-    return () => { mounted = false };
-  }, [businessId]);
+  const { currentStep, hasWallet, loading } = useOnboardingStatus();
 
   // Subscribe to auth state to get emailVerified
   useEffect(() => {
@@ -69,13 +32,13 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
           <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-          {menuUploaded === false ? (
-            <div>
-              <p className="mb-4">Upload a menu to get started.</p>
-              <Link href="/dashboard/menus" className="btn border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded">
-                Go to Menus
-              </Link>
-            </div>
+          {loading ? (
+            <div>Loading...</div>
+          ) : currentStep && currentStep !== 'complete' ? (
+            <OnboardingPrompt 
+              step={currentStep}
+              className="p-0"
+            />
           ) : (
             <div className="space-y-2">
               <Link href="/dashboard/orders" className="block text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
