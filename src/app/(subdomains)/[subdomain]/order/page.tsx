@@ -19,10 +19,14 @@ export default async function OrderPage({ params }: OrderPageProps) {
 
   const menuData = await getBusinessMenu(business.id);
 
+  // Construct the order URL for the mobile wallet selector
+  const orderUrl = `https://${subdomain}.gromopo.com/order`;
+
   return (
     <Order 
       business={business}
       menuData={menuData}
+      orderUrl={orderUrl}
     />
   );
 }
