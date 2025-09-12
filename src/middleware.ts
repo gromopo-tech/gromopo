@@ -22,8 +22,13 @@ export function middleware(request: NextRequest) {
 
   // If we have a subdomain, rewrite to dynamic subdomain routes
   if (subdomain) {
-    // Don't rewrite if already in the correct subdomain path
-    if (!pathname.startsWith(`/${subdomain}`) && !pathname.startsWith('/api') && !pathname.startsWith('/_next')) {
+    // Don't rewrite auth pages, API routes, or static files
+    if (!pathname.startsWith('/signin') && 
+        !pathname.startsWith('/signup') && 
+        !pathname.startsWith('/verify-email') &&
+        !pathname.startsWith(`/${subdomain}`) && 
+        !pathname.startsWith('/api') && 
+        !pathname.startsWith('/_next')) {
       const rewriteUrl = `/${subdomain}${pathname}`;
       return NextResponse.rewrite(new URL(rewriteUrl, request.url));
     }
@@ -42,6 +47,24 @@ export function middleware(request: NextRequest) {
     const token = request.cookies.get('__session')?.value;
     if (!token) {
       return NextResponse.redirect(new URL('/signin', request.url));
+    }
+    
+    try {
+      // Basic JWT decode to check email verification without full verification
+      // This is less secure but works in Edge Runtime
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      
+      // Check if email is verified
+      if (payload.email_verified === false) {
+        return NextResponse.redirect(new URL('/verify-email', request.url));
+      }
+      
+    } catch (error) {
+      // If we can't decode the token, redirect to signin
+      console.error('Token decode failed:', error);
+      const response = NextResponse.redirect(new URL('/signin', request.url));
+      response.cookies.delete('__session');
+      return response;
     }
   }
 
