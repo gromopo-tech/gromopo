@@ -5,13 +5,18 @@ import OrderDetails from '@/components/order/order-details';
 import { Payments } from './payments';
 import { useCart } from '@/components/order/hooks/use-cart';
 import { BusinessData, MenuData, MenuItem } from '@/types/business';
+import { MobileWalletSelector } from '@/components/mobile/mobile-wallet-selector';
+import { useState } from 'react';
 
 interface OrderProps {
   business: BusinessData;
   menuData: MenuData;
+  orderUrl: string;
 }
 
-export default function Order({ business, menuData }: OrderProps) {
+export default function Order({ business, menuData, orderUrl }: OrderProps) {
+  const [showMobileWalletSelector, setShowMobileWalletSelector] = useState(true);
+  
   const {
     cart,
     total,
@@ -46,8 +51,17 @@ export default function Order({ business, menuData }: OrderProps) {
   };
 
   return (
-    <div className="p-4 max-w-6xl mx-auto">
-      <div className="grid grid-cols-1 gap-8">
+    <>
+      {/* Mobile Wallet Selector - shows on mobile devices initially */}
+      {showMobileWalletSelector && (
+        <MobileWalletSelector
+          orderUrl={orderUrl}
+          onWalletSelected={() => setShowMobileWalletSelector(false)}
+        />
+      )}
+      
+      <div className="p-4 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 gap-8">
         <div>
           {menuData.categories.length > 0 ? (
             <Menu 
@@ -84,5 +98,6 @@ export default function Order({ business, menuData }: OrderProps) {
         </div>
       </div>
     </div>
+    </>
   );
 }
