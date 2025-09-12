@@ -5,23 +5,23 @@ import { BusinessIdContext } from '@/components/protected/business-id-provider';
 import { db } from '@/lib/firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
 
-export type OnboardingStep = 'upload-menu' | 'add-wallet' | 'complete';
+export type OnboardingStep = 'upload-menu' | 'add-wallet' | 'print-qr' | 'complete';
 
 export interface OnboardingStatus {
   currentStep: OnboardingStep | null;
   menuUploaded: boolean | null;
-  menuIntegrated: boolean | null;
   hasWallet: boolean | null;
   loading: boolean;
   isComplete: boolean;
+  markComplete: () => void;
 }
 
 export function useOnboardingStatus(): OnboardingStatus {
   const businessId = useContext(BusinessIdContext);
   const [menuUploaded, setMenuUploaded] = useState<boolean | null>(null);
-  const [menuIntegrated, setMenuIntegrated] = useState<boolean | null>(null);
   const [hasWallet, setHasWallet] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -30,7 +30,6 @@ export function useOnboardingStatus(): OnboardingStatus {
       if (!businessId) {
         if (mounted) {
           setMenuUploaded(null);
-          setMenuIntegrated(null);
           setHasWallet(null);
           setLoading(false);
         }
@@ -49,7 +48,6 @@ export function useOnboardingStatus(): OnboardingStatus {
           
           // Check menu status
           setMenuUploaded(typeof data.menuUploaded === 'boolean' ? data.menuUploaded : false);
-          setMenuIntegrated(typeof data.menuIntegrated === 'boolean' ? data.menuIntegrated : false);
           
           // Check wallet status
           const walletAddress = data.merchantWallet;
@@ -60,14 +58,12 @@ export function useOnboardingStatus(): OnboardingStatus {
           setHasWallet(!!hasValidWallet);
         } else {
           setMenuUploaded(false);
-          setMenuIntegrated(false);
           setHasWallet(false);
         }
       } catch (err) {
         console.error('Error checking onboarding status:', err instanceof Error ? err.message : String(err));
         if (mounted) {
           setMenuUploaded(false);
-          setMenuIntegrated(false);
           setHasWallet(false);
         }
       } finally {
@@ -83,30 +79,36 @@ export function useOnboardingStatus(): OnboardingStatus {
 
   // Determine current onboarding step
   const getCurrentStep = (): OnboardingStep | null => {
-    if (loading || menuUploaded === null || menuIntegrated === null || hasWallet === null) {
+    if (loading || menuUploaded === null || hasWallet === null) {
       return null;
     }
 
-    if (!menuUploaded && !menuIntegrated) {
+    if (!menuUploaded) {
       return 'upload-menu';
     }
-    
-    if (!hasWallet) {
+    if (menuUploaded && !hasWallet) {
       return 'add-wallet';
     }
-    
+
+    if (menuUploaded && hasWallet) {
+      return 'print-qr';
+    }
+    //TODO: Define criteria for "complete" step to display default quick actions
     return 'complete';
   };
 
   const currentStep = getCurrentStep();
-  const isComplete = currentStep === 'complete';
+  
+  const markComplete = () => {
+    setIsComplete(true);
+  };
 
   return {
     currentStep,
     menuUploaded,
-    menuIntegrated,
     hasWallet,
     loading,
-    isComplete
+    isComplete,
+    markComplete
   };
 }

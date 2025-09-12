@@ -1,4 +1,4 @@
- 'use client'
+'use client'
  import { usePathname } from 'next/navigation'
  import { useState, useEffect } from 'react'
  import { onAuthStateChanged } from 'firebase/auth'
@@ -57,6 +57,7 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
   const [isClient, setIsClient] = useState(false)
   // client-side auth state so header updates immediately on sign-in/out
   const [clientAuth, setClientAuth] = useState<boolean>(isAuthenticated)
+  const [displayName, setDisplayName] = useState<string | null>(null)
 
   useEffect(() => {
     setIsClient(true)
@@ -66,6 +67,7 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       setClientAuth(!!user)
+      setDisplayName(user?.displayName || null)
     })
     return () => unsub()
   }, [])
@@ -157,10 +159,10 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
           )}
         </div>
 
-    {clientAuth ? (
+    {clientAuth && displayName ? (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center w-full pointer-events-none">
             <span className="pointer-events-auto font-semibold text-lg text-neutral-700 dark:text-neutral-200 px-4 py-1 rounded">
-              Hello, {auth.currentUser?.displayName || 'User'}
+              Hello, {displayName}
             </span>
           </div>
         ) : null}

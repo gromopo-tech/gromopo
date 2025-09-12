@@ -11,7 +11,7 @@ import { OnboardingPrompt } from '@/components/protected/dashboard/onboarding-pr
 export default function DashboardPage() {
   const role = useContext(RoleContext);
   const [verified, setVerified] = useState<boolean | null>(null);
-  const { currentStep, hasWallet, loading } = useOnboardingStatus();
+  const { currentStep, hasWallet, loading, isComplete } = useOnboardingStatus();
 
   // Subscribe to auth state to get emailVerified
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function DashboardPage() {
           <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
           {loading ? (
             <div>Loading...</div>
-          ) : currentStep && currentStep !== 'complete' ? (
+          ) : currentStep && currentStep !== 'complete' && !isComplete ? (
             <OnboardingPrompt 
               step={currentStep}
               className="p-0"
@@ -46,6 +46,9 @@ export default function DashboardPage() {
               </Link>
               <Link href="/dashboard/menus" className="block text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
                 Manage Menus
+              </Link>
+              <Link href="/dashboard/settings" className="block text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                View QR Code
               </Link>
             </div>
           )}

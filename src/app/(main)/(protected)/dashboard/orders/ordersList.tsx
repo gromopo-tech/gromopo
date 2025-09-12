@@ -10,7 +10,7 @@ import { OnboardingPrompt } from '@/components/protected/dashboard/onboarding-pr
 
 export default function OrdersList() {
   const businessId = useContext(BusinessIdContext);
-  const { currentStep, menuIntegrated, hasWallet, loading } = useOnboardingStatus();
+  const { currentStep, hasWallet, loading } = useOnboardingStatus();
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -22,7 +22,7 @@ export default function OrdersList() {
   // Subscribe to orders only when we know a menu is integrated AND wallet is set up
   useEffect(() => {
     let unsub: (() => void) | undefined;
-    if (businessId && selectedDate && menuIntegrated && hasWallet) {
+    if (businessId && selectedDate && hasWallet) {
       // Calculate start and end of selected day in local time (not UTC)
       const [year, month, day] = selectedDate.split('-').map(Number);
       const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0).toISOString();
@@ -44,7 +44,7 @@ export default function OrdersList() {
     return () => {
       if (unsub) unsub();
     };
-  }, [businessId, selectedDate, menuIntegrated, hasWallet]);
+  }, [businessId, selectedDate, hasWallet]);
 
   const getAsOf = (order: Order) => {
     switch (order.status) {

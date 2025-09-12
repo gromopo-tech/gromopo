@@ -6,11 +6,10 @@ import { adminDb } from '@/lib/firebase/adminConfig';
 
 // Sample data based on your static files
 const sampleBusinessData = {
-  name: "Duck and Decanter",
+  name: "Sandy's Sandies",
   description: "Fresh sandwiches made to order",
-  normalizedName: "duckanddecanter",
-  menuUploaded: true,
-  menuIntegrated: true,
+  normalizedName: "sandys-sandies",
+  menuUploaded: false,
   merchantWallet: '<merchant-wallet-address>',
   theme: {
     primaryColor: "yellow",
@@ -69,13 +68,13 @@ export async function seedFirestoreData() {
     console.log('Seeding Firestore with sample data...');
     
     // Create business document
-    const businessRef = adminDb.doc(`businesses/duck-and-decanter`);
+    const businessRef = adminDb.doc(`businesses/sandys-sandies`);
     await businessRef.set(sampleBusinessData);
-    console.log('✅ Business created with ID:', 'duck-and-decanter');
+    console.log('✅ Business created with ID:', 'sandys-sandies');
     
     // Create menu categories and items
     for (const menuCategory of sampleMenuData) {
-      const menuRef = adminDb.collection(`businesses/duck-and-decanter/menu`).doc(menuCategory.categoryName);
+      const menuRef = adminDb.collection(`businesses/sandys-sandies/menu`).doc(menuCategory.categoryName);
       await menuRef.set({
         order: menuCategory.order
       });
@@ -83,7 +82,7 @@ export async function seedFirestoreData() {
       
       // Add items to this category
       for (const item of menuCategory.items) {
-        const itemRef = adminDb.collection(`businesses/duck-and-decanter/menu/${menuCategory.categoryName}/items`).doc(item.itemName);
+        const itemRef = adminDb.collection(`businesses/sandys-sandies/menu/${menuCategory.categoryName}/items`).doc(item.itemName);
         await itemRef.set({
           description: item.description,
           price: item.price
@@ -93,8 +92,8 @@ export async function seedFirestoreData() {
     }
     
     console.log('🎉 Firestore seeding completed!');
-    console.log('Business ID:', 'duck-and-decanter');
-    return 'duck-and-decanter';
+    console.log('Business ID:', 'sandys-sandies');
+    return 'sandys-sandies';
 
   } catch (error) {
     console.error('❌ Error seeding Firestore:', error);

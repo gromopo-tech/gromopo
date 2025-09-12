@@ -47,7 +47,6 @@ export async function POST(req: Request) {
         description: 'Fresh food made to order',
         ownerId: userUid,
         menuUploaded: false,
-        menuIntegrated: false,
         merchantWallet: '<merchant-wallet-address>',
         createdAt: new Date(),
       });

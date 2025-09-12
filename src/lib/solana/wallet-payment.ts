@@ -6,7 +6,7 @@ import { USDC_MINT } from './config'; // Import from config
 interface SolanaPayParams {
   total: number;
   cart: CartItem[];
-  businessWallet: string;
+  merchantWallet: string | null;
   publicKey: PublicKey | null;
   sendTransaction: (tx: Transaction, connection: Connection) => Promise<string>;
   connection: Connection;
@@ -20,7 +20,7 @@ interface SolanaPayParams {
 export async function handleSolanaPayPayment({
   total,
   cart,
-  businessWallet,
+  merchantWallet,
   publicKey,
   sendTransaction,
   connection,
@@ -37,7 +37,8 @@ export async function handleSolanaPayPayment({
     
     // Get associated token addresses
     const fromTokenAccount = await getAssociatedTokenAddress(USDC_MINT, publicKey!);
-    const toTokenAccount = await getAssociatedTokenAddress(USDC_MINT, new PublicKey(businessWallet));
+    const toTokenAccount = merchantWallet ? await getAssociatedTokenAddress(USDC_MINT, new PublicKey(merchantWallet)) : null;
+    if (!toTokenAccount) throw new Error('Merchant wallet not configured');
     
     // Create USDC transfer transaction
     const tx = new Transaction().add(
