@@ -100,9 +100,9 @@ export default function MenuUploadGate({
     return (
       <div className="p-4 rounded shadow-md max-w-2xl">
         <h3 className="font-semibold">Menu submitted</h3>
-        <p className="mb-2">Your menu(s) are being reviewed. We'll notify you as soon as your order page is ready. In the meantime, you can add a Solana wallet address where you will receive customer payments in the settings.</p>
+        <p className="mb-2">Your menu(s) are being reviewed. We'll notify you as soon as your order page is ready. In the meantime, add a Solana wallet to accept orders and payments.</p>
         <Link href="/dashboard/settings" className="btn border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded">
-          Go to Settings
+          Add a wallet
         </Link>
       </div>
     );

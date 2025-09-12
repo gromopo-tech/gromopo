@@ -5,25 +5,24 @@ export default function Features() {
       description: 'Accept orders via QR code or link — no app required. Simple for your customers, efficient for you.',
     },
     {
-      title: 'USDC-Native Payments',
-      description: 'Enjoy near-zero transaction fees with instant digital dollar payments. Keep more of what you earn.',
+      title: 'USDC-Native Payments on Solana',
+      description: 'Say goodbye to high credit/debit card processing fees. USDC payments on the Solana network are less than 1 cent per transaction, letting you keep more of what you earn.',
     },
     {
       title: 'Tailored for Mom & Pop Shops',
       description: 'Whether you run a café, food truck, or corner restaurant — our tools are designed for you.',
     },
     {
-      title: 'Instant Setup — No Coding Required (Coming Soon)',
+      title: 'Instant Setup',
       description: 'Launch your ordering page in minutes. Our platform works out of the box so you can focus on food.',
     },
     {
-
-      title: 'AI Assistant for Smarter Business Decisions (Coming Soon)',
-      description: 'Get personalized suggestions based on customer feedback and order trends. Know what’s working, what needs fixing, and how to stock smarter — powered by real-time data.',
+      title: 'Built-in Loyalty Features (Coming Soon)',
+      description: 'Encourage repeat visits and reward customers for their reviews — no punch cards required.',
     },
     {
-      title: 'Built-in Loyalty Features (Coming Soon)',
-      description: 'Encourage repeat visits with simple, automated rewards — no punch cards required.',
+      title: 'AI Assistant for Smarter Business Decisions (Coming Soon)',
+      description: 'Get personalized suggestions based on customer feedback and order trends. Know what’s working, what needs fixing, and how to stock smarter — powered by real-time data.',
     },
   ];
 

@@ -4,7 +4,8 @@ import { RoleContext } from '@/components/protected/role-provider';
 import { BusinessIdContext } from '@/components/protected/business-id-provider';
 import { useContext } from 'react';
 import { redirect } from 'next/navigation';
-import { WalletSettings } from '@/components/protected/dashboard/wallet-settings';
+import { WalletSettings } from '@/components/protected/dashboard/settings/wallet-settings';
+import { QRCodeSection } from '@/components/protected/dashboard/settings/qr-code-section';
 
 export default function SettingsPage() {
   const role = useContext(RoleContext);
@@ -24,6 +25,7 @@ export default function SettingsPage() {
         
         <div className="grid gap-6">
           <WalletSettings businessId={businessId} />
+          {businessId && <QRCodeSection businessId={businessId} />}
         </div>
       </div>
     </div>
