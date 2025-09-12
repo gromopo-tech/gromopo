@@ -35,6 +35,14 @@ export default function SigninForm() {
         data.password
       );
 
+      // Check if email is verified
+      if (!userCredential.user.emailVerified) {
+        // Don't set session cookie, redirect to verification page
+        setSuccess(true);
+        window.location.replace("/verify-email");
+        return;
+      }
+
       const idToken = await userCredential.user.getIdToken(true);
       await fetch("/api/set-session-cookie", {
         method: "POST",

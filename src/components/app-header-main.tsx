@@ -58,6 +58,7 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
   // client-side auth state so header updates immediately on sign-in/out
   const [clientAuth, setClientAuth] = useState<boolean>(isAuthenticated)
   const [displayName, setDisplayName] = useState<string | null>(null)
+  const [emailVerified, setEmailVerified] = useState<boolean>(false)
 
   useEffect(() => {
     setIsClient(true)
@@ -68,6 +69,7 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
     const unsub = onAuthStateChanged(auth, (user) => {
       setClientAuth(!!user)
       setDisplayName(user?.displayName || null)
+      setEmailVerified(user?.emailVerified || false)
     })
     return () => unsub()
   }, [])
@@ -140,7 +142,7 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
           </Link>
           <div className="hidden md:flex items-center">
             <ul className="flex gap-4 flex-nowrap items-center">
-      {(clientAuth ? effectiveBusinessLinks : customerLinks).map(({ label, path }) => (
+      {((clientAuth && emailVerified) ? effectiveBusinessLinks : customerLinks).map(({ label, path }) => (
                 <li key={path}>
                   <Link
                     className={`hover:text-neutral-500 dark:hover:text-white ${isActive(path) ? 'text-neutral-500 dark:text-white' : ''}`}
@@ -152,7 +154,7 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
               ))}
             </ul>
           </div>
-          {isAuthenticated && (
+          {(isAuthenticated && emailVerified) && (
             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setShowMenu(!showMenu)}>
               {showMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
@@ -161,9 +163,15 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
 
     {clientAuth && displayName ? (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center w-full pointer-events-none">
-            <span className="pointer-events-auto font-semibold text-lg text-neutral-700 dark:text-neutral-200 px-4 py-1 rounded">
-              Hello, {displayName}
-            </span>
+            {emailVerified ? (
+              <span className="pointer-events-auto font-semibold text-lg text-neutral-700 dark:text-neutral-200 px-4 py-1 rounded">
+                Hello, {displayName}
+              </span>
+            ) : (
+              <span className="pointer-events-auto font-medium text-sm text-amber-600 dark:text-amber-400 px-4 py-1 rounded bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800">
+                Please verify your email to access dashboard features
+              </span>
+            )}
           </div>
         ) : null}
 
@@ -177,7 +185,7 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
           <div className="md:hidden fixed inset-x-0 top-[52px] bottom-0 bg-neutral-100/95 dark:bg-neutral-900/95 backdrop-blur-sm">
             <div className="flex flex-col p-4 gap-4 border-t dark:border-neutral-800">
               <ul className="flex flex-col gap-4">
-                {(clientAuth ? effectiveBusinessLinks : customerLinks).map(({ label, path }) => (
+                {((clientAuth && emailVerified) ? effectiveBusinessLinks : customerLinks).map(({ label, path }) => (
                   <li key={path}>
                     <Link
                       className={`hover:text-neutral-500 dark:hover:text-white block text-lg py-2  ${isActive(path) ? 'text-neutral-500 dark:text-white' : ''} `}
