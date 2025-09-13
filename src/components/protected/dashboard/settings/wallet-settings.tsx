@@ -159,7 +159,7 @@ export function WalletSettings({ businessId }: WalletSettingsProps) {
       const user = auth.currentUser;
       if (!user) return;
       
-      const { multiFactor, TotpMultiFactorGenerator } = await import('firebase/auth');
+      const { multiFactor } = await import('firebase/auth');
       const mfaUser = multiFactor(user);
       const enrolledFactors = mfaUser.enrolledFactors;
       
@@ -179,7 +179,7 @@ export function WalletSettings({ businessId }: WalletSettingsProps) {
         setRequiresTotpForWallet(false);
         toast.success('Security verification passed');
       }
-    } catch (error) {
+    } catch {
       toast.error('TOTP verification failed');
     }
   };
