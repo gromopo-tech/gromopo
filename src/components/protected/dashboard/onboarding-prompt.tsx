@@ -67,8 +67,10 @@ export function OnboardingPrompt({
   const finalButtonText = buttonText || content.buttonText;
   const finalButtonHref = buttonHref || content.buttonHref;
 
-  const handleDoneClick = () => {
-    markComplete();
+  const handleDoneClick = async () => {
+    await markComplete();
+    // Force a reload of the page to show updated state
+    window.location.reload();
   };
 
   // Determine background color based on step

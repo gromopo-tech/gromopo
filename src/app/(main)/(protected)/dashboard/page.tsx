@@ -47,9 +47,6 @@ export default function DashboardPage() {
               <Link href="/dashboard/menus" className="block text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
                 Manage Menus
               </Link>
-              <Link href="/dashboard/settings" className="block text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                View QR Code
-              </Link>
             </div>
           )}
         </div>
