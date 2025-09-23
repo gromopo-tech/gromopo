@@ -61,7 +61,6 @@ export function MobileWalletSelector({ orderUrl, onWalletSelected }: MobileWalle
   const isMobile = useMobileDetection();
 
   const handleWalletClick = (wallet: WalletOption) => {
-    // Don't allow clicks on wallets that are not yet implemented
     if (!wallet.useCustomFormat) {
       console.log(`${wallet.name} deep linking coming soon...`);
       return;
@@ -70,41 +69,39 @@ export function MobileWalletSelector({ orderUrl, onWalletSelected }: MobileWalle
     try {
       let deepLinkUrl: string;
       
+      // Add a URL parameter to prevent infinite loop
+      const targetUrl = new URL(orderUrl);
+      targetUrl.searchParams.set('wallet-redirect', 'true');
+      
       if (wallet.useCustomFormat && (wallet.name === 'Solflare' || wallet.name === 'Phantom')) {
-        // For Solflare/Phantom: scheme://ul/v1/browse/hostname%2Fpath?ref=gromopo.com
-        const url = new URL(orderUrl);
+        const url = new URL(targetUrl);
         const hostAndPath = `${url.hostname}${encodeURIComponent(url.pathname)}`;
         const mainDomain = 'gromopo.com';
         
         if (wallet.name === 'Phantom') {
-          // Phantom uses the same format but different scheme
           deepLinkUrl = `phantom://ul/v1/browse/${hostAndPath}?${wallet.urlParameter}=${mainDomain}`;
         } else {
-          // Solflare
           deepLinkUrl = `${wallet.deepLinkScheme}/${hostAndPath}?${wallet.urlParameter}=${mainDomain}`;
         }
       } else {
-        // For other wallets (not implemented yet)
-        deepLinkUrl = `${wallet.deepLinkScheme}?${wallet.urlParameter}=${encodeURIComponent(orderUrl)}`;
+        deepLinkUrl = `${wallet.deepLinkScheme}?${wallet.urlParameter}=${encodeURIComponent(targetUrl.toString())}`;
       }
       
-      console.log(`Opening ${wallet.name} with deep link:`, deepLinkUrl);
-      
-      // Use window.location.href to trigger the deep link
       window.location.href = deepLinkUrl;
-      
-      // Notify parent component that wallet was selected
       onWalletSelected?.();
       
     } catch (error) {
       console.error(`Failed to open ${wallet.name} wallet:`, error);
-      // If there's an error, still notify parent so user can continue
       onWalletSelected?.();
     }
   };
 
-  // Don't show wallet selector on non-mobile devices
-  if (!isMobile) {
+  // Don't show selector if we're being redirected from a wallet
+  const isWalletRedirect = typeof window !== 'undefined' && 
+    new URLSearchParams(window.location.search).has('wallet-redirect');
+  
+  // Don't show wallet selector on non-mobile devices or wallet redirects
+  if (!isMobile || isWalletRedirect) {
     return null;
   }
 
