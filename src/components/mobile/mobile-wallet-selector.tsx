@@ -28,7 +28,7 @@ const SUPPORTED_WALLETS: WalletOption[] = [
   },
   {
     name: 'Phantom',
-    deepLinkScheme: 'phantom://ul/browse',
+    deepLinkScheme: 'phantom://browse',
     urlParameter: 'ref',
     useCustomFormat: true,
     icon: '👻',
@@ -71,15 +71,15 @@ export function MobileWalletSelector({ orderUrl }: MobileWalletSelectorProps) {
       
       if (wallet.useCustomFormat && (wallet.name === 'Solflare' || wallet.name === 'Phantom')) {
         const url = new URL(orderUrl);
-        // Add wallet-redirect parameter to the path
         url.searchParams.set('wallet-redirect', 'true');
-        const hostAndPath = `${url.hostname}${encodeURIComponent(url.pathname + url.search)}`;
-        const mainDomain = 'gromopo.com';
         
         if (wallet.name === 'Phantom') {
-          deepLinkUrl = `phantom://ul/v1/browse/${hostAndPath}?${wallet.urlParameter}=${mainDomain}`;
+          // Phantom requires a different URL structure
+          deepLinkUrl = `${wallet.deepLinkScheme}/${encodeURIComponent(url.toString())}`;
         } else {
-          deepLinkUrl = `${wallet.deepLinkScheme}/${hostAndPath}?${wallet.urlParameter}=${mainDomain}`;
+          // Solflare format remains the same
+          const hostAndPath = `${url.hostname}${encodeURIComponent(url.pathname + url.search)}`;
+          deepLinkUrl = `${wallet.deepLinkScheme}/${hostAndPath}?${wallet.urlParameter}=gromopo.com`;
         }
       } else {
         const targetUrl = new URL(orderUrl);
@@ -153,7 +153,7 @@ export function MobileWalletSelector({ orderUrl }: MobileWalletSelectorProps) {
             Solflare: solflare://ul/v1/browse/{new URL(orderUrl).hostname}{encodeURIComponent(new URL(orderUrl).pathname + '?wallet-redirect=true')}?ref=gromopo.com
           </p>
           <p className="text-xs text-gray-400">
-            Phantom: phantom://ul/v1/browse/{new URL(orderUrl).hostname}{encodeURIComponent(new URL(orderUrl).pathname + '?wallet-redirect=true')}?ref=gromopo.com
+            Phantom: phantom://browse/{encodeURIComponent(orderUrl + '?wallet-redirect=true')}
           </p>
         </div>
       </div>
