@@ -69,13 +69,11 @@ export function MobileWalletSelector({ orderUrl, onWalletSelected }: MobileWalle
     try {
       let deepLinkUrl: string;
       
-      // Add a URL parameter to prevent infinite loop
-      const targetUrl = new URL(orderUrl);
-      targetUrl.searchParams.set('wallet-redirect', 'true');
-      
       if (wallet.useCustomFormat && (wallet.name === 'Solflare' || wallet.name === 'Phantom')) {
-        const url = new URL(targetUrl);
-        const hostAndPath = `${url.hostname}${encodeURIComponent(url.pathname)}`;
+        const url = new URL(orderUrl);
+        // Add wallet-redirect parameter to the path
+        url.searchParams.set('wallet-redirect', 'true');
+        const hostAndPath = `${url.hostname}${encodeURIComponent(url.pathname + url.search)}`;
         const mainDomain = 'gromopo.com';
         
         if (wallet.name === 'Phantom') {
@@ -84,6 +82,8 @@ export function MobileWalletSelector({ orderUrl, onWalletSelected }: MobileWalle
           deepLinkUrl = `${wallet.deepLinkScheme}/${hostAndPath}?${wallet.urlParameter}=${mainDomain}`;
         }
       } else {
+        const targetUrl = new URL(orderUrl);
+        targetUrl.searchParams.set('wallet-redirect', 'true');
         deepLinkUrl = `${wallet.deepLinkScheme}?${wallet.urlParameter}=${encodeURIComponent(targetUrl.toString())}`;
       }
       
