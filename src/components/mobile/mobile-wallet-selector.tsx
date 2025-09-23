@@ -162,10 +162,10 @@ export function MobileWalletSelector({ orderUrl, onWalletSelected }: MobileWalle
 
         <div className="text-center">
           <p className="text-xs text-gray-400 mb-1">
-            Solflare: solflare://ul/v1/browse/{new URL(orderUrl).hostname}{encodeURIComponent(new URL(orderUrl).pathname)}?ref=gromopo.com
+            Solflare: solflare://ul/v1/browse/{new URL(orderUrl).hostname}{encodeURIComponent(new URL(orderUrl).pathname + '?wallet-redirect=true')}?ref=gromopo.com
           </p>
           <p className="text-xs text-gray-400">
-            Phantom: phantom://ul/v1/browse/{new URL(orderUrl).hostname}{encodeURIComponent(new URL(orderUrl).pathname)}?ref=gromopo.com
+            Phantom: phantom://ul/v1/browse/{new URL(orderUrl).hostname}{encodeURIComponent(new URL(orderUrl).pathname + '?wallet-redirect=true')}?ref=gromopo.com
           </p>
         </div>
       </div>
