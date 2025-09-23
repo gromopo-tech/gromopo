@@ -57,7 +57,7 @@ const SUPPORTED_WALLETS: WalletOption[] = [
   },
 ];
 
-export function MobileWalletSelector({ orderUrl, onWalletSelected }: MobileWalletSelectorProps) {
+export function MobileWalletSelector({ orderUrl }: MobileWalletSelectorProps) {
   const isMobile = useMobileDetection();
 
   const handleWalletClick = (wallet: WalletOption) => {
@@ -87,12 +87,11 @@ export function MobileWalletSelector({ orderUrl, onWalletSelected }: MobileWalle
         deepLinkUrl = `${wallet.deepLinkScheme}?${wallet.urlParameter}=${encodeURIComponent(targetUrl.toString())}`;
       }
       
-      window.location.href = deepLinkUrl;
-      onWalletSelected?.();
+      // Open the wallet without redirecting the current page
+      window.open(deepLinkUrl, '_blank');
       
     } catch (error) {
       console.error(`Failed to open ${wallet.name} wallet:`, error);
-      onWalletSelected?.();
     }
   };
 
@@ -104,10 +103,6 @@ export function MobileWalletSelector({ orderUrl, onWalletSelected }: MobileWalle
   if (!isMobile || isWalletRedirect) {
     return null;
   }
-
-  const handleContinueInBrowser = () => {
-    onWalletSelected?.();
-  };
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-6">
@@ -149,15 +144,8 @@ export function MobileWalletSelector({ orderUrl, onWalletSelected }: MobileWalle
 
         <div className="text-center">
           <p className="text-sm text-gray-500 mb-4">
-            Don't have a wallet installed?
+            Orders can only be placed from within a wallet app
           </p>
-          <Button
-            variant="outline"
-            onClick={handleContinueInBrowser}
-            className="w-full"
-          >
-            Continue in Browser
-          </Button>
         </div>
 
         <div className="text-center">

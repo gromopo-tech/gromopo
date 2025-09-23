@@ -1,7 +1,7 @@
 import React from 'react';
 import { getBusinessBySubdomain, getBusinessMenu } from '@/lib/firebase/business';
 import { notFound } from 'next/navigation';
-import Order from './order';
+import { OrderPageWrapper } from '@/components/order/order-page-wrapper';
 
 interface OrderPageProps {
   params: Promise<{
@@ -23,7 +23,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
   const orderUrl = `https://${subdomain}.gromopo.com/order`;
 
   return (
-    <Order 
+    <OrderPageWrapper 
       business={business}
       menuData={menuData}
       orderUrl={orderUrl}
