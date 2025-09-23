@@ -3,7 +3,8 @@
 import { useState, useEffect, useContext } from 'react';
 import { BusinessIdContext } from '@/components/protected/business-id-provider';
 import { db } from '@/lib/firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { toast } from 'sonner';
 
 export type OnboardingStep = 'upload-menu' | 'add-wallet' | 'print-qr' | 'complete';
 
@@ -48,7 +49,7 @@ export function useOnboardingStatus(): OnboardingStatus {
           
           // Check menu status
           setMenuUploaded(typeof data.menuUploaded === 'boolean' ? data.menuUploaded : false);
-          
+
           // Check wallet status
           const walletAddress = data.merchantWallet;
           const hasValidWallet = 
@@ -56,6 +57,9 @@ export function useOnboardingStatus(): OnboardingStatus {
             typeof walletAddress === 'string' && 
             walletAddress !== '<merchant-wallet-address>';
           setHasWallet(!!hasValidWallet);
+
+          // Check if onboarding is complete
+          setIsComplete(data.onboardingComplete === true);
         } else {
           setMenuUploaded(false);
           setHasWallet(false);
@@ -83,6 +87,10 @@ export function useOnboardingStatus(): OnboardingStatus {
       return null;
     }
 
+    if (isComplete) {
+      return 'complete';
+    }
+
     if (!menuUploaded) {
       return 'upload-menu';
     }
@@ -93,14 +101,25 @@ export function useOnboardingStatus(): OnboardingStatus {
     if (menuUploaded && hasWallet) {
       return 'print-qr';
     }
-    //TODO: Define criteria for "complete" step to display default quick actions
+
     return 'complete';
   };
 
   const currentStep = getCurrentStep();
   
-  const markComplete = () => {
-    setIsComplete(true);
+  const markComplete = async (): Promise<void> => {
+    if (!businessId) return;
+    
+    try {
+      const ref = doc(db, 'businesses', businessId);
+      await updateDoc(ref, {
+        onboardingComplete: true
+      });
+      setIsComplete(true);
+    } catch (error) {
+      console.error('Error marking onboarding as complete:', error);
+      toast.error('Failed to update onboarding status');
+    }
   };
 
   return {

@@ -144,16 +144,7 @@ export function MobileWalletSelector({ orderUrl }: MobileWalletSelectorProps) {
 
         <div className="text-center">
           <p className="text-sm text-gray-500 mb-4">
-            Orders can only be placed from within a wallet app
-          </p>
-        </div>
-
-        <div className="text-center">
-          <p className="text-xs text-gray-400 mb-1">
-            Solflare: solflare://ul/v1/browse/{new URL(orderUrl).hostname}{encodeURIComponent(new URL(orderUrl).pathname + '?wallet-redirect=true')}?ref=gromopo.com
-          </p>
-          <p className="text-xs text-gray-400">
-            Phantom: phantom://browse/{encodeURIComponent(orderUrl + '?wallet-redirect=true')}
+            For security, orders can only be placed from within a wallet app's browser.
           </p>
         </div>
       </div>
