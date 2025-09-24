@@ -59,7 +59,7 @@ export default function DemoForm() {
       <p className="pb-12 w-full text-center text-lg text-emerald-800 dark:text-emerald-100">
       If you&apos;re interested in a demo or have any questions, 
       <br />
-      reach out to support@gromopo.com or leave your details below:
+      reach out to demos@gromopo.com or leave your details below:
       </p>
       {success ? (
         <div>
