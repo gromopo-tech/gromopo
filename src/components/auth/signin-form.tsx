@@ -53,7 +53,7 @@ export default function SigninForm() {
       });
 
       setSuccess(true);
-      window.location.replace("/dashboard");
+      window.location.replace("/dashboard/gmp-chat");
     } catch (error) {
       console.error(error);
       if (error instanceof Error) {

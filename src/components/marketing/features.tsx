@@ -17,11 +17,11 @@ export default function Features() {
       description: 'Launch your ordering page in minutes. Our platform works out of the box so you can focus on food.',
     },
     {
-      title: 'Built-in Loyalty Features (Coming Soon)',
+      title: 'Built-in Loyalty Features',
       description: 'Encourage repeat visits and reward customers for their reviews — no punch cards required.',
     },
     {
-      title: 'AI Assistant for Smarter Business Decisions (Coming Soon)',
+      title: 'AI Assistant for Smarter Business Decisions',
       description: 'Get personalized suggestions based on customer feedback and order trends. Know what’s working, what needs fixing, and how to stock smarter — powered by real-time data.',
     },
   ];
