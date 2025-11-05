@@ -52,8 +52,17 @@ export default function SigninForm() {
         body: JSON.stringify({ token: idToken }),
       });
 
+      // Get custom claims to check businessId
+      const idTokenResult = await userCredential.user.getIdTokenResult();
+      const businessId = idTokenResult.claims.businessId as string | undefined;
+
       setSuccess(true);
-      window.location.replace("/dashboard/gmp-chat");
+      // Redirect to gmp-chat only for specific businessId, otherwise go to dashboard
+      if (businessId === '27nj0fatH7IQUZywPmqO') {
+        window.location.replace("/dashboard/gmp-chat");
+      } else {
+        window.location.replace("/dashboard");
+      }
     } catch (error) {
       console.error(error);
       if (error instanceof Error) {
