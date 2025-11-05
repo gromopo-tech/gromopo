@@ -12,11 +12,6 @@ export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isDevelopment = process.env.NODE_ENV === 'development';
 
-  // Disable employees routes for now. Return 404
-  if (pathname.startsWith('/dashboard/employees')) {
-    return new NextResponse('Not Found', { status: 404 });
-  }
-
   // Extract subdomain using utility function
   const subdomain = getSubdomain(hostname);
 

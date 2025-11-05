@@ -24,6 +24,7 @@ const customerLinks: { label: string; path: string }[] = [
 
 const businessLinks: { label: string; path: string }[] = [
   // More links...
+  { label: 'Employees', path: '/dashboard/employees' },
   { label: 'Menus', path: '/dashboard/menus' },
   { label: 'Orders', path: '/dashboard/orders' },
 ]
