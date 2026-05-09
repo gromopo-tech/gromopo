@@ -27,7 +27,7 @@ flowchart LR
     end
 
     subgraph chat ["gromopo-tech/chat"]
-        E[FastAPI RAG service<br/>ertex AI · Qdrant]
+        E[FastAPI RAG service<br/>Vertex AI · Qdrant]
     end
 
     subgraph vouched ["gromopo-tech/vouched"]
@@ -72,37 +72,22 @@ src/lib/solana/               Solana network config + vouched client
 
 ---
 
-## Local Development
+## Local Setup
 
 ### Prerequisites
 
 - Node.js 20+
+- Docker (for the RAG backend)
 - [Firebase CLI](https://firebase.google.com/docs/cli) (`npm install -g firebase-tools`)
-- A funded Solana devnet wallet (for testing payments)
+- A funded Solana devnet wallet (for testing on-chain payments)
 
-### 1. Clone
+### 1. Install and configure
 
 ```sh
 git clone https://github.com/gromopo-tech/gromopo.git
 cd gromopo
 npm install
 ```
-
-### 2. Start Firebase emulators
-
-```sh
-firebase emulators:start
-```
-
-Default ports (can be overridden via `.env.local`):
-
-| Emulator | Default |
-|---|---|
-| Auth | http://127.0.0.1:9099 |
-| Firestore | http://127.0.0.1:8081 |
-| Storage | http://127.0.0.1:9199 |
-
-### 3. Configure environment variables
 
 Create `.env.local`:
 
@@ -122,26 +107,111 @@ FIREBASE_ADMIN_CLIENT_EMAIL=<service-account-email>
 FIREBASE_ADMIN_PRIVATE_KEY=<service-account-private-key>
 ```
 
-### 4. Run the dev server
+### 2. Start Firebase emulators and open the app
 
 ```sh
-npm run dev
+firebase emulators:start
 ```
 
-App is available at http://localhost:3000.
+| Emulator | Default URL |
+|---|---|
+| Auth | http://127.0.0.1:9099 |
+| Firestore | http://127.0.0.1:8081 |
+| Storage | http://127.0.0.1:9199 |
 
-Subdomain-based order pages are rewritten by middleware — test locally at `http://localhost:3000/<subdomain>/order`.
+open the app at http://localhost:5002
 
-### 5. (Optional) Start the RAG backend
+---
 
-To use the AI chat dashboard feature, run the chat service locally:
+## Demo & Testing
+
+### Merchant Dashboard
+
+The owner dashboard (`/dashboard`) requires a seeded business and an authenticated owner account.
+
+**Create the owner account + set Firebase claims:**
 
 ```sh
-# see https://github.com/gromopo-tech/chat for setup
-docker-compose up -d   # from the chat repo
+node seedOwner.js
 ```
 
-Then set `RAG_API_URL=http://localhost:8080/rag` in `.env.local`.
+This creates a local emulator user with owner claims for the seeded `sandys-sandies` business. Log in with:
+
+```
+Email:    owner@sandys-sandies.test
+Password: localtest123
+```
+
+After signing in, click on 'Resend verification email', follow the link printed in the emulator terminal, and then click on 'I'm verified -- Continue' or reload the page.
+
+**Seed example business data:**
+
+```sh
+# Without a Solana wallet (skips on-chain payment testing)
+curl -X POST -H "Content-Type: application/json" \
+  http://localhost:5002/api/seed-data
+
+# With a devnet wallet (enables on-chain payment flow)
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"merchantWallet":"<your-devnet-solana-pubkey>"}' \
+  http://localhost:5002/api/seed-data
+```
+
+Reload the page and you'll see a link to the ordering page, or the option to create a QR code so that others can scan and place and pay for orders with their solana wallet on their mobile phone.
+
+---
+
+### Customer Ordering (Public Subdomain)
+
+The customer order flow is subdomain-based. Middleware rewrites `<business>.localhost` to the order page — for local testing use the path directly:
+
+```
+http://localhost:5002/sandys-sandies/order
+```
+You can place orders here directly with your Solana wallet on devnet if you have the extension installed on your web browser, or you can generate the QR code and use `ngrok` to test ordering on your mobile phone. Current supported wallets are: Solflare, Phantom, Backpack, MetaMask, and Exodus.
+
+
+**What to explore:**
+- Browse menu and add items to cart
+- Connect a Phantom/Backpack wallet (devnet)
+- Pay with devnet USDC — transaction lands on Solana devnet
+- On the confirmation page, submit an on-chain review via the "Leave a Review" CTA (requires a connected wallet and a `merchantWallet` set on the business)
+
+See [gromopo-tech/vouched](https://github.com/gromopo-tech/vouched) for the on-chain review program.
+
+---
+
+### AI Review Chat
+
+The AI chat feature (`/dashboard/gmp-chat`) queries a RAG backend built on Vertex AI + Qdrant. It requires the [chat](https://github.com/gromopo-tech/chat) service to be running.
+
+**Start the RAG backend:**
+
+```sh
+# From the chat repo — see https://github.com/gromopo-tech/chat for full setup
+docker-compose up -d
+```
+
+Confirm it's healthy:
+
+```sh
+curl http://localhost:8080/health
+```
+
+**Ingest reviews into the vector store:**
+
+```sh
+# Google Takeout reviews
+python3 ingest/run_ingest.py --source google_takeout --business-id sandys-sandies
+
+# On-chain Solana reviews
+python3 ingest/run_ingest.py --source onchain_solana --business-id sandys-sandies --reviewee <merchant-pubkey>
+```
+
+**What to explore:**
+- Log in as the seeded owner and navigate to `/dashboard/gmp-chat`
+- Ask natural-language questions about customer reviews (e.g. "What do customers say about the sandwiches?")
+- Responses stream in real-time and cite source reviews
 
 ---
 

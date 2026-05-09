@@ -41,8 +41,6 @@ if (process.env.NODE_ENV === "development") {
 }
 
 export { auth, db, storage };
-export const analytics = isSupported().then((isSupported) => {
-  if (isSupported) {
-    return getAnalytics(app);
-  }
-});
+export const analytics = process.env.NODE_ENV === "production"
+  ? isSupported().then((yes) => yes ? getAnalytics(app) : undefined)
+  : Promise.resolve(undefined);

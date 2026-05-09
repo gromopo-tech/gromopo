@@ -23,6 +23,26 @@ export function isSubdomain() {
          hostname !== 'gromopo.com';
 }
 
+/**
+ * Returns the public order URL for a given business.
+ * - On the client: derives host/port from window.location so localhost dev
+ *   gets a path-based URL (e.g. http://localhost:5002/sandys-sandies/order).
+ * - On the server during SSR in dev: falls back to port 5002.
+ * - In production: uses subdomain routing (https://<id>.gromopo.com/order).
+ */
+export function getOrderUrl(businessId: string): string {
+  if (typeof window !== 'undefined') {
+    const { hostname, port, protocol } = window.location;
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+    if (isLocal) {
+      return `${protocol}//${hostname}${port ? ':' + port : ''}/${businessId}/order`;
+    }
+  } else if (process.env.NODE_ENV === 'development') {
+    return `http://localhost:5002/${businessId}/order`;
+  }
+  return `https://${businessId}.gromopo.com/order`;
+}
+
 // src/lib/utils/navigation.ts
 export function getHomeUrl() {
   if (typeof window === 'undefined') return '/';

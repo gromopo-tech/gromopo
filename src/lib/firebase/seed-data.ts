@@ -9,7 +9,7 @@ const sampleBusinessData = {
   name: "Sandy's Sandies",
   description: "Fresh sandwiches made to order",
   normalizedName: "sandys-sandies",
-  menuUploaded: false,
+  menuUploaded: true,
   merchantWallet: '<merchant-wallet-address>',
   theme: {
     primaryColor: "yellow",
@@ -63,13 +63,16 @@ const sampleMenuData = [
   }
 ];
 
-export async function seedFirestoreData() {
+export async function seedFirestoreData(merchantWallet?: string) {
   try {
     console.log('Seeding Firestore with sample data...');
     
     // Create business document
     const businessRef = adminDb.doc(`businesses/sandys-sandies`);
-    await businessRef.set(sampleBusinessData);
+    await businessRef.set({
+      ...sampleBusinessData,
+      ...(merchantWallet ? { merchantWallet } : {}),
+    });
     console.log('✅ Business created with ID:', 'sandys-sandies');
     
     // Create menu categories and items

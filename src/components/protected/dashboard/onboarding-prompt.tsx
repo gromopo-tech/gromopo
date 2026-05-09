@@ -5,6 +5,7 @@ import { useContext } from 'react';
 import { BusinessIdContext } from '@/components/protected/business-id-provider';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import type { OnboardingStep } from '@/hooks/useOnboardingStatus';
+import { getOrderUrl } from '@/lib/utils';
 
 interface OnboardingPromptProps {
   step: OnboardingStep;
@@ -57,8 +58,22 @@ export function OnboardingPrompt({
   // Generate custom message for print-qr step to include the subdomain URL
   const getCustomMessage = () => {
     if (step === 'print-qr' && businessId) {
-      return `Your ordering page is live at https://${businessId}.gromopo.com/order. Customers can scan your QR code to view your menu and place orders. View and print your QR code from your account settings.`;
-    }
+        const url = getOrderUrl(businessId);
+      return (
+      <>
+        Your ordering page is live at{' '}
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+        >
+          {url}
+        </a>
+        {'\n'}Customers can scan your QR code to view your menu and place orders. View and print your QR code from your account settings.
+      </>
+    );
+  }
     return message || content.message;
   };
 

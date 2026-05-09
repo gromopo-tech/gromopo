@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { seedFirestoreData } from '@/lib/firebase/seed-data';
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
-    const businessId = await seedFirestoreData();
+    const body = await req.json().catch(() => ({}));
+    const businessId = await seedFirestoreData(body.merchantWallet);
     return NextResponse.json({ 
       success: true, 
       businessId,
