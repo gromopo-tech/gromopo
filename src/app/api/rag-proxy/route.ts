@@ -12,10 +12,13 @@ export async function POST(req: NextRequest) {
   const useStreaming = body.streaming === true;
   const endpoint = `${ragApiUrl.replace(/\/+$/, "")}/${useStreaming ? "rag/streaming-query" : "query"}`;
 
-  // Forward businessId for per-tenant retrieval scoping
+  // Forward businessId and businessName for per-tenant retrieval scoping
   const upstreamPayload: Record<string, unknown> = { query: body.query };
   if (body.businessId) {
     upstreamPayload.business_id = body.businessId;
+  }
+  if (body.businessName) {
+    upstreamPayload.business_name = body.businessName;
   }
   
   if (!useStreaming) {

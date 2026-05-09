@@ -1,8 +1,10 @@
-# Gromopo
+# GroMoPo
+
+[![CI](https://github.com/gromopo-tech/gromopo/actions/workflows/ci.yml/badge.svg)](https://github.com/gromopo-tech/gromopo/actions/workflows/ci.yml)
 
 Solana-based restaurant ordering platform — owners onboard, upload menus, configure a USDC wallet, accept on-chain payments, track orders, and get AI-powered review insights from a multi-source RAG service.
 
-Part of a three-repo system: this app is the customer-facing and owner-facing frontend; [chat](https://github.com/gromopo-tech/chat) is the RAG backend; [feedbites](https://github.com/tomasArizu13/feedbites) is the on-chain review program.
+Part of a three-repo system: this app is the customer-facing and owner-facing frontend; [chat](https://github.com/gromopo-tech/chat) is the RAG backend; [vouched](https://github.com/gromopo-tech/vouched) is the on-chain review program.
 
 ---
 
@@ -28,7 +30,7 @@ flowchart LR
         E[FastAPI RAG service\nVertex AI · Qdrant]
     end
 
-    subgraph feedbites ["tomasArizu13/feedbites"]
+    subgraph vouched ["gromopo-tech/vouched"]
         F[Anchor program\non-chain review storage\nSolana devnet]
     end
 
@@ -52,7 +54,7 @@ flowchart LR
 | Forms | React Hook Form + Zod |
 | Data fetching | TanStack React Query |
 | RAG backend | [gromopo-tech/chat](https://github.com/gromopo-tech/chat) — FastAPI + Vertex AI + Qdrant |
-| On-chain reviews | [tomasArizu13/feedbites](https://github.com/tomasArizu13/feedbites) — Solana Anchor program |
+| On-chain reviews | [gromopo-tech/vouched](https://github.com/gromopo-tech/vouched) — Solana Anchor program |
 
 ---
 
@@ -62,10 +64,10 @@ flowchart LR
 src/app/(main)/(marketing)/   Public pages — landing, sign-in, sign-up
 src/app/(main)/(protected)/   Owner dashboard — menus, orders, employees, AI chat, review upload
 src/app/(subdomains)/         Customer-facing order flow, routed by subdomain
-src/app/api/                  Next.js API routes — rag-proxy, reviews/ingest
+src/app/api/                  Next.js API routes — rag-proxy (proxies to chat RAG service)
 src/components/               Shared UI components + Solana provider
 src/lib/firebase/             Firebase client + Admin SDK config
-src/lib/solana/               Solana network config + feedbites client
+src/lib/solana/               Solana network config + vouched client
 ```
 
 ---
@@ -148,4 +150,4 @@ Then set `RAG_API_URL=http://localhost:8080/rag` in `.env.local`.
 | Repo | Role |
 |---|---|
 | [gromopo-tech/chat](https://github.com/gromopo-tech/chat) | Python/FastAPI RAG service — Vertex AI embeddings, Qdrant vector store, LLM-driven query parser, multi-source ingestion |
-| [tomasArizu13/feedbites](https://github.com/tomasArizu13/feedbites) | Solana Anchor program — on-chain review storage, PDA-based accounts, devnet deployment |
+| [gromopo-tech/vouched](https://github.com/gromopo-tech/vouched) | Solana Anchor program — purchase-verified on-chain review storage, PDA-based accounts, devnet deployment |
