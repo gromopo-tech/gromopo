@@ -188,6 +188,7 @@ export function Payments({
         total: finalTotal,
         cart: cartSnapshot.length > 0 ? cartSnapshot : cart,
         txSignature,
+        merchantWallet,
       };
       sessionStorage.setItem('orderConfirmation', JSON.stringify(orderDetails));
       router.push(`/order/confirmation`);

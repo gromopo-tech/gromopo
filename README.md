@@ -20,24 +20,24 @@ Part of a three-repo system: this app is the customer-facing and owner-facing fr
 ```mermaid
 flowchart LR
     subgraph gromopo ["gromopo (this repo)"]
-        A[Customer order flow\nSolana USDC payment]
-        B[Owner dashboard\nmenus · orders · employees]
-        C[AI review chat\n/dashboard/gmp-chat]
-        D[Review upload\n/dashboard/reviews/upload]
+        A[Customer order flow<br/>Solana USDC payment]
+        B[Owner dashboard<br/>menus · orders · employees]
+        C[AI review chat<br/>/dashboard/gmp-chat]
+        D[Review upload<br/>/dashboard/reviews/upload]
     end
 
     subgraph chat ["gromopo-tech/chat"]
-        E[FastAPI RAG service\nVertex AI · Qdrant]
+        E[FastAPI RAG service<br/>ertex AI · Qdrant]
     end
 
     subgraph vouched ["gromopo-tech/vouched"]
-        F[Anchor program\non-chain review storage\nSolana devnet]
+        F[Anchor program<br/>on-chain review storage<br/>Solana devnet]
     end
 
-    A -->|addReview tx| F
+    A -->|addReview tx - post-order CTA| F
     D -->|POST /ingest/google_takeout| E
     C -->|POST /rag/streaming-query| E
-    F -.->|batch indexer\nanchorpy| E
+    F -.->|batch indexer<br/>solders + manual Borsh| E
 ```
 
 ---
