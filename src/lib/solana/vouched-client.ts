@@ -30,6 +30,7 @@ export interface UseAddReviewResult {
   errorMessage: string | null;
   checkAlreadyReviewed: (merchantWallet: string) => Promise<boolean>;
   submitReview: (merchantWallet: string, comment: string, rating: number) => Promise<void>;
+  updateReview: (merchantWallet: string, comment: string, rating: number) => Promise<void>;
 }
 
 export function useAddReview(): UseAddReviewResult {
@@ -107,7 +108,33 @@ export function useAddReview(): UseAddReviewResult {
     [getProgram, publicKey, checkAlreadyReviewed],
   );
 
-  return { status, txSignature, errorMessage, checkAlreadyReviewed, submitReview };
+  const updateReview = useCallback(
+    async (merchantWallet: string, comment: string, rating: number) => {
+      const program = getProgram();
+      if (!program || !publicKey) {
+        setStatus('error');
+        setErrorMessage('Wallet not connected');
+        return;
+      }
+      try {
+        setStatus('submitting');
+        const reviewee = new PublicKey(merchantWallet);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const sig = await (program.methods as any)
+          .updateReview(reviewee, comment, rating)
+          .accounts({ reviewer: publicKey })
+          .rpc();
+        setTxSignature(sig);
+        setStatus('success');
+      } catch (err) {
+        setStatus('error');
+        setErrorMessage(err instanceof Error ? err.message : 'Transaction failed');
+      }
+    },
+    [getProgram, publicKey],
+  );
+
+  return { status, txSignature, errorMessage, checkAlreadyReviewed, submitReview, updateReview };
 }
 
 // Re-export BN so callers don't need to import from anchor directly

@@ -115,9 +115,9 @@ firebase emulators:start
 
 | Emulator | Default URL |
 |---|---|
-| Auth | http://127.0.0.1:9099 |
-| Firestore | http://127.0.0.1:8081 |
-| Storage | http://127.0.0.1:9199 |
+| Auth | http://127.0.0.1:4000/auth |
+| Firestore | http://127.0.0.1:4000/firestore |
+| Storage | http://127.0.0.1:4000/storage |
 
 open the app at http://localhost:5002
 

@@ -24,7 +24,7 @@ export default function OrderConfirmationPage() {
   const router = useRouter();
 
   const { connected } = useWallet();
-  const { status, txSignature: reviewTx, errorMessage, checkAlreadyReviewed, submitReview } = useAddReview();
+  const { status, txSignature: reviewTx, errorMessage, checkAlreadyReviewed, submitReview, updateReview } = useAddReview();
 
   useEffect(() => {
     const data = sessionStorage.getItem("orderConfirmation");
@@ -47,7 +47,11 @@ export default function OrderConfirmationPage() {
 
   const handleSubmitReview = async () => {
     if (!order?.merchantWallet || !comment.trim()) return;
-    await submitReview(order.merchantWallet, comment.trim(), rating);
+    if (alreadyReviewed) {
+      await updateReview(order.merchantWallet, comment.trim(), rating);
+    } else {
+      await submitReview(order.merchantWallet, comment.trim(), rating);
+    }
   };
 
   if (!order) {
@@ -108,27 +112,15 @@ export default function OrderConfirmationPage() {
       {reviewOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white dark:bg-neutral-900 rounded-lg p-6 w-full max-w-md shadow-xl">
-            <h2 className="text-xl font-bold mb-4">Leave a Review</h2>
+            <h2 className="text-xl font-bold mb-4">
+              {status === "success" ? (alreadyReviewed ? "Review Updated" : "Review Submitted") : alreadyReviewed || status === "already_reviewed" ? "Update Your Review" : "Leave a Review"}
+            </h2>
 
-            {alreadyReviewed || status === "already_reviewed" ? (
-              <>
-                <p className="text-yellow-700 dark:text-yellow-400 mb-4">
-                  You&apos;ve already left a review for this restaurant.
-                </p>
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => setReviewOpen(false)}
-                    className="px-4 py-2 rounded border text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                  >
-                    Close
-                  </button>
-                </div>
-              </>
-            ) : status === "success" ? (
+            {status === "success" ? (
               <>
                 <div className="space-y-2 mb-4">
                   <p className="text-green-700 dark:text-green-400 font-medium">
-                    Review submitted on-chain!
+                    {alreadyReviewed ? "Review updated on-chain!" : "Review submitted on-chain!"}
                   </p>
                   {reviewTx && (
                     <a
@@ -147,6 +139,58 @@ export default function OrderConfirmationPage() {
                     className="px-4 py-2 rounded border text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   >
                     Close
+                  </button>
+                </div>
+              </>
+            ) : alreadyReviewed || status === "already_reviewed" ? (
+              <>
+                <p className="text-sm text-yellow-700 dark:text-yellow-400 mb-4">
+                  You&apos;ve already reviewed this restaurant. You can update it below.
+                </p>
+                {status === "error" && (
+                  <p className="text-red-600 dark:text-red-400 text-sm mb-3">{errorMessage}</p>
+                )}
+                {/* Star rating */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">Rating</label>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setRating(star)}
+                        className={`text-2xl focus:outline-none ${star <= rating ? "text-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Comment */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">Comment</label>
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    rows={4}
+                    maxLength={2500}
+                    placeholder="Tell us about your experience..."
+                    className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-neutral-800 dark:border-neutral-600"
+                  />
+                  <p className="text-xs text-gray-500 text-right mt-0.5">{comment.length}/2500</p>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setReviewOpen(false)}
+                    className="px-4 py-2 rounded border text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmitReview}
+                    disabled={!comment.trim() || status === "submitting"}
+                    className="px-4 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {status === "submitting" ? "Updating..." : "Update Review"}
                   </button>
                 </div>
               </>

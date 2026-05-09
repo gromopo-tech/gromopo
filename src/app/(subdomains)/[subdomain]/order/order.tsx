@@ -100,6 +100,7 @@ export default function Order({ business, menuData, orderUrl }: OrderProps) {
             customerName={customerName}
             businessId={business.id}
             businessName={business.name}
+            subdomain={business.subdomain}
             clearCart={clearCart}
           />
         </div>

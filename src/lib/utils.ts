@@ -43,6 +43,17 @@ export function getOrderUrl(businessId: string): string {
   return `https://${businessId}.gromopo.com/order`;
 }
 
+export function getConfirmationPath(subdomain: string): string {
+  if (typeof window !== 'undefined') {
+    const { hostname } = window.location;
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+    if (isLocal) return `/${subdomain}/order/confirmation`;
+  } else if (process.env.NODE_ENV === 'development') {
+    return `/${subdomain}/order/confirmation`;
+  }
+  return '/order/confirmation';
+}
+
 // src/lib/utils/navigation.ts
 export function getHomeUrl() {
   if (typeof window === 'undefined') return '/';
