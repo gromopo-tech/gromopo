@@ -10,14 +10,19 @@ export async function POST(req: NextRequest) {
   
   // Determine if we're streaming based on the request
   const useStreaming = body.streaming === true;
-  const endpoint = `${ragApiUrl.replace(/\/+$/, "")}/${useStreaming ? "streaming-query" : "query"}`;
+  const endpoint = `${ragApiUrl.replace(/\/+$/, "")}/${useStreaming ? "rag/streaming-query" : "query"}`;
+
+  // Forward businessId for per-tenant retrieval scoping
+  const upstreamPayload: Record<string, unknown> = { query: body.query };
+  if (body.businessId) {
+    upstreamPayload.business_id = body.businessId;
+  }
   
   if (!useStreaming) {
-    // Original non-streaming behavior
     const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: body.query }),
+      body: JSON.stringify(upstreamPayload),
     });
     const data = await res.json();
     return NextResponse.json(data);
@@ -29,7 +34,7 @@ export async function POST(req: NextRequest) {
           const res = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query: body.query }),
+            body: JSON.stringify(upstreamPayload),
           });
           
           const reader = res.body?.getReader();
