@@ -57,9 +57,9 @@ export default function SigninForm() {
       const businessId = idTokenResult.claims.businessId as string | undefined;
 
       setSuccess(true);
-      // Redirect to gmp-chat only for specific businessId, otherwise go to dashboard
+      // Redirect to chat-gmp only for specific businessId, otherwise go to dashboard
       if (businessId === '27nj0fatH7IQUZywPmqO') {
-        window.location.replace("/dashboard/gmp-chat");
+        window.location.replace("/dashboard/chat-gmp");
       } else {
         window.location.replace("/dashboard");
       }

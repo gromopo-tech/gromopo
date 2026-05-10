@@ -13,9 +13,6 @@
  import { getHomeUrl } from '@/lib/utils';
  import { useContext } from 'react'
  import { RoleContext } from './protected/role-provider'
- import { BusinessIdContext } from '@/components/protected/business-id-provider'
-import { db } from '@/lib/firebase/config'
-import { doc, getDoc } from 'firebase/firestore'
 
 const customerLinks: { label: string; path: string }[] = [
   // More links...
@@ -87,47 +84,9 @@ export function AppHeaderMain({ isAuthenticated }: { isAuthenticated: boolean })
   let effectiveBusinessLinks = [...businessLinks];
 
   const role = useContext(RoleContext)
-  const businessId = useContext(BusinessIdContext)
-  const [hasWallet, setHasWallet] = useState<boolean | null>(null)
-
-  // Conditionally add GMPchat link for owner only when the business doc indicates a wallet is configured
-  useEffect(() => {
-    const load = async () => {
-      if (!clientAuth || role !== 'owner' || !businessId) {
-        setHasWallet(false)
-        return
-      }
-
-      if (typeof businessId === 'string') {
-        try {
-          const ref = doc(db, 'businesses', businessId)
-          const snap = await getDoc(ref)
-          if (!snap.exists()) {
-            setHasWallet(false)
-            return
-          }
-          const data = snap.data() as Record<string, unknown>
-          // Determine wallet presence: prefer explicit hasWallet flag, fall back to merchantWallet placeholder check
-          const walletFlag = data.hasWallet === true
-          const merchantWallet = typeof data.merchantWallet === 'string' ? data.merchantWallet : ''
-          const hasMerchantWallet = merchantWallet && merchantWallet !== '<merchant-wallet-address>'
-          const resolvedHasWallet = walletFlag || Boolean(hasMerchantWallet)
-          setHasWallet(Boolean(resolvedHasWallet))
-          if (resolvedHasWallet) {
-            try { sessionStorage.setItem(`businessHasWallet-${businessId}`, 'true') } catch {}
-          }
-        } catch (err) {
-          console.error('Error checking business wallet status:', err)
-          setHasWallet(false)
-        }
-      }
-    }
-    load()
-  }, [businessId, isAuthenticated, role, clientAuth])
-
-  if (clientAuth && role === 'owner' && hasWallet === true) {
+  if (clientAuth && role === 'owner') {
     effectiveBusinessLinks = [
-      { label: 'GMPchat', path: '/dashboard/gmp-chat' },
+      { label: 'ChatGMP', path: '/dashboard/chat-gmp' },
       ...businessLinks
     ]
   }

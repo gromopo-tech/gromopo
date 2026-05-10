@@ -7,7 +7,7 @@ public/sw.js
 public/sw.js.map
 public/workbox-*.js.map
 .DS_Store
-env.local
+.env.local
 .env.development
 apphosting.emulator.yaml
 firestore-debug.log

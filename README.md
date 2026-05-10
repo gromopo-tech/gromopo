@@ -22,7 +22,7 @@ flowchart LR
     subgraph gromopo ["gromopo (this repo)"]
         A[Customer order flow<br/>Solana USDC payment]
         B[Owner dashboard<br/>menus · orders · employees]
-        C[AI review chat<br/>/dashboard/gmp-chat]
+        C[AI review chat<br/>/dashboard/chat-gmp]
         D[Review upload<br/>/dashboard/reviews/upload]
     end
 
@@ -99,7 +99,11 @@ NEXT_PUBLIC_FIREBASE_DB_EMULATOR_PORT=8081
 NEXT_PUBLIC_FIREBASE_STORAGE_EMULATOR_PORT=9199
 
 # RAG backend — point at local chat service (see gromopo-tech/chat)
-RAG_API_URL=http://localhost:8080/rag
+RAG_API_URL=http://localhost:8080
+
+# Review ingest service — shared secret must match INGEST_SHARED_SECRET in the chat repo
+RAG_INGEST_URL=http://localhost:8080
+INGEST_SHARED_SECRET=dev-secret
 
 # Firebase Admin SDK (for server-side JWT verification)
 FIREBASE_ADMIN_PROJECT_ID=<your-project-id>
@@ -181,9 +185,19 @@ See [gromopo-tech/vouched](https://github.com/gromopo-tech/vouched) for the on-c
 
 ---
 
+### Review Upload (Self-Serve Ingest)
+
+Owners can upload a Google Business Profile / Takeout JSON export directly from the dashboard at `/dashboard/reviews/upload`. The file is parsed client-side (preview shows count, average rating, date range), then forwarded to the chat service's `/ingest/google_takeout` endpoint.
+
+Requires the [chat](https://github.com/gromopo-tech/chat) service running and `RAG_INGEST_URL` + `INGEST_SHARED_SECRET` set in `.env.local` (see above). Re-uploads are idempotent — duplicate reviews are overwritten, not added twice.
+
+**How to get the export file:** sign in to `business.google.com`, then use `takeout.google.com` to export Google Business Profile data. The file is `Takeout/Google Business Profile/reviews.json` inside the downloaded archive. Click "How do I get this file?" in the dashboard for step-by-step instructions.
+
+---
+
 ### AI Review Chat
 
-The AI chat feature (`/dashboard/gmp-chat`) queries a RAG backend built on Vertex AI + Qdrant. It requires the [chat](https://github.com/gromopo-tech/chat) service to be running.
+The AI chat feature (`/dashboard/chat-gmp`) queries a RAG backend built on Vertex AI + Qdrant. It requires the [chat](https://github.com/gromopo-tech/chat) service to be running.
 
 **Start the RAG backend:**
 
@@ -200,6 +214,10 @@ curl http://localhost:8080/health
 
 **Ingest reviews into the vector store:**
 
+Option A — owner dashboard (no CLI needed): log in, go to `/dashboard/reviews/upload`, drop in your `reviews.json`.
+
+Option B — CLI (from the chat repo):
+
 ```sh
 # Google Takeout reviews
 python3 ingest/run_ingest.py --source google_takeout --business-id sandys-sandies
@@ -209,7 +227,7 @@ python3 ingest/run_ingest.py --source onchain_solana --business-id sandys-sandie
 ```
 
 **What to explore:**
-- Log in as the seeded owner and navigate to `/dashboard/gmp-chat`
+- Log in as the seeded owner and navigate to `/dashboard/chat-gmp`
 - Ask natural-language questions about customer reviews (e.g. "What do customers say about the sandwiches?")
 - Responses stream in real-time and cite source reviews
 

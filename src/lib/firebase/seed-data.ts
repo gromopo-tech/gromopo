@@ -35,7 +35,7 @@ const sampleMenuData = [
       },
       {
         itemName: 'vermont-treat',
-        description: 'Honey glazed ham, pine nuts, spinach, sliced apples, Duck and Decanter\'s famous cheddar cheese spread on multigrain bread',
+        description: 'Honey glazed ham, pine nuts, spinach, sliced apples, Sandy\'s famous cheddar cheese spread on multigrain bread',
         price: { FULL: 12.99, MINI: 6.99 }
       }
     ]

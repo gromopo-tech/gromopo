@@ -4,7 +4,9 @@ import { getFirestore } from 'firebase-admin/firestore'
 
 // Only initialize once (Next.js hot reload compatibility)
 if (!getApps().length) {
-  initializeApp()
+  initializeApp({
+    projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
+  })
 }
 
 export const adminAuth = getAuth()
