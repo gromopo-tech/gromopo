@@ -11,7 +11,7 @@ import { OnboardingPrompt } from '@/components/protected/dashboard/onboarding-pr
 export default function DashboardPage() {
   const role = useContext(RoleContext);
   const [verified, setVerified] = useState<boolean | null>(null);
-  const { currentStep, hasWallet, loading, isComplete } = useOnboardingStatus();
+  const { currentStep, loading, isComplete } = useOnboardingStatus();
 
   // Subscribe to auth state to get emailVerified
   useEffect(() => {
@@ -53,18 +53,18 @@ export default function DashboardPage() {
         
         {role === 'owner' ? (
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">GMPchat Assistant</h2>
-            {!hasWallet ? (
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Launch your ordering page to unlock the AI assistant and get instant help with your business operations.
-              </p>
-            ) : (
-              <>
-                <p className="text-gray-600 dark:text-gray-300 mb-4">
-                  Check out GMPchat in the menu above to get instant help with your business operations using our AI assistant.
-                </p>
-              </>
-            )}
+            <h2 className="text-xl font-semibold mb-4">ChatGMP Assistant</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              Upload reviews from your business from Google Maps to get instant help with your business operations using our AI assistant.
+            </p>
+            <div className="flex flex-col gap-2">
+              <Link href="/dashboard/reviews/upload" className="btn border hover:bg-neutral-100 dark:hover:bg-neutral-800 bg-neutral-200 dark:bg-neutral-700 text-gray-900 dark:text-white px-4 py-2 rounded text-center">
+                Upload Reviews
+              </Link>
+              <Link href="/dashboard/chat-gmp" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm text-center">
+                Open ChatGMP →
+              </Link>
+            </div>
           </div>
         ) : null}
 

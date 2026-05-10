@@ -35,9 +35,10 @@ async function seedOwner() {
   try {
     const existing = await adminAuth.getUserByEmail(EMAIL);
     uid = existing.uid;
+    await adminAuth.updateUser(uid, { emailVerified: true });
     console.log(`ℹ️  User already exists (${EMAIL}) — uid: ${uid}`);
   } catch {
-    const created = await adminAuth.createUser({ email: EMAIL, password: PASSWORD });
+    const created = await adminAuth.createUser({ email: EMAIL, password: PASSWORD, emailVerified: true });
     uid = created.uid;
     console.log(`✅ Created user: ${EMAIL} — uid: ${uid}`);
   }
