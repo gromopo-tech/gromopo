@@ -18,3 +18,4 @@ pglite-debug.log
 
 # Keep our security patch
 !bigint-buffer-safe/
+.claude/
