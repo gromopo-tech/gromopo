@@ -2,6 +2,7 @@ import React from 'react';
 import { getBusinessBySubdomain, getBusinessMenu } from '@/lib/firebase/business';
 import { notFound } from 'next/navigation';
 import { OrderPageWrapper } from '@/components/order/order-page-wrapper';
+import { getOrderUrl } from '@/lib/utils';
 
 interface OrderPageProps {
   params: Promise<{
@@ -20,7 +21,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
   const menuData = await getBusinessMenu(business.id);
 
   // Construct the order URL for the mobile wallet selector
-  const orderUrl = `https://${subdomain}.gromopo.com/order`;
+  const orderUrl = getOrderUrl(subdomain);
 
   return (
     <OrderPageWrapper 

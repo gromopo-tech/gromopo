@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { getOrderUrl } from '@/lib/utils';
 
 interface QRCodeSectionProps {
   businessId: string;
@@ -11,7 +12,7 @@ export function QRCodeSection({ businessId }: QRCodeSectionProps) {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
-  const orderUrl = `https://${businessId}.gromopo.com/order`;
+  const orderUrl = getOrderUrl(businessId);
 
   const generateQRCode = async () => {
     setLoading(true);

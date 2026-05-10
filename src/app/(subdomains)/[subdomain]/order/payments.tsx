@@ -11,6 +11,7 @@ import { WalletButton } from '@/components/solana/solana-provider';
 import TipModal from '@/components/order/tip-modal';
 import { db } from '@/lib/firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
+import { getConfirmationPath } from '@/lib/utils';
 
 interface PaymentsProps {
   total: number;
@@ -18,6 +19,7 @@ interface PaymentsProps {
   customerName: string;
   businessId: string;
   businessName: string;
+  subdomain: string;
   clearCart: () => void;
   onSuccess?: (signature: string) => void;
   onError?: () => void;
@@ -29,6 +31,7 @@ export function Payments({
   customerName = 'Test Customer',
   businessId,
   businessName,
+  subdomain,
   onSuccess,
   onError,
   clearCart,
@@ -188,9 +191,10 @@ export function Payments({
         total: finalTotal,
         cart: cartSnapshot.length > 0 ? cartSnapshot : cart,
         txSignature,
+        merchantWallet,
       };
       sessionStorage.setItem('orderConfirmation', JSON.stringify(orderDetails));
-      router.push(`/order/confirmation`);
+      router.push(getConfirmationPath(subdomain));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderConfirmed, orderNumber]);
