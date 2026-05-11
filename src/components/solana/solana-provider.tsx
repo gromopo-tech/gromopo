@@ -34,7 +34,10 @@ export const SolanaProvider: FC<SolanaProviderProps> = ({ children }) => {
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={[]} autoConnect>
+      <WalletProvider wallets={[]} autoConnect onError={(error) => {
+          // Auto-connect rejections are expected when no wallet is active — suppress console noise.
+          if (error.name !== 'WalletConnectionError') console.error(error);
+        }}>
         <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
