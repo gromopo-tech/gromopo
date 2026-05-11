@@ -8,10 +8,13 @@ Part of a three-repo system: this app is the customer-facing and owner-facing fr
 
 ---
 
-## Screenshots
+## Demo
 
-![Order confirmation page](./public/images/screenshot-order-confirmation.png)
-![Owner dashboard — AI review chat](./public/images/screenshot-dashboard-chat.png)
+<video src="https://github.com/user-attachments/assets/6d48e18e-289e-486e-8818-2a54c0d7b122" autoplay loop muted playsinline></video>
+
+
+
+
 
 ---
 
