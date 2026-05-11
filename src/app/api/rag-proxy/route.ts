@@ -32,11 +32,10 @@ export async function POST(req: NextRequest) {
   const endpoint = `${baseUrl}/${useStreaming ? "rag/streaming-query" : "query"}`;
 
   const upstreamPayload: Record<string, unknown> = { query: body.query };
-  if (businessId) {
-    upstreamPayload.business_id = businessId;
-  }
-  if (businessName) {
-    upstreamPayload.business_name = businessName;
+  if (businessId) upstreamPayload.business_id = businessId;
+  if (businessName) upstreamPayload.business_name = businessName;
+  if (Array.isArray(body.chat_history) && body.chat_history.length > 0) {
+    upstreamPayload.chat_history = body.chat_history;
   }
 
   if (!useStreaming) {

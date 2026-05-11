@@ -163,10 +163,21 @@ export default function ChatGMP() {
     let tempAnswer = "";
 
     try {
+      // Convert prior turns to {human, ai} pairs for the RAG backend's question rewriter.
+      // selectedChatHistory is the history *before* this turn was appended.
+      const chatHistory: { human: string; ai: string }[] = [];
+      for (let i = 0; i + 1 < selectedChatHistory.length; i += 2) {
+        const human = selectedChatHistory[i];
+        const ai = selectedChatHistory[i + 1];
+        if (human?.role === "user" && ai?.role === "assistant") {
+          chatHistory.push({ human: human.text, ai: ai.text });
+        }
+      }
+
       const response = await fetch('/api/rag-proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-        body: JSON.stringify({ query, streaming: true, businessId }),
+        body: JSON.stringify({ query, streaming: true, businessId, chat_history: chatHistory }),
       });
 
       const reader = response.body!.getReader();
